@@ -1,9 +1,9 @@
-package com.onmoim.server.test.controller;
+package com.onmoim.server.example.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.onmoim.server.test.entity.TestEntity;
-import com.onmoim.server.test.service.TestService;
+import com.onmoim.server.example.entity.TestEntity;
+import com.onmoim.server.example.service.TestService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

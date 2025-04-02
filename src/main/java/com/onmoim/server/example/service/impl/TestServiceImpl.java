@@ -1,13 +1,13 @@
-package com.onmoim.server.test.service.impl;
+package com.onmoim.server.example.service.impl;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.onmoim.server.test.entity.TestEntity;
-import com.onmoim.server.test.repository.TestRepository;
-import com.onmoim.server.test.service.TestService;
+import com.onmoim.server.example.entity.TestEntity;
+import com.onmoim.server.example.repository.TestRepository;
+import com.onmoim.server.example.service.TestService;
 
 import lombok.RequiredArgsConstructor;
 

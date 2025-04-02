@@ -1,4 +1,4 @@
-package com.onmoim.server.test.entity;
+package com.onmoim.server.example.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
