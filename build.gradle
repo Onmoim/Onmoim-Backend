@@ -40,6 +40,9 @@ dependencies {
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // checkStyle
+    checkstyle("com.puppycrawl.tools:checkstyle:10.3.2")
 }
 
 tasks.named('test') {
@@ -62,3 +65,11 @@ tasks.register('copySecretForTest', Copy) {
     include '*.yml', 'application-env.properties'
     into 'src/test/resources'
 }
+
+checkstyle {
+    maxWarnings = 0
+    configFile = file("/${rootDir}/checkstyle/naver-checkstyle-rules.xml")
+    configProperties = ["suppressionFile": "${rootDir}/checkstyle/naver-checkstyle-suppressions.xml"]
+    toolVersion = "10.22.0"
+}
+checkstyleMain.source = fileTree('src/main/java') //검사 대상
