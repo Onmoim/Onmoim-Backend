@@ -7,4 +7,4 @@ import com.onmoim.server.example.entity.TestEntity;
 
 @Repository
 public interface TestRepository extends JpaRepository<TestEntity, Long> {
-} 
+}

@@ -14,18 +14,18 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class TestServiceImpl implements TestService {
-    
-    private final TestRepository testRepository;
-    
-    @Override
-    @Transactional
-    public void save(TestEntity userInfo) {
-        testRepository.save(userInfo);
-    }
-    
-    @Override
-    @Transactional(readOnly = true)
-    public List<TestEntity> findAll() {
-        return testRepository.findAll();
-    }
-} 
+
+	private final TestRepository testRepository;
+
+	@Override
+	@Transactional
+	public void save(TestEntity userInfo) {
+		testRepository.save(userInfo);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<TestEntity> findAll() {
+		return testRepository.findAll();
+	}
+}
