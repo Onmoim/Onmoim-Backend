@@ -39,8 +39,6 @@ src/main/resources/sql/
 
 ### VS Code ###
 .vscode/
-*.yml
-+ !.github/workflows/*.yml
 
 ### yml ###
 src/main/resources/*.yml
