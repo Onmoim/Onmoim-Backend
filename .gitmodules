@@ -1,0 +1,3 @@
+[submodule "Onmoim-config"]
+	path = Onmoim-config
+	url = https://github.com/Onmoim/Onmoim-config.git
