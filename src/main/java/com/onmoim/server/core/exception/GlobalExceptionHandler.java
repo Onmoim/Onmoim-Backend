@@ -1,0 +1,23 @@
+package com.onmoim.server.core.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+import com.onmoim.server.core.response.ResponseHandler;
+
+import lombok.extern.slf4j.Slf4j;
+
+@ControllerAdvice
+@Slf4j
+public class GlobalExceptionHandler {
+	@ExceptionHandler(value = CustomException.class)
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	public ResponseEntity<?> handleCustomException(CustomException customException) {
+		log.warn("[handleCustomException] : {}", customException.getErrorCode());
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+			.body(ResponseHandler.errorResponse(customException.getErrorCode()));
+	}
+}
