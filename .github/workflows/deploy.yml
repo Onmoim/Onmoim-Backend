@@ -68,7 +68,7 @@ jobs:
             sleep 3
             
             # 애플리케이션 실행 output.log 로그 기록 
-            nohup java -jar project.jar > ./output.log 2>&1 &
+            nohup java -jar project.jar --spring.profiles.active=dev > ./output.log 2>&1 &
             
             # 폴더 삭제 
             rm -rf /home/ubuntu/backend-server/tobe
