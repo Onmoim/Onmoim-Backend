@@ -43,10 +43,11 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+
 processResources.dependsOn('copySecret')
 
 tasks.register('copySecret', Copy) {
-    from 'Onmoim-config'         // 서브모듈 디렉토리명
-    include '*.yml'              // yml 파일만 복사
+    from 'Onmoim-config'          // 서브모듈 디렉토리명
+    include '*.yml', 'application-env.properties'    // yml, env 파일 복사
     into 'src/main/resources'    // 여기에 복사됨
 }
