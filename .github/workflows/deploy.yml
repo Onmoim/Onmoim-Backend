@@ -40,6 +40,7 @@ jobs:
           token: ${{ secrets.GH_PAT }}
 
       - name: 서브모듈 YAML 파일 복사
+        if: false
         run: |
           cp -r Onmoim-config/* src/main/resources/
           cp -r Onmoim-config/* src/test/resources/
