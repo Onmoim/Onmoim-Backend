@@ -1,13 +1,11 @@
 package com.onmoim.server.example.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-@Profile("local")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/test/redis")
