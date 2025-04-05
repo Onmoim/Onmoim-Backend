@@ -58,12 +58,6 @@ jobs:
       - name: 테스트 및 빌드하기
         run: ./gradlew clean build -Dspring.profiles.active=test
 
-      - name: 테스트 리포트 아티팩트로 업로드
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-report
-          path: build/reports/tests/test/index.html
-
       - name: 빌드된 파일 이름 변경하기
         run: mv ./build/libs/*SNAPSHOT.jar ./project.jar
 
