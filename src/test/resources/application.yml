@@ -6,7 +6,7 @@ spring:
   config:
     activate:
       on-profile: test
-  import: "common.yml, application-test.yml"
+    import: "common.yml, application-test.yml"
 ---
 spring:
   config:
