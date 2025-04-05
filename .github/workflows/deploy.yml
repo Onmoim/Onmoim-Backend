@@ -52,7 +52,7 @@ jobs:
           java-version: 21
 
       - name: 테스트 및 빌드하기
-        run: ./gradlew clean build -Dspring.profiles.active=test
+        run: ./gradlew clean build -Dspring.profiles.active=test --info --stacktrace
 
       - name: 빌드된 파일 이름 변경하기
         run: mv ./build/libs/*SNAPSHOT.jar ./project.jar
