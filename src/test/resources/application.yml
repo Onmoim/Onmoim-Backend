@@ -1,0 +1,21 @@
+spring:
+  profiles:
+    default: local
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  import: "common.yml, application-test.yml"
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+    import: "common.yml, application-local.yml, application-env.properties"
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+    import: "common.yml, application-dev.yml"
