@@ -40,7 +40,10 @@ jobs:
           token: ${{ secrets.GH_PAT }}
 
       - name: 서브모듈 YAML 파일 복사
-        run: cp -r Onmoim-config/* src/main/resources/
+        run: |
+          cp -r Onmoim-config/* src/main/resources/
+          echo "리소스 복사 후 파일 목록:"
+          ls -al src/main/resources/
 
       - name: JDK 21버전 설치
         uses: actions/setup-java@v4
