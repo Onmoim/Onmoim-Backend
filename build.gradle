@@ -18,6 +18,9 @@ repositories {
 }
 
 dependencies {
+    // S3
+    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+
     // Database
     runtimeOnly 'com.mysql:mysql-connector-j'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -41,6 +44,9 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    def profile = project.hasProperty('profile') ? project.getProperty('profile') : 'local'
+    systemProperty 'spring.profiles.active', profile
 }
 
 processResources.dependsOn('copySecret')
