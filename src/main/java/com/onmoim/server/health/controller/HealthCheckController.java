@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,13 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Health Check", description = "서버 상태 확인 API입니다.")
 public class HealthCheckController {
 
-    @GetMapping
-    @Operation(summary = "서버 상태 확인", description = "서버가 정상 작동 중인지 확인합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "서버 정상 작동 중")
-    })
-    public ResponseEntity<String> healthCheck() {
-        log.info("Health check 요청 수신");
-        return ResponseEntity.ok("Server is up and running");
-    }
-} 
+	@GetMapping
+	@Operation(summary = "서버 상태 확인", description = "서버가 정상 작동 중인지 확인합니다.")
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200", description = "서버 정상 작동 중")
+	})
+	public ResponseEntity<String> healthCheck() {
+		log.info("Health check 요청 수신");
+		return ResponseEntity.ok("Server is up and running");
+	}
+}

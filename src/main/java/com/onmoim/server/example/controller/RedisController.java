@@ -1,10 +1,15 @@
 package com.onmoim.server.example.controller;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
@@ -15,7 +20,7 @@ public class RedisController {
 
 	@PostMapping
 	public ResponseEntity<String> create(@RequestParam(required = false) String value) {
-		if(!StringUtils.hasText(value)) {
+		if (!StringUtils.hasText(value)) {
 			return ResponseEntity.badRequest().body("value is empty");
 		}
 		redisTemplate.opsForValue().set("key", value);
@@ -25,7 +30,7 @@ public class RedisController {
 	@GetMapping
 	public ResponseEntity<String> get() {
 		String find = redisTemplate.opsForValue().get("key");
-		if(find == null) {
+		if (find == null) {
 			return ResponseEntity.notFound().build();
 		}
 		return ResponseEntity.ok().body(find);

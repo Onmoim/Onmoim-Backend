@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.2'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'checkstyle'
 }
 
 group = 'com.onmoim'
@@ -42,7 +43,7 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // checkStyle
-    checkstyle("com.puppycrawl.tools:checkstyle:10.3.2")
+    checkstyle 'com.puppycrawl.tools:checkstyle:10.3.2'
 }
 
 tasks.named('test') {
