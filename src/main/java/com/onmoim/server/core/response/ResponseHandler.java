@@ -2,7 +2,7 @@ package com.onmoim.server.core.response;
 
 import java.time.LocalDateTime;
 
-import com.onmoim.server.core.exception.ErrorCode;
+import com.onmoim.server.core.exception.CustomException;
 
 import lombok.Builder;
 import lombok.Data;
@@ -26,10 +26,10 @@ public class ResponseHandler<T> {
 			.build();
 	}
 
-	public static <T> ResponseHandler<T> errorResponse(final ErrorCode errorCode) {
+	public static <T> ResponseHandler<T> errorResponse(final CustomException customException) {
 		return ResponseHandler.<T>builder()
-			.message(errorCode.name())
-			.data((T)errorCode.getDetail())
+			.message(customException.getErrorCode().name())
+			.data((T)customException.getMessage())
 			.build();
 	}
 }
