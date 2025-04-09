@@ -44,6 +44,9 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    def profile = project.hasProperty('profile') ? project.getProperty('profile') : 'local'
+    systemProperty 'spring.profiles.active', profile
 }
 
 processResources.dependsOn('copySecret')
