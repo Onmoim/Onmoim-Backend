@@ -1,8 +1,8 @@
-package com.onmoim.server.core.response;
+package com.onmoim.server.common.response;
 
 import java.time.LocalDateTime;
 
-import com.onmoim.server.core.exception.CustomException;
+import com.onmoim.server.common.exception.CustomException;
 
 import lombok.Builder;
 import lombok.Data;

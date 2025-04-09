@@ -1,4 +1,4 @@
-package com.onmoim.server.core.exception;
+package com.onmoim.server.common.exception;
 
 import lombok.Getter;
 

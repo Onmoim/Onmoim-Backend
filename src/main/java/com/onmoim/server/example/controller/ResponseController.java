@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.onmoim.server.core.exception.CustomException;
-import com.onmoim.server.core.exception.ErrorCode;
-import com.onmoim.server.core.response.ResponseHandler;
+import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.common.response.ResponseHandler;
 import com.onmoim.server.example.entity.TestEntity;
 
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,4 +1,4 @@
-package com.onmoim.server.core;
+package com.onmoim.server.common;
 
 import java.time.LocalDateTime;
 
