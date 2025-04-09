@@ -8,6 +8,9 @@ build/
 ### .env ###
 src/main/resources/application-env.properties
 
+### src/test/resources ###
+src/test/resources/**
+
 ### STS ###
 .apt_generated
 .classpath
