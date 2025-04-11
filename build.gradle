@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.2'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'checkstyle'
 }
 
 group = 'com.onmoim'
@@ -18,6 +19,9 @@ repositories {
 }
 
 dependencies {
+    // S3
+    implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+
     // Database
     runtimeOnly 'com.mysql:mysql-connector-j'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -37,10 +41,16 @@ dependencies {
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // checkStyle
+    checkstyle 'com.puppycrawl.tools:checkstyle:10.3.2'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+
+    def profile = project.hasProperty('profile') ? project.getProperty('profile') : 'local'
+    systemProperty 'spring.profiles.active', profile
 }
 
 processResources.dependsOn('copySecret')
@@ -56,3 +66,11 @@ tasks.register('copySecretForTest', Copy) {
     include '*.yml', 'application-env.properties'
     into 'src/test/resources'
 }
+
+checkstyle {
+    maxWarnings = 0
+    configFile = file("/${rootDir}/checkstyle/naver-checkstyle-rules.xml")
+    configProperties = ["suppressionFile": "${rootDir}/checkstyle/naver-checkstyle-suppressions.xml"]
+    toolVersion = "10.22.0"
+}
+checkstyleMain.source = fileTree('src/main/java') //검사 대상
