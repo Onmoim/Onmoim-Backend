@@ -53,6 +53,7 @@ public class TestController {
 	public ResponseEntity<List<TestEntity>> testGet() {
 		log.info("유저 정보 반환 컨트롤러 실행");
 
+
 		try {
 			List<TestEntity> testEntity = testService.findAll();
 			return ResponseEntity.ok(testEntity);
@@ -62,3 +63,4 @@ public class TestController {
 		}
 	}
 }
+
