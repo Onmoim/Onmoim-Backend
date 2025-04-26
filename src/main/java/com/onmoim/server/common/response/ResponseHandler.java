@@ -2,8 +2,6 @@ package com.onmoim.server.common.response;
 
 import java.time.LocalDateTime;
 
-import com.onmoim.server.common.exception.CustomException;
-
 import lombok.Builder;
 import lombok.Data;
 
@@ -21,15 +19,15 @@ public class ResponseHandler<T> {
 
 	public static <T> ResponseHandler<T> response(T data) {
 		return ResponseHandler.<T>builder()
-			.message("SUCCESS")
+			.message(Message.SUCCESS.getDescription())
 			.data(data)
 			.build();
 	}
 
-	public static <T> ResponseHandler<T> errorResponse(final CustomException customException) {
+	public static <T> ResponseHandler<T> errorResponse(T data, String message) {
 		return ResponseHandler.<T>builder()
-			.message(customException.getErrorCode().name())
-			.data((T)customException.getMessage())
+			.message(message)
+			.data(data)
 			.build();
 	}
 }
