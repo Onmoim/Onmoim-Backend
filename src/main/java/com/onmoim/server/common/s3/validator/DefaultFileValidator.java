@@ -1,5 +1,6 @@
 package com.onmoim.server.common.s3.validator;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class DefaultFileValidator implements FileValidator {
     // 최대 파일 크기(DataSize로 표현, 기본 10MB)
     @Value("${spring.servlet.multipart.max-file-size:10MB}")
     private DataSize maxFileSize;
-    
+
     @PostConstruct
     public void init() {
         log.info("최대 파일 크기 설정: {}", maxFileSize);
@@ -74,19 +75,13 @@ public class DefaultFileValidator implements FileValidator {
         return file.getSize() <= maxFileSize.toBytes();
     }
 
-    /**
-     * 허용된 파일 유형 목록을 설정합니다.
-     * 이 메서드는 기본 허용 파일 유형을 재정의하는 데 사용할 수 있습니다.
-     *
-     * @param allowedFileTypes 허용된 파일 유형 목록
-     */
     public void setAllowedFileTypes(List<String> allowedFileTypes) {
-        this.allowedFileTypes = allowedFileTypes;
+		this.allowedFileTypes = new ArrayList<>(allowedFileTypes);
     }
 
     /**
      * 최대 파일 크기를 설정합니다.
-     * 
+     *
      * @param maxFileSize 최대 파일 크기(DataSize 형식)
      */
     public void setMaxFileSize(DataSize maxFileSize) {

@@ -124,8 +124,6 @@ class S3FileStorageServiceTest {
 	@Test
 	@DisplayName("파일 삭제 성공 테스트")
 	void deleteFileSuccess() throws Exception {
-
-		when(amazonS3.getRegionName()).thenReturn("ap-northeast-2");
 		doNothing().when(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 
 		assertDoesNotThrow(() -> {
@@ -138,8 +136,6 @@ class S3FileStorageServiceTest {
 	@Test
 	@DisplayName("파일 삭제 실패 테스트")
 	void deleteFileFailure() throws Exception {
-
-		when(amazonS3.getRegionName()).thenReturn("ap-northeast-2");
 		doThrow(new RuntimeException("삭제 실패")).when(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 
 		CustomException exception = assertThrows(CustomException.class, () -> {
