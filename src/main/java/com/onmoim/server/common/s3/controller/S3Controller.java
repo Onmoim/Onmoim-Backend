@@ -1,6 +1,5 @@
 package com.onmoim.server.common.s3.controller;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -9,8 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.response.ResponseHandler;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
@@ -109,7 +106,7 @@ public class S3Controller {
 		log.info("파일 삭제 요청: URL={}", fileUrl);
 		fileStorageService.deleteFile(fileUrl);
 		log.info("파일 삭제 성공: URL={}", fileUrl);
-		
+
 		return ResponseEntity.ok(ResponseHandler.response(null));
 	}
 }
