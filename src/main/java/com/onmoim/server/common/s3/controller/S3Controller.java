@@ -1,19 +1,19 @@
 package com.onmoim.server.common.s3.controller;
 
-import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
-import com.onmoim.server.common.s3.service.S3Service;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-
-import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.response.ResponseHandler;
+import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
+import com.onmoim.server.common.s3.service.FileStorageService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,10 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/s3")
-@Tag(name = "S3", description = "S3 파일 업로드 API")
+@Tag(name = "S3", description = "S3 파일 관리 API")
 public class S3Controller {
 
-	private final S3Service s3Service;
+	private final FileStorageService fileStorageService;
 
 	@PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@Operation(
@@ -73,21 +73,50 @@ public class S3Controller {
 
 		log.info("파일 업로드 요청: 파일명={}, 크기={}bytes", file.getOriginalFilename(), file.getSize());
 
-		if (file.isEmpty()) {
-			throw new CustomException(ErrorCode.EMPTY_FILE);
-		}
+		FileUploadResponseDto responseDto = fileStorageService.uploadFile(file, directory);
 
-		String fileUrl = s3Service.uploadFile(file, directory);
-
-		FileUploadResponseDto responseDto = FileUploadResponseDto.builder()
-			.fileName(file.getOriginalFilename())
-			.fileUrl(fileUrl)
-			.fileType(file.getContentType())
-			.fileSize(file.getSize())
-			.build();
-
-		log.info("파일 업로드 성공: URL={}", fileUrl);
+		log.info("파일 업로드 성공: URL={}", responseDto.getFileUrl());
 
 		return ResponseEntity.ok(ResponseHandler.response(responseDto));
+	}
+
+	@DeleteMapping
+	@Operation(
+		summary = "파일 삭제",
+		description = "S3에서 파일을 삭제합니다."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "파일 삭제 성공"
+		),
+		@ApiResponse(
+			responseCode = "400",
+			description = "파일 삭제 실패 - 잘못된 URL 또는 삭제 과정에서 오류 발생"
+		),
+		@ApiResponse(
+			responseCode = "500",
+			description = "서버 오류"
+		)
+	})
+	public ResponseEntity<ResponseHandler<Boolean>> deleteFile(
+		@Parameter(
+			description = "삭제할 파일의 URL",
+			required = true
+		)
+		@RequestParam("fileUrl") String fileUrl) {
+
+		log.info("파일 삭제 요청: URL={}", fileUrl);
+
+		boolean result = fileStorageService.deleteFile(fileUrl);
+
+		if (result) {
+			log.info("파일 삭제 성공: URL={}", fileUrl);
+			return ResponseEntity.ok(ResponseHandler.response(true));
+		} else {
+			log.warn("파일 삭제 실패: URL={}", fileUrl);
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+				.body(ResponseHandler.errorResponse(false, ErrorCode.FILE_DELETE_FAILED.name()));
+		}
 	}
 }
