@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -118,24 +119,42 @@ public class S3FileStorageService implements FileStorageService {
 
     /**
      * URL에서 S3 키(경로)를 추출합니다.
+     * AWS SDK의 AmazonS3URI를 기본으로 사용하며, 실패 시 수동 파싱으로 대체합니다.
      *
      * @param fileUrl S3 URL
      * @return S3에서의 키(경로)
      */
     private String extractKeyFromUrl(String fileUrl) {
-        // 기본 URL 부분을 제거하여 키 추출
-        String baseUrl = "https://" + bucket + ".s3." + amazonS3.getRegionName() + ".amazonaws.com/";
-        if (fileUrl.startsWith(baseUrl)) {
-            return fileUrl.substring(baseUrl.length());
-        }
+        try {
+            // AWS SDK를 사용한 URL 파싱
+            AmazonS3URI s3Uri = new AmazonS3URI(fileUrl);
 
-        // 대체 형식
-        baseUrl = "https://s3." + amazonS3.getRegionName() + ".amazonaws.com/" + bucket + "/";
-        if (fileUrl.startsWith(baseUrl)) {
-            return fileUrl.substring(baseUrl.length());
-        }
+            // URL에서 추출한 버킷이 현재 설정된 버킷과 일치하는지 확인
+            if (!bucket.equals(s3Uri.getBucket())) {
+                log.warn("URL의 버킷({})이 설정된 버킷({})과 일치하지 않습니다.", s3Uri.getBucket(), bucket);
+            }
 
-        // URL 형식이 인식되지 않으면 URL의 마지막 부분만 반환
-        return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+            return s3Uri.getKey();
+        } catch (IllegalArgumentException e) {
+            log.warn("AWS SDK로 URL 파싱 실패: {}, 수동 파싱 방식을 대체로 사용합니다.", fileUrl);
+
+            // AWS SDK 파싱 실패 시 수동 파싱 방식 사용 (대체 로직)
+
+            // 1. 가상 호스팅 스타일 URL 파싱 시도 (https://bucket-name.s3.region.amazonaws.com/key)
+            String baseUrl = "https://" + bucket + ".s3." + amazonS3.getRegionName() + ".amazonaws.com/";
+            if (fileUrl.startsWith(baseUrl)) {
+                return fileUrl.substring(baseUrl.length());
+            }
+
+            // 2. 경로 스타일 URL 파싱 시도 (https://s3.region.amazonaws.com/bucket-name/key)
+            baseUrl = "https://s3." + amazonS3.getRegionName() + ".amazonaws.com/" + bucket + "/";
+            if (fileUrl.startsWith(baseUrl)) {
+                return fileUrl.substring(baseUrl.length());
+            }
+
+            // 3. 그 외 URL 형식의 경우 마지막 경로 부분만 사용
+            log.warn("인식 가능한 S3 URL 형식이 아닙니다. 마지막 경로 부분만 사용합니다: {}", fileUrl);
+            return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        }
     }
 }
