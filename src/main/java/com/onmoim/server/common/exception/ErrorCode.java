@@ -17,6 +17,7 @@ public enum ErrorCode {
 
 	INVALID_LOGIN_INFO(BAD_REQUEST, "아이디 또는 비밀번호가 일치하지 않습니다."),
 	FILE_UPLOAD_FAILED(BAD_REQUEST, "파일 업로드에 실패했습니다."),
+	FILE_DELETE_FAILED(BAD_REQUEST, "파일 삭제에 실패했습니다."),
 	EMPTY_FILE(BAD_REQUEST, "파일이 비어 있습니다."),
 	INVALID_FILE_TYPE(BAD_REQUEST, "지원하지 않는 파일 형식입니다."),
 	FILE_SIZE_EXCEEDED(BAD_REQUEST, "파일 크기가 허용된 최대 크기를 초과했습니다."),
