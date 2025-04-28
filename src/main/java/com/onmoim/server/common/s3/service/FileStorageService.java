@@ -29,11 +29,11 @@ public interface FileStorageService {
 
     /**
      * 저장소에서 파일을 삭제합니다.
+     * 삭제에 실패하면 CustomException을 발생시킵니다.
      *
      * @param fileUrl 삭제할 파일의 URL
-     * @return 파일이 성공적으로 삭제되었으면 true, 그렇지 않으면 false
      */
-    boolean deleteFile(String fileUrl);
+    void deleteFile(String fileUrl);
 
     /**
      * 파일에 대한 고유한 파일명을 생성합니다.

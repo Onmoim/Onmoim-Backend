@@ -89,7 +89,7 @@ public class S3FileStorageService implements FileStorageService {
     }
 
     @Override
-    public boolean deleteFile(String fileUrl) {
+    public void deleteFile(String fileUrl) {
         try {
             // URL에서 키 추출
             String key = extractKeyFromUrl(fileUrl);
@@ -98,10 +98,9 @@ public class S3FileStorageService implements FileStorageService {
             amazonS3.deleteObject(new DeleteObjectRequest(bucket, key));
 
             log.info("파일 삭제 성공: {}", fileUrl);
-            return true;
         } catch (Exception e) {
             log.error("파일 삭제 실패: {}", e.getMessage(), e);
-            return false;
+            throw new CustomException(ErrorCode.FILE_DELETE_FAILED);
         }
     }
 

@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.validator.FileValidator;
 
@@ -105,7 +106,6 @@ class S3FileStorageServiceTest {
 
 		doNothing().when(fileValidator).validate(any(MultipartFile.class));
 
-		// IOException을 발생시키는 MultipartFile Mock 생성
 		MultipartFile errorFile = mock(MultipartFile.class);
 		when(errorFile.getOriginalFilename()).thenReturn("error-file.txt");
 		when(errorFile.getContentType()).thenReturn("text/plain");
@@ -128,10 +128,10 @@ class S3FileStorageServiceTest {
 		when(amazonS3.getRegionName()).thenReturn("ap-northeast-2");
 		doNothing().when(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 
-		boolean result = s3FileStorageService.deleteFile(testUrl);
+		assertDoesNotThrow(() -> {
+			s3FileStorageService.deleteFile(testUrl);
+		});
 
-
-		assertTrue(result);
 		verify(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 	}
 
@@ -142,9 +142,11 @@ class S3FileStorageServiceTest {
 		when(amazonS3.getRegionName()).thenReturn("ap-northeast-2");
 		doThrow(new RuntimeException("삭제 실패")).when(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 
-		boolean result = s3FileStorageService.deleteFile(testUrl);
+		CustomException exception = assertThrows(CustomException.class, () -> {
+			s3FileStorageService.deleteFile(testUrl);
+		});
 
-		assertFalse(result);
+		assertEquals(ErrorCode.FILE_DELETE_FAILED, exception.getErrorCode());
 		verify(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 	}
 

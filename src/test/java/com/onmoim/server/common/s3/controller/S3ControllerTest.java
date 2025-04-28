@@ -103,14 +103,13 @@ class S3ControllerTest {
     void deleteFileSuccess() throws Exception {
 
         String fileUrl = "https://test-bucket.s3.ap-northeast-2.amazonaws.com/test-file.txt";
-        given(fileStorageService.deleteFile(fileUrl)).willReturn(true);
-
+        willDoNothing().given(fileStorageService).deleteFile(fileUrl);
 
         mockMvc.perform(delete("/api/v1/s3")
                 .param("fileUrl", fileUrl))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("SUCCESS"))
-                .andExpect(jsonPath("$.data").value(true));
+                .andExpect(jsonPath("$.data").isEmpty());
 
         verify(fileStorageService).deleteFile(fileUrl);
     }
@@ -120,7 +119,8 @@ class S3ControllerTest {
     void deleteFileFailure() throws Exception {
 
         String fileUrl = "https://invalid-url.com/file.txt";
-        given(fileStorageService.deleteFile(fileUrl)).willReturn(false);
+        willThrow(new CustomException(ErrorCode.FILE_DELETE_FAILED))
+            .given(fileStorageService).deleteFile(fileUrl);
 
         mockMvc.perform(delete("/api/v1/s3")
                 .param("fileUrl", fileUrl))

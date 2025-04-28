@@ -99,7 +99,7 @@ public class S3Controller {
 			description = "서버 오류"
 		)
 	})
-	public ResponseEntity<ResponseHandler<Boolean>> deleteFile(
+	public ResponseEntity<ResponseHandler<Void>> deleteFile(
 		@Parameter(
 			description = "삭제할 파일의 URL",
 			required = true
@@ -107,16 +107,9 @@ public class S3Controller {
 		@RequestParam("fileUrl") String fileUrl) {
 
 		log.info("파일 삭제 요청: URL={}", fileUrl);
-
-		boolean result = fileStorageService.deleteFile(fileUrl);
-
-		if (result) {
-			log.info("파일 삭제 성공: URL={}", fileUrl);
-			return ResponseEntity.ok(ResponseHandler.response(true));
-		} else {
-			log.warn("파일 삭제 실패: URL={}", fileUrl);
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-				.body(ResponseHandler.errorResponse(false, ErrorCode.FILE_DELETE_FAILED.name()));
-		}
+		fileStorageService.deleteFile(fileUrl);
+		log.info("파일 삭제 성공: URL={}", fileUrl);
+		
+		return ResponseEntity.ok(ResponseHandler.response(null));
 	}
 }
