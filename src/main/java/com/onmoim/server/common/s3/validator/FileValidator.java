@@ -4,7 +4,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 파일 유효성 검증 작업을 위한 인터페이스.
- * 구현체는 다양한 유효성 검증 전략을 제공할 수 있습니다.
  */
 public interface FileValidator {
 
