@@ -9,6 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.onmoim.server.common.response.Message;
 import com.onmoim.server.common.response.ResponseHandler;
@@ -35,6 +36,16 @@ public class GlobalExceptionHandler {
 
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
 			.body(ResponseHandler.errorResponse(errors, Message.BAD_REQUEST.getDescription()));
+	}
+
+	@ExceptionHandler(value = MaxUploadSizeExceededException.class)
+	public ResponseEntity<?> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException exception) {
+		log.warn("[handleMaxUploadSizeExceeded] : {}", exception.getMessage());
+        
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+			.body(ResponseHandler.errorResponse(
+				ErrorCode.FILE_SIZE_EXCEEDED.getDetail(), 
+				ErrorCode.FILE_SIZE_EXCEEDED.name()));
 	}
 
 	@ExceptionHandler(value = Exception.class)

@@ -19,6 +19,7 @@ public enum ErrorCode {
 	FILE_UPLOAD_FAILED(BAD_REQUEST, "파일 업로드에 실패했습니다."),
 	EMPTY_FILE(BAD_REQUEST, "파일이 비어 있습니다."),
 	INVALID_FILE_TYPE(BAD_REQUEST, "지원하지 않는 파일 형식입니다."),
+	FILE_SIZE_EXCEEDED(BAD_REQUEST, "파일 크기가 허용된 최대 크기를 초과했습니다."),
 
 	/* ------------------ 401 BAD_REQUEST : 권한 없음 ------------------ */
 	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다.");
