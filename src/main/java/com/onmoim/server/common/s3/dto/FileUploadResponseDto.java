@@ -1,4 +1,4 @@
-package com.onmoim.server.common.dto;
+package com.onmoim.server.common.s3.dto;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -10,4 +10,4 @@ public class FileUploadResponseDto {
     private String fileUrl;
     private String fileType;
     private long fileSize;
-} 
+}

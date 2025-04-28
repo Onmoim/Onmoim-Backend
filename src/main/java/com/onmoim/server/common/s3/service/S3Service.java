@@ -1,4 +1,4 @@
-package com.onmoim.server.common.service;
+package com.onmoim.server.common.s3.service;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -44,13 +44,13 @@ public class S3Service {
 
         // 파일 확장자 확인
         String ext = originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase();
-        
+
         // 고유한 파일명 생성
         String storedFileName = UUID.randomUUID().toString() + ext;
-        
+
         // 디렉토리 이름이 제공된 경우, 디렉토리 경로를 추가
-        String keyName = (dirName != null && !dirName.isBlank()) 
-                        ? dirName + "/" + storedFileName 
+        String keyName = (dirName != null && !dirName.isBlank())
+                        ? dirName + "/" + storedFileName
                         : storedFileName;
 
         try {
@@ -83,4 +83,4 @@ public class S3Service {
     public String uploadFile(MultipartFile file) {
         return uploadFile(file, "");
     }
-} 
+}
