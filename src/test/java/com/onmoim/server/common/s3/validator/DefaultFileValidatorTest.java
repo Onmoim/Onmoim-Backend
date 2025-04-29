@@ -10,11 +10,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.util.unit.DataSize;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
@@ -22,7 +20,6 @@ import com.onmoim.server.common.exception.ErrorCode;
 @ExtendWith(MockitoExtension.class)
 class DefaultFileValidatorTest {
 
-	@InjectMocks
 	private DefaultFileValidator validator;
 
 	private MockMultipartFile validFile;
@@ -35,8 +32,9 @@ class DefaultFileValidatorTest {
 	);
 
 	@BeforeEach
-	void setUp() throws Exception {
-		// 유효한 파일 설정
+	void setUp() {
+		validator = new DefaultFileValidator(ALLOWED_TYPES, MAX_FILE_SIZE);
+
 		validFile = new MockMultipartFile(
 			"file",
 			"test.txt",
@@ -44,7 +42,6 @@ class DefaultFileValidatorTest {
 			"테스트 내용".getBytes()
 		);
 
-		// 빈 파일 설정
 		emptyFile = new MockMultipartFile(
 			"emptyFile",
 			"empty.txt",
@@ -52,23 +49,12 @@ class DefaultFileValidatorTest {
 			new byte[0]
 		);
 
-		// 잘못된 유형의 파일 설정
 		invalidTypeFile = new MockMultipartFile(
 			"invalidTypeFile",
 			"invalid.xyz",
 			"application/xyz",
 			"잘못된 유형".getBytes()
 		);
-
-		// Validator 필드 설정
-		setField(validator, "maxFileSize", MAX_FILE_SIZE);
-		setField(validator, "allowedFileTypes", ALLOWED_TYPES);
-	}
-
-	private void setField(Object target, String fieldName, Object value) throws Exception {
-		java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
-		field.setAccessible(true);
-		field.set(target, value);
 	}
 
 	@Test
@@ -110,57 +96,5 @@ class DefaultFileValidatorTest {
 			validator.validate(invalidTypeFile);
 		});
 		assertEquals(ErrorCode.INVALID_FILE_TYPE, exception.getErrorCode());
-	}
-
-	@Test
-	@DisplayName("파일 크기 검증")
-	void isFileSizeValidTest() {
-		MockMultipartFile largeFile = spy(new MockMultipartFile(
-			"largeFile",
-			"large.txt",
-			"text/plain",
-			"대용량 파일".getBytes()
-		));
-		when(largeFile.getSize()).thenReturn(MAX_FILE_SIZE.toBytes() + 1);
-
-		assertTrue(validator.isFileSizeValid(validFile));
-		assertFalse(validator.isFileSizeValid(largeFile));
-	}
-
-	@Test
-	@DisplayName("파일 유형 검증")
-	void isAllowedFileTypeTest() {
-		assertTrue(validator.isAllowedFileType(validFile));
-		assertFalse(validator.isAllowedFileType(invalidTypeFile));
-	}
-
-	@Test
-	@DisplayName("허용된 파일 유형 설정")
-	void setAllowedFileTypesTest() throws Exception {
-		List<String> newAllowedTypes = Arrays.asList("application/pdf", "application/msword");
-
-		validator.setAllowedFileTypes(newAllowedTypes);
-
-		List<String> currentAllowedTypes = (List<String>) getField(validator, "allowedFileTypes");
-		assertEquals(newAllowedTypes, currentAllowedTypes);
-		assertFalse(validator.isAllowedFileType(validFile)); // 이제 text/plain은 허용되지 않음
-	}
-
-	@Test
-	@DisplayName("최대 파일 크기 설정")
-	void setMaxFileSizeTest() throws Exception {
-		DataSize newMaxSize = DataSize.ofKilobytes(1); // 1KB
-
-		validator.setMaxFileSize(newMaxSize);
-
-		DataSize currentSize = (DataSize) getField(validator, "maxFileSize");
-		assertEquals(newMaxSize, currentSize);
-		assertEquals(1024, currentSize.toBytes());
-	}
-
-	private Object getField(Object target, String fieldName) throws Exception {
-		java.lang.reflect.Field field = target.getClass().getDeclaredField(fieldName);
-		field.setAccessible(true);
-		return field.get(target);
 	}
 }
