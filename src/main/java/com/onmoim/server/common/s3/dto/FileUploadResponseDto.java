@@ -6,8 +6,8 @@ import lombok.Getter;
 @Getter
 @Builder
 public class FileUploadResponseDto {
-    private String fileName;
-    private String fileUrl;
-    private String fileType;
-    private long fileSize;
+	private String fileName;
+	private String fileUrl;
+	private String fileType;
+	private long fileSize;
 }
