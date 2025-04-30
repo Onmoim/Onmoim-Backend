@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
 import com.onmoim.server.common.response.ResponseHandler;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
@@ -38,20 +39,20 @@ public class S3Controller {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
-			responseCode = "200",
-			description = "파일 업로드 성공",
-			content = @Content(
-				mediaType = "application/json",
-				schema = @Schema(implementation = ResponseHandler.class)
-			)
+				responseCode = "200",
+				description = "파일 업로드 성공",
+				content = @Content(
+						mediaType = "application/json",
+						schema = @Schema(implementation = ResponseHandler.class)
+				)
 		),
 		@ApiResponse(
-			responseCode = "400",
-			description = "파일 업로드 실패 - 빈 파일이거나 업로드 과정에서 오류 발생"
+				responseCode = "400",
+				description = "파일 업로드 실패 - 빈 파일이거나 업로드 과정에서 오류 발생"
 		),
 		@ApiResponse(
-			responseCode = "500",
-			description = "서버 오류"
+				responseCode = "500",
+				description = "서버 오류"
 		)
 	})
 	public ResponseEntity<ResponseHandler<FileUploadResponseDto>> uploadFile(
@@ -84,16 +85,16 @@ public class S3Controller {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
-			responseCode = "200",
-			description = "파일 삭제 성공"
+				responseCode = "200",
+				description = "파일 삭제 성공"
 		),
 		@ApiResponse(
-			responseCode = "400",
-			description = "파일 삭제 실패 - 잘못된 URL 또는 삭제 과정에서 오류 발생"
+				responseCode = "400",
+				description = "파일 삭제 실패 - 잘못된 URL 또는 삭제 과정에서 오류 발생"
 		),
 		@ApiResponse(
-			responseCode = "500",
-			description = "서버 오류"
+				responseCode = "500",
+				description = "서버 오류"
 		)
 	})
 	public ResponseEntity<ResponseHandler<Void>> deleteFile(
