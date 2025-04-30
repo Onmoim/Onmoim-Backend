@@ -102,7 +102,7 @@ class S3FileStorageServiceTest {
 
 	@Test
 	@DisplayName("파일 업로드 실패 테스트 - IOException")
-	void uploadFileFailureIOException() throws IOException {
+	void uploadFileFailureIoException() throws IOException {
 
 		doNothing().when(fileValidator).validate(any(MultipartFile.class));
 
