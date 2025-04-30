@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.amazonaws.services.s3.AmazonS3;
@@ -40,7 +41,7 @@ public class S3FileStorageService implements FileStorageService {
         fileValidator.validate(file);
 
         String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || originalFilename.isBlank()) {
+        if (!StringUtils.hasText(originalFilename)) {
             originalFilename = "unnamed-file";
         }
 
@@ -48,7 +49,7 @@ public class S3FileStorageService implements FileStorageService {
         String storedFileName = generateUniqueFilename(originalFilename);
 
         // 키 이름 준비 (S3 내 경로)
-        String keyName = (directory != null && !directory.isBlank())
+        String keyName = StringUtils.hasText(directory)
                 ? directory + "/" + storedFileName
                 : storedFileName;
 
