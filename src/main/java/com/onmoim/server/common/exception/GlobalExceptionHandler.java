@@ -41,10 +41,10 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(value = MaxUploadSizeExceededException.class)
 	public ResponseEntity<?> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException exception) {
 		log.warn("[handleMaxUploadSizeExceeded] : {}", exception.getMessage());
-        
+		
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
 			.body(ResponseHandler.errorResponse(
-				ErrorCode.FILE_SIZE_EXCEEDED.getDetail(), 
+				ErrorCode.FILE_SIZE_EXCEEDED.getDetail(),
 				ErrorCode.FILE_SIZE_EXCEEDED.name()));
 	}
 
