@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class FileValidatorConfig {
 
+	// Spring의 표준 설정 사용
 	@Value("${spring.servlet.multipart.max-file-size}")
 	private String maxFileSize;
 
