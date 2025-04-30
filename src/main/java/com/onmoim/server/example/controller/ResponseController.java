@@ -30,8 +30,8 @@ public class ResponseController {
 	 * @return
 	 * {
 	 * 	   "timestamp": "2025-04-04T03:41:20.833333",
-	 *	 "message": "DENIED_UNAUTHORIZED_USER",
-	 *	 "data": "로그인되지 않은 유저의 접근입니다."
+	 *     "message": "DENIED_UNAUTHORIZED_USER",
+	 *     "data": "로그인되지 않은 유저의 접근입니다."
 	 * }
 	 */
 
@@ -47,9 +47,9 @@ public class ResponseController {
 	/**
 	 * @return
 	 *{
-	 *	 "timestamp": "2025-04-09T22:03:35.929197",
-	 *	 "message": "DENIED_UNAUTHORIZED_USER",
-	 *	 "data": "상황에 따른 메시지 커스텀"
+	 *     "timestamp": "2025-04-09T22:03:35.929197",
+	 *     "message": "DENIED_UNAUTHORIZED_USER",
+	 *     "data": "상황에 따른 메시지 커스텀"
 	 * }
 	 */
 	@GetMapping("/exception/message-custom")
@@ -65,12 +65,12 @@ public class ResponseController {
 	 * @return
 	 * {
 	 * 	   "timestamp": "2025-04-04T03:41:20.833333",
-	 *	 "message": "SUCCESS",
-	 *	 "data": {
-	 *		 "id": 1,
-	 *		 "name": "hong",
-	 *		 "email": "email@naver.com"
-	 *	 }
+	 *     "message": "SUCCESS",
+	 *     "data": {
+	 *         "id": 1,
+	 *         "name": "hong",
+	 *         "email": "email@naver.com"
+	 *     }
 	 * }
 	 */
 	@GetMapping("/success")
