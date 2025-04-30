@@ -61,7 +61,7 @@ class S3FileStorageServiceTest {
 		field.set(target, value);
 	}
 
-	@Tes
+	@Test
 	@DisplayName("파일 업로드 성공 테스트")
 	void uploadFileSuccess() throws Exception {
 
@@ -82,7 +82,7 @@ class S3FileStorageServiceTest {
 		verify(amazonS3).getUrl(eq(bucket), anyString());
 	}
 
-	@Tes
+	@Test
 	@DisplayName("디렉토리 없이 파일 업로드 성공 테스트")
 	void uploadFileWithoutDirectorySuccess() throws Exception {
 
@@ -100,7 +100,7 @@ class S3FileStorageServiceTest {
 		verify(amazonS3).putObject(any());
 	}
 
-	@Tes
+	@Test
 	@DisplayName("파일 업로드 실패 테스트 - IOException")
 	void uploadFileFailureIOException() throws IOException {
 
@@ -121,7 +121,7 @@ class S3FileStorageServiceTest {
 		verify(amazonS3, never()).getUrl(anyString(), anyString());
 	}
 
-	@Tes
+	@Test
 	@DisplayName("파일 삭제 성공 테스트")
 	void deleteFileSuccess() throws Exception {
 		doNothing().when(amazonS3).deleteObject(any(DeleteObjectRequest.class));
@@ -133,7 +133,7 @@ class S3FileStorageServiceTest {
 		verify(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 	}
 
-	@Tes
+	@Test
 	@DisplayName("파일 삭제 실패 테스트")
 	void deleteFileFailure() throws Exception {
 		doThrow(new RuntimeException("삭제 실패")).when(amazonS3).deleteObject(any(DeleteObjectRequest.class));
@@ -146,7 +146,7 @@ class S3FileStorageServiceTest {
 		verify(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 	}
 
-	@Tes
+	@Test
 	@DisplayName("고유 파일명 생성 테스트")
 	void generateUniqueFilenameTest() {
 

@@ -57,13 +57,13 @@ class DefaultFileValidatorTest {
 		);
 	}
 
-	@Tes
+	@Test
 	@DisplayName("유효한 파일은 검증을 통과해야 함")
 	void validateValidFile() {
 		assertDoesNotThrow(() -> validator.validate(validFile));
 	}
 
-	@Tes
+	@Test
 	@DisplayName("빈 파일은 예외를 발생시켜야 함")
 	void validateEmptyFile() {
 		CustomException exception = assertThrows(CustomException.class, () -> {
@@ -72,7 +72,7 @@ class DefaultFileValidatorTest {
 		assertEquals(ErrorCode.EMPTY_FILE, exception.getErrorCode());
 	}
 
-	@Tes
+	@Test
 	@DisplayName("너무 큰 파일은 예외를 발생시켜야 함")
 	void validateLargeFile() {
 		MockMultipartFile largeFile = spy(new MockMultipartFile(
@@ -89,7 +89,7 @@ class DefaultFileValidatorTest {
 		assertEquals(ErrorCode.FILE_SIZE_EXCEEDED, exception.getErrorCode());
 	}
 
-	@Tes
+	@Test
 	@DisplayName("잘못된 유형의 파일은 예외를 발생시켜야 함")
 	void validateInvalidTypeFile() {
 		CustomException exception = assertThrows(CustomException.class, () -> {

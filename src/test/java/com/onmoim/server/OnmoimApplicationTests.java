@@ -3,10 +3,10 @@ package com.onmoim.server;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTes
+@SpringBootTest
 class OnmoimApplicationTests {
 
-	@Tes
+	@Test
 	void contextLoads() {
 	}
 

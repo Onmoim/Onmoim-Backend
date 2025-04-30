@@ -50,7 +50,7 @@ class S3ControllerTest {
 				.build();
 	}
 
-	@Tes
+	@Test
 	@DisplayName("파일 업로드 성공 테스트")
 	void uploadFileSuccess() throws Exception {
 
@@ -69,7 +69,7 @@ class S3ControllerTest {
 		verify(fileStorageService).uploadFile(any(), eq("test-directory"));
 	}
 
-	@Tes
+	@Test
 	@DisplayName("디렉토리 없이 파일 업로드 성공 테스트")
 	void uploadFileWithoutDirectorySuccess() throws Exception {
 
@@ -84,7 +84,7 @@ class S3ControllerTest {
 		verify(fileStorageService).uploadFile(any(), isNull());
 	}
 
-	@Tes
+	@Test
 	@DisplayName("파일 업로드 실패 테스트 - 빈 파일")
 	void uploadFileFailureEmptyFile() throws Exception {
 
@@ -98,7 +98,7 @@ class S3ControllerTest {
 				.andExpect(jsonPath("$.message").value("EMPTY_FILE"));
 	}
 
-	@Tes
+	@Test
 	@DisplayName("파일 삭제 성공 테스트")
 	void deleteFileSuccess() throws Exception {
 
@@ -114,7 +114,7 @@ class S3ControllerTest {
 		verify(fileStorageService).deleteFile(fileUrl);
 	}
 
-	@Tes
+	@Test
 	@DisplayName("파일 삭제 실패 테스트")
 	void deleteFileFailure() throws Exception {
 
