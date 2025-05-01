@@ -45,15 +45,15 @@ public class S3Controller {
 						mediaType = "application/json",
 						schema = @Schema(implementation = ResponseHandler.class)
 				)
-		),
+			),
 		@ApiResponse(
 				responseCode = "400",
 				description = "파일 업로드 실패 - 빈 파일이거나 업로드 과정에서 오류 발생"
-		),
+			),
 		@ApiResponse(
 				responseCode = "500",
 				description = "서버 오류"
-		)
+			)
 	})
 	public ResponseEntity<ResponseHandler<FileUploadResponseDto>> uploadFile(
 		@Parameter(
@@ -87,15 +87,15 @@ public class S3Controller {
 		@ApiResponse(
 				responseCode = "200",
 				description = "파일 삭제 성공"
-		),
+			),
 		@ApiResponse(
 				responseCode = "400",
 				description = "파일 삭제 실패 - 잘못된 URL 또는 삭제 과정에서 오류 발생"
-		),
+			),
 		@ApiResponse(
 				responseCode = "500",
 				description = "서버 오류"
-		)
+			)
 	})
 	public ResponseEntity<ResponseHandler<Void>> deleteFile(
 		@Parameter(
