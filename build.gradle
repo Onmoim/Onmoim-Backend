@@ -50,6 +50,14 @@ dependencies {
 
     // checkStyle
     checkstyle 'com.puppycrawl.tools:checkstyle:10.3.2'
+
+    // datafaker
+    implementation 'net.datafaker:datafaker:2.4.2'
+
+    // security & oauth
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
 }
 
 tasks.named('test') {
