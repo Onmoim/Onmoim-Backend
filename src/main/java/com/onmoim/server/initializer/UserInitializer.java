@@ -64,11 +64,7 @@ public class UserInitializer {
 						category = categories.get(faker.number().numberBetween(0, categories.size()));
 					} while (!assigned.add(category.getId()));
 
-					UserCategory uc = UserCategory.builder()
-						.id(new UserCategoryId(user.getId(), category.getId()))
-						.user(user)
-						.category(category)
-						.build();
+					UserCategory uc = UserCategory.create(user, category);
 
 					userCategoryRepository.save(uc);
 				}

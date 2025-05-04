@@ -10,17 +10,17 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "user_category")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserCategory extends BaseEntity {
 
 	@EmbeddedId
@@ -36,4 +36,17 @@ public class UserCategory extends BaseEntity {
 	@JoinColumn(name = "category_id")
 	private Category category;
 
+	@Builder
+	private UserCategory(User user, Category category) {
+		this.user = user;
+		this.category = category;
+		this.id = new UserCategoryId(user.getId(), category.getId());
+	}
+
+	public static UserCategory create(User user, Category category) {
+		return UserCategory.builder()
+			.user(user)
+			.category(category)
+			.build();
+	}
 }

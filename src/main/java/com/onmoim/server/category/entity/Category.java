@@ -1,8 +1,8 @@
 package com.onmoim.server.category.entity;
 
-import java.sql.Timestamp;
-
 import org.hibernate.annotations.Comment;
+
+import com.onmoim.server.common.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,18 +10,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "category")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class Category {
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Category extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,16 +32,17 @@ public class Category {
 	@Comment("아이콘 url")
 	private String iconUrl;
 
-	@Column(columnDefinition = "TIMESTAMP")
-	@Comment("생성일")
-	private Timestamp createdAt;
+	@Builder
+	private Category(String name, String iconUrl) {
+		this.name = name;
+		this.iconUrl = iconUrl;
+	}
 
-	@Column(columnDefinition = "TIMESTAMP")
-	@Comment("수정일")
-	private Timestamp updatedAt;
-
-	@Column(columnDefinition = "TIMESTAMP")
-	@Comment("삭제일")
-	private Timestamp deletedAt;
+	public static Category create(String name, String iconUrl) {
+		return Category.builder()
+			.name(name)
+			.iconUrl(iconUrl)
+			.build();
+	}
 
 }

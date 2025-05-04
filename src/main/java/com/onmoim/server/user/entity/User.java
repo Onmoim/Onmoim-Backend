@@ -12,17 +12,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "user")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseEntity {
 
 	@Id
@@ -62,5 +60,36 @@ public class User extends BaseEntity {
 
 	@Comment("자기소개")
 	private String introduction;
+
+	@Builder
+	private User(Long roleId, String snsType, String oauthId, String name, String gender, Date birth,
+		Long addressId, Long categoryId, String profileImgUrl, String introduction) {
+		this.roleId = roleId;
+		this.snsType = snsType;
+		this.oauthId = oauthId;
+		this.name = name;
+		this.gender = gender;
+		this.birth = birth;
+		this.addressId = addressId;
+		this.categoryId = categoryId;
+		this.profileImgUrl = profileImgUrl;
+		this.introduction = introduction;
+	}
+
+	public static User create(Long roleId, String snsType, String oauthId, String name, String gender, Date birth,
+		Long addressId, Long categoryId, String profileImgUrl, String introduction) {
+		return User.builder()
+			.roleId(roleId)
+			.snsType(snsType)
+			.oauthId(oauthId)
+			.name(name)
+			.gender(gender)
+			.birth(birth)
+			.addressId(addressId)
+			.categoryId(categoryId)
+			.profileImgUrl(profileImgUrl)
+			.introduction(introduction)
+			.build();
+	}
 
 }
