@@ -45,8 +45,6 @@ public class UserInitializer {
 					.gender(faker.gender().binaryTypes().equalsIgnoreCase("Male") ? "M" : "F")
 					.birth(Date.valueOf(faker.timeAndDate().birthday(20, 50)))
 					.addressId(faker.number().numberBetween(1L, 300L))
-					.createdAt(now)
-					.updatedAt(now)
 					.build();
 
 				userRepository.save(user);
@@ -70,8 +68,6 @@ public class UserInitializer {
 						.id(new UserCategoryId(user.getId(), category.getId()))
 						.user(user)
 						.category(category)
-						.createdAt(now)
-						.updatedAt(now)
 						.build();
 
 					userCategoryRepository.save(uc);

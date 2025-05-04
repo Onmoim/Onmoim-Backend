@@ -6,6 +6,5 @@ import org.springframework.stereotype.Repository;
 import com.onmoim.server.user.entity.UserCategory;
 import com.onmoim.server.user.entity.UserCategoryId;
 
-@Repository
 public interface UserCategoryRepository extends JpaRepository<UserCategory, UserCategoryId> {
 }

@@ -1,10 +1,8 @@
 package com.onmoim.server.user.entity;
 
-import java.sql.Timestamp;
-
 import com.onmoim.server.category.entity.Category;
+import com.onmoim.server.common.BaseEntity;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -23,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserCategory {
+public class UserCategory extends BaseEntity {
 
 	@EmbeddedId
 	private UserCategoryId id;
@@ -37,14 +35,5 @@ public class UserCategory {
 	@MapsId("categoryId")
 	@JoinColumn(name = "category_id")
 	private Category category;
-
-	@Column(columnDefinition = "TIMESTAMP")
-	private Timestamp createdAt;
-
-	@Column(columnDefinition = "TIMESTAMP")
-	private Timestamp updatedAt;
-
-	@Column(columnDefinition = "TIMESTAMP")
-	private Timestamp deletedAt;
 
 }

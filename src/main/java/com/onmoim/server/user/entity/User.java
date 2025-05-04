@@ -1,9 +1,10 @@
 package com.onmoim.server.user.entity;
 
 import java.sql.Date;
-import java.sql.Timestamp;
 
 import org.hibernate.annotations.Comment;
+
+import com.onmoim.server.common.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,7 +23,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class User extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -61,17 +62,5 @@ public class User {
 
 	@Comment("자기소개")
 	private String introduction;
-
-	@Column(columnDefinition = "TIMESTAMP")
-	@Comment("생성일")
-	private Timestamp createdAt;
-
-	@Column(columnDefinition = "TIMESTAMP")
-	@Comment("수정일")
-	private Timestamp updatedAt;
-
-	@Column(columnDefinition = "TIMESTAMP")
-	@Comment("삭제일")
-	private Timestamp deletedAt;
 
 }
