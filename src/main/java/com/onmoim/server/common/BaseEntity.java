@@ -21,4 +21,7 @@ public class BaseEntity {
 	// 조회한 Entity 값을 변경할 때 시간이 자동 저장됩니다.
 	@LastModifiedDate
 	private LocalDateTime modifiedDate;
+
+	// 삭제 시점 추가
+	private LocalDateTime deletedDate;
 }
