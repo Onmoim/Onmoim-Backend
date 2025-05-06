@@ -4,22 +4,72 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.onmoim.server.oauth.service.CustomOAuth2UserService;
 import com.onmoim.server.security.StubAuthenticationFilter;
 
+import lombok.RequiredArgsConstructor;
+
 @Configuration
+@RequiredArgsConstructor
+@EnableWebSecurity
 public class SecurityConfig {
 
+	// @Bean
+	// @Profile("local")
+	// public SecurityFilterChain localSecurityFilterChain(HttpSecurity http, StubAuthenticationFilter stubAuthenticationFilter) throws Exception {
+	// 	return http
+	// 		.csrf(csrf -> csrf.disable())
+	// 		.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+	// 		.addFilterBefore(stubAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+	// 		.build();
+	// }
+
 	@Bean
-	@Profile("local")
-	public SecurityFilterChain localSecurityFilterChain(HttpSecurity http, StubAuthenticationFilter stubAuthenticationFilter) throws Exception {
-		return http
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
+		http
+			.authorizeHttpRequests(authorizeRequests -> authorizeRequests
+			.requestMatchers("/test-google-login.html", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+			.requestMatchers("/auth/**").permitAll()
+			.requestMatchers("/api-docs/**", "/swagger-ui/**", "swagger-resources/**").permitAll()
+			.anyRequest().authenticated()
+			)
+
+			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 			.csrf(csrf -> csrf.disable())
-			.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-			.addFilterBefore(stubAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-			.build();
+			.httpBasic(httpBasic -> httpBasic.disable())
+			.formLogin(formLogin -> formLogin.disable())
+			.sessionManagement(sessionManagement -> sessionManagement
+				.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+			);
+
+		return http.build();
+	}
+
+
+	/**
+	 * cors 설정
+	 */
+	@Bean
+	public CorsConfigurationSource corsConfigurationSource() {
+		CorsConfiguration configuration = new CorsConfiguration();
+		configuration.setAllowCredentials(true);
+		configuration.addAllowedOriginPattern("*");
+		configuration.addAllowedHeader("*");
+		configuration.addAllowedMethod("*");
+
+		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration);
+
+		return source;
 	}
 
 }

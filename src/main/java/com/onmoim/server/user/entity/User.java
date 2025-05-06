@@ -30,11 +30,14 @@ public class User extends BaseEntity {
 	@Comment("유저 role id")
 	private Long roleId;
 
-	@Comment("SNS 타입")
-	private String snsType;
-
-	@Comment("소셜 key")
+	@Comment("소셜 고유 id")
 	private String oauthId;
+
+	@Comment("소셜 프로바이더")
+	private String provider;
+
+	@Comment("이메일")
+	private String email;
 
 	@Comment("이름")
 	@Column(nullable = false)
@@ -62,10 +65,11 @@ public class User extends BaseEntity {
 	private String introduction;
 
 	@Builder
-	private User(Long roleId, String snsType, String oauthId, String name, String gender, Date birth,
+	private User(Long roleId, String oauthId, String provider, String email, String name, String gender, Date birth,
 		Long addressId, Long categoryId, String profileImgUrl, String introduction) {
 		this.roleId = roleId;
-		this.snsType = snsType;
+		this.provider = provider;
+		this.email = email;
 		this.oauthId = oauthId;
 		this.name = name;
 		this.gender = gender;
@@ -76,12 +80,13 @@ public class User extends BaseEntity {
 		this.introduction = introduction;
 	}
 
-	public static User create(Long roleId, String snsType, String oauthId, String name, String gender, Date birth,
+	public static User create(Long roleId, String oauthId, String provider, String email, String name, String gender, Date birth,
 		Long addressId, Long categoryId, String profileImgUrl, String introduction) {
 		return User.builder()
 			.roleId(roleId)
-			.snsType(snsType)
 			.oauthId(oauthId)
+			.provider(provider)
+			.email(email)
 			.name(name)
 			.gender(gender)
 			.birth(birth)
