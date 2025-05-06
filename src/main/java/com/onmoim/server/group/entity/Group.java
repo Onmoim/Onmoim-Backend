@@ -1,9 +1,11 @@
 package com.onmoim.server.group.entity;
 
 import org.hibernate.annotations.Comment;
+import org.hibernate.annotations.HQLSelect;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.common.BaseEntity;
+import com.onmoim.server.location.entity.Location;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,7 +33,11 @@ public class Group extends BaseEntity {
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "category_id")
 	private Category category;
-	// todo 지역
+
+	@OneToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "location_id")
+	private Location location;
+
 	@Comment("모임 이름")
 	private String name;
 
