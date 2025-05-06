@@ -14,7 +14,8 @@ public class SecurityConfig {
 
 	@Bean
 	@Profile("local")
-	public SecurityFilterChain localSecurityFilterChain(HttpSecurity http, StubAuthenticationFilter stubAuthenticationFilter) throws Exception {
+	public SecurityFilterChain localSecurityFilterChain(
+			HttpSecurity http, StubAuthenticationFilter stubAuthenticationFilter) throws Exception {
 		return http
 			.csrf(csrf -> csrf.disable())
 			.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
