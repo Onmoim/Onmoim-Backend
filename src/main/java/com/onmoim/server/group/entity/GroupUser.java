@@ -34,4 +34,12 @@ public class GroupUser extends BaseEntity {
 
 	@Enumerated(EnumType.STRING)
 	private Status status;
+
+	public static GroupUser create(Group group, User user, Status status) {
+		GroupUser groupUser = new GroupUser();
+		groupUser.group = group;
+		groupUser.user = user;
+		groupUser.status = status;
+		return groupUser;
+	}
 }

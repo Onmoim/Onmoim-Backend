@@ -23,7 +23,10 @@ import com.onmoim.server.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
-@Component
+/**
+ * 일단 IndexOutOfBoundsException 예외 발생해서 주석 처리했습니다..!
+ */
+// @Component
 @RequiredArgsConstructor
 public class UserInitializer {
 

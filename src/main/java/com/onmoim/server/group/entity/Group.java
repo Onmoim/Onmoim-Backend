@@ -39,6 +39,7 @@ public class Group extends BaseEntity {
 	private Location location;
 
 	@Comment("모임 이름")
+	@Column(unique = true)
 	private String name;
 
 	@Comment("모임 설명")
@@ -54,4 +55,12 @@ public class Group extends BaseEntity {
 	@Comment("모임 대표 사진")
 	private String imgUrl;
 
+	public static Group create(String name, String description, int capacity, Location location) {
+		Group group = new Group();
+		group.name = name;
+		group.description = description;
+		group.capacity = capacity;
+		group.location = location;
+		return group;
+	}
 }
