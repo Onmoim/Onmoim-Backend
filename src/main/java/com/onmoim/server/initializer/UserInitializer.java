@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * 일단 IndexOutOfBoundsException 예외 발생해서 주석 처리했습니다..!
  */
-// @Component
+@Component
 @RequiredArgsConstructor
 public class UserInitializer {
 
