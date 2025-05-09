@@ -23,4 +23,12 @@ public class SecurityConfig {
 			.build();
 	}
 
+	@Bean
+	@Profile("test")
+	public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+		return http
+			.csrf(csrf -> csrf.disable())
+			.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+			.build();
+	}
 }
