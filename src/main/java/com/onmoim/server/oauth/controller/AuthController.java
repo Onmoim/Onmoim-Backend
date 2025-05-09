@@ -53,9 +53,7 @@ public class AuthController {
 		)
 	})
 	public ResponseEntity<ResponseHandler<OAuthResponse>> login(@RequestBody OAuthRequest oAuthRequest) {
-		log.info("im here");
 		OAuthResponse response = oAuthService.login(oAuthRequest.getProvider(), oAuthRequest.getToken());
-		log.info("response = {}", response);
 
 		String status = response.getStatus();
 

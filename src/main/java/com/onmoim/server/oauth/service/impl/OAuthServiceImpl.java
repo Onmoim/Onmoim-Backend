@@ -38,7 +38,6 @@ public class OAuthServiceImpl implements OAuthService {
 	@Override
 	public OAuthResponse login(String providerName, String token) {
 
-		log.info("im hereabc");
 		OAuthProvider provider = switch (providerName.toLowerCase()) {
 			case "google" -> googleProvider;
 			// case "kakao" -> kakaoProvider;
