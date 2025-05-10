@@ -16,6 +16,7 @@ import com.onmoim.server.oauth.service.OAuthService;
 import com.onmoim.server.oauth.service.RefreshTokenService;
 import com.onmoim.server.oauth.service.provider.GoogleOAuthProvider;
 import com.onmoim.server.oauth.service.provider.OAuthProvider;
+import com.onmoim.server.oauth.service.provider.OAuthProviderFactory;
 import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.security.JwtProvider;
 import com.onmoim.server.user.entity.User;
@@ -29,56 +30,47 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OAuthServiceImpl implements OAuthService {
 
+	private final OAuthProviderFactory oauthProviderFactory;
 	private final GoogleOAuthProvider googleProvider;
 	// private final KakaoOAuthProvider kakaoProvider;
 	private final UserRepository userRepository;
 	private final JwtProvider jwtProvider;
 	private final RefreshTokenService refreshTokenService;
 
+
 	@Override
 	public OAuthResponse login(String providerName, String token) {
-
-		OAuthProvider provider = switch (providerName.toLowerCase()) {
-			case "google" -> googleProvider;
-			// case "kakao" -> kakaoProvider;
-			default -> throw new IllegalArgumentException("지원하지 않는 provider: " + providerName);
-		};
-
+		OAuthProvider provider = oauthProviderFactory.getProvider(providerName);
 		OAuthUser oAuthUser = provider.getUserInfo(token);
 
+		return processUserLogin(oAuthUser, providerName);
+	}
+
+	private OAuthResponse processUserLogin(OAuthUser oAuthUser, String providerName) {
 		Optional<User> optionalUser = userRepository.findByOauthIdAndProvider(oAuthUser.oauthId(), providerName);
 
-		if (optionalUser.isPresent()) {
-			User user = optionalUser.get();
-
-			CustomUserDetails userDetails = new CustomUserDetails(
-				user.getId(),
-				user.getEmail(),
-				user.getProvider()
-			);
-
-			Authentication authentication = new UsernamePasswordAuthenticationToken(
-				userDetails,
-				null,
-				userDetails.getAuthorities()
-			);
-
-			// SecurityContextHolder에 인증 객체 심기
-			SecurityContextHolder.getContext().setAuthentication(authentication);
-
-			String accessToken = jwtProvider.createAccessToken(authentication);
-			String refreshToken = jwtProvider.createRefreshToken(authentication);
-
-			refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
-
-			if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
-				log.info("현재 로그인된 사용자 ID: {}", userDetails.getUserId());
-			}
-
-			return new OAuthResponse(accessToken, refreshToken, "EXISTS");
-		} else {
+		if (optionalUser.isEmpty()) {
 			return new OAuthResponse(null, null, "NOT_EXISTS");
 		}
+
+		User user = optionalUser.get();
+		Authentication authentication = createAuthentication(user);
+		setAuthenticationToContext(authentication);
+
+		String accessToken = jwtProvider.createAccessToken(authentication);
+		String refreshToken = jwtProvider.createRefreshToken(authentication);
+		refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
+
+		return new OAuthResponse(accessToken, refreshToken, "EXISTS");
+	}
+
+	private Authentication createAuthentication(User user) {
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId(), user.getEmail(), user.getProvider());
+		return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+	}
+
+	private void setAuthenticationToContext(Authentication authentication) {
+		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
 
 
@@ -102,5 +94,6 @@ public class OAuthServiceImpl implements OAuthService {
 
 		return new OAuthResponse(newAccessToken, refreshToken, "EXISTS");
 	}
+
 
 }
