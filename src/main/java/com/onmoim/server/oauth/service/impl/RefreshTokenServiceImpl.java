@@ -6,6 +6,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.onmoim.server.oauth.service.RefreshTokenService;
+import com.onmoim.server.oauth.token.TokenProperties;
 
 import lombok.RequiredArgsConstructor;
 
@@ -14,15 +15,14 @@ import lombok.RequiredArgsConstructor;
 public class RefreshTokenServiceImpl implements RefreshTokenService {
 
 	private final RedisTemplate<String, String> redisTemplate;
-
-	private static final long REFRESH_TOKEN_EXPIRATION = 1000L * 60 * 60 * 24 * 7; // 7일
+	private final TokenProperties tokenProperties;
 
 	@Override
 	public void saveRefreshToken(Long userId, String refreshToken) {
 		redisTemplate.opsForValue().set(
 			getKey(userId),
 			refreshToken,
-			Duration.ofMillis(REFRESH_TOKEN_EXPIRATION)
+			Duration.ofMillis(tokenProperties.getRefreshExpirationTime())
 		);
 	}
 

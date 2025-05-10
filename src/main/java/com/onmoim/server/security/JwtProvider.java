@@ -7,8 +7,9 @@ import java.util.Date;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
+
+import com.onmoim.server.oauth.token.TokenProperties;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -16,18 +17,16 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 
 @Component
+@RequiredArgsConstructor
 public class JwtProvider {
 
 	@Value("${jwt.secret}")
 	private String secretKey;
 
-	@Value("${jwt.token.access-expiration-time}")
-	private long accessExpirationTime;
-
-	@Value("${jwt.token.refresh-expiration-time}")
-	private long refreshExpirationTime;
+	private final TokenProperties tokenProperties;
 
 	private Key key;
 
@@ -40,7 +39,7 @@ public class JwtProvider {
 	// Access Token 생성
 	public String createAccessToken(Authentication authentication) {
 		Date now = new Date();
-		Date expireDate = new Date(now.getTime() + accessExpirationTime);
+		Date expireDate = new Date(now.getTime() + tokenProperties.getAccessExpirationTime());
 
 		Claims claims = Jwts.claims().setSubject(authentication.getName()); // ex: userId or email
 
@@ -54,10 +53,11 @@ public class JwtProvider {
 
 	// Refresh Token 생성
 	public String createRefreshToken(Authentication authentication) {
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 		Date now = new Date();
-		Date expireDate = new Date(now.getTime() + refreshExpirationTime);
+		Date expireDate = new Date(now.getTime() + tokenProperties.getRefreshExpirationTime());
 
-		Claims claims = Jwts.claims().setSubject(authentication.getName());
+		Claims claims = Jwts.claims().setSubject(userDetails.getUserId().toString());
 
 		return Jwts.builder()
 			.setClaims(claims)

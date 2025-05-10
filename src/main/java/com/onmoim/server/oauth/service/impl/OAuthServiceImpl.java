@@ -81,7 +81,6 @@ public class OAuthServiceImpl implements OAuthService {
 		}
 
 		String userId = jwtProvider.getSubject(refreshToken);  // JWT subject (userId)
-
 		String savedToken = refreshTokenService.getRefreshToken(Long.parseLong(userId));
 
 		if (!refreshToken.equals(savedToken)) {
