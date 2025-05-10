@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google OAuth Test</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<h2>Google Login</h2>
+<div id="g_id_onload"
+     data-client_id="1080254288980-dtrjnpmsahemnsjn7fhscbuuo12irpc2.apps.googleusercontent.com"
+     data-callback="handleCredentialResponse"
+     data-auto_prompt="false">
+</div>
+<div class="g_id_signin" data-type="standard"></div>
+
+<script>
+    function handleCredentialResponse(response) {
+        const idToken = response.credential;
+        console.log("ID Token:", idToken);
+
+        // 백엔드로 POST 요청
+        fetch("http://localhost:8080/auth/oauth", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                provider: "google",
+                token: idToken
+            })
+        })
+            .then(res => {
+                console.log("raw response:", res);
+                return res.json();
+            })
+            .then(data => {
+                console.log("response:", data);
+                console.log("keys:", Object.keys(data));
+                alert("JWT: " + data.accessToken);
+            })
+            .catch(err => {
+                console.error("🚨 fetch or JSON parse error:", err);
+            });
+    }
+</script>
+</body>
+</html>
