@@ -25,7 +25,6 @@ public class OAuthProviderFactory {
 
 	public OAuthProvider getProvider(String providerName) {
 		OAuthProvider provider = providers.get(providerName.toLowerCase());
-		if (provider == null) throw new IllegalArgumentException("지원하지 않는 provider: " + providerName);
 		return provider;
 	}
 

@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,7 +53,7 @@ public class AuthController {
 			description = "서버 내부 오류"
 		)
 	})
-	public ResponseEntity<ResponseHandler<OAuthResponseDTO>> login(@RequestBody OAuthRequestDTO oAuthRequestDto) {
+	public ResponseEntity<ResponseHandler<OAuthResponseDTO>> login(@Valid @RequestBody OAuthRequestDTO oAuthRequestDto) {
 		OAuthResponseDTO response = oAuthService.login(oAuthRequestDto.getProvider(), oAuthRequestDto.getToken());
 
 		String status = response.getStatus();
