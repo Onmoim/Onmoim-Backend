@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
 @Getter
-public class ReissueTokenRequest {
+public class ReissueTokenRequestDTO {
 
 	@Schema(description = "Refresh Token")
 	private String refreshToken;

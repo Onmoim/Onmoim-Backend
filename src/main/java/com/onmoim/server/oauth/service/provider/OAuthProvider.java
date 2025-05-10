@@ -1,9 +1,9 @@
 package com.onmoim.server.oauth.service.provider;
 
-import com.onmoim.server.oauth.dto.OAuthUser;
+import com.onmoim.server.oauth.dto.OAuthUserDTO;
 
 public interface OAuthProvider {
 
-	OAuthUser getUserInfo(String token);
+	OAuthUserDTO getUserInfo(String token);
 
 }

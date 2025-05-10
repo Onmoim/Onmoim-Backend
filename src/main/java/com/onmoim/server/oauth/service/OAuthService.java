@@ -1,11 +1,11 @@
 package com.onmoim.server.oauth.service;
 
-import com.onmoim.server.oauth.dto.OAuthResponse;
+import com.onmoim.server.oauth.dto.OAuthResponseDTO;
 
 public interface OAuthService {
 
-	OAuthResponse login(String provider, String token);
+	OAuthResponseDTO login(String provider, String token);
 
-	OAuthResponse reissueAccessToken(String refreshToken);
+	OAuthResponseDTO reissueAccessToken(String refreshToken);
 
 }

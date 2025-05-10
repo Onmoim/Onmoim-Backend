@@ -10,8 +10,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.onmoim.server.oauth.dto.OAuthResponse;
-import com.onmoim.server.oauth.dto.OAuthUser;
+import com.onmoim.server.oauth.dto.OAuthResponseDTO;
+import com.onmoim.server.oauth.dto.OAuthUserDTO;
 import com.onmoim.server.oauth.service.OAuthService;
 import com.onmoim.server.oauth.service.RefreshTokenService;
 import com.onmoim.server.oauth.service.provider.GoogleOAuthProvider;
@@ -39,18 +39,18 @@ public class OAuthServiceImpl implements OAuthService {
 
 
 	@Override
-	public OAuthResponse login(String providerName, String token) {
+	public OAuthResponseDTO login(String providerName, String token) {
 		OAuthProvider provider = oauthProviderFactory.getProvider(providerName);
-		OAuthUser oAuthUser = provider.getUserInfo(token);
+		OAuthUserDTO oAuthUserDto = provider.getUserInfo(token);
 
-		return processUserLogin(oAuthUser, providerName);
+		return processUserLogin(oAuthUserDto, providerName);
 	}
 
-	private OAuthResponse processUserLogin(OAuthUser oAuthUser, String providerName) {
-		Optional<User> optionalUser = userRepository.findByOauthIdAndProvider(oAuthUser.oauthId(), providerName);
+	private OAuthResponseDTO processUserLogin(OAuthUserDTO oAuthUserDto, String providerName) {
+		Optional<User> optionalUser = userRepository.findByOauthIdAndProvider(oAuthUserDto.oauthId(), providerName);
 
 		if (optionalUser.isEmpty()) {
-			return new OAuthResponse(null, null, "NOT_EXISTS");
+			return new OAuthResponseDTO(null, null, "NOT_EXISTS");
 		}
 
 		User user = optionalUser.get();
@@ -61,7 +61,7 @@ public class OAuthServiceImpl implements OAuthService {
 		String refreshToken = jwtProvider.createRefreshToken(authentication);
 		refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
 
-		return new OAuthResponse(accessToken, refreshToken, "EXISTS");
+		return new OAuthResponseDTO(accessToken, refreshToken, "EXISTS");
 	}
 
 	private Authentication createAuthentication(User user) {
@@ -75,7 +75,7 @@ public class OAuthServiceImpl implements OAuthService {
 
 
 	@Override
-	public OAuthResponse reissueAccessToken(String refreshToken) {
+	public OAuthResponseDTO reissueAccessToken(String refreshToken) {
 		if (!jwtProvider.validateToken(refreshToken)) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
 		}
@@ -91,7 +91,7 @@ public class OAuthServiceImpl implements OAuthService {
 		Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
 		String newAccessToken = jwtProvider.createAccessToken(authentication);
 
-		return new OAuthResponse(newAccessToken, refreshToken, "EXISTS");
+		return new OAuthResponseDTO(newAccessToken, refreshToken, "EXISTS");
 	}
 
 

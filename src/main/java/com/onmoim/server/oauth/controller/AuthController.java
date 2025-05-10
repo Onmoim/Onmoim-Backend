@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.onmoim.server.common.response.ResponseHandler;
-import com.onmoim.server.oauth.dto.OAuthRequest;
-import com.onmoim.server.oauth.dto.OAuthResponse;
-import com.onmoim.server.oauth.dto.ReissueTokenRequest;
+import com.onmoim.server.oauth.dto.OAuthRequestDTO;
+import com.onmoim.server.oauth.dto.OAuthResponseDTO;
+import com.onmoim.server.oauth.dto.ReissueTokenRequestDTO;
 import com.onmoim.server.oauth.service.OAuthService;
 import com.onmoim.server.user.dto.SignupRequest;
 import com.onmoim.server.user.service.UserService;
@@ -52,8 +52,8 @@ public class AuthController {
 			description = "서버 내부 오류"
 		)
 	})
-	public ResponseEntity<ResponseHandler<OAuthResponse>> login(@RequestBody OAuthRequest oAuthRequest) {
-		OAuthResponse response = oAuthService.login(oAuthRequest.getProvider(), oAuthRequest.getToken());
+	public ResponseEntity<ResponseHandler<OAuthResponseDTO>> login(@RequestBody OAuthRequestDTO oAuthRequestDto) {
+		OAuthResponseDTO response = oAuthService.login(oAuthRequestDto.getProvider(), oAuthRequestDto.getToken());
 
 		String status = response.getStatus();
 
@@ -111,8 +111,8 @@ public class AuthController {
 		// 	description = "서버 오류 - 이미 가입된 유저거나 DB 오류 발생"
 		// )
 	})
-	public ResponseEntity<ResponseHandler<OAuthResponse>> reissueAccessToken(@RequestBody ReissueTokenRequest reissueTokenRequest) {
-		OAuthResponse response = oAuthService.reissueAccessToken(reissueTokenRequest.getRefreshToken());
+	public ResponseEntity<ResponseHandler<OAuthResponseDTO>> reissueAccessToken(@RequestBody ReissueTokenRequestDTO reissueTokenRequestDto) {
+		OAuthResponseDTO response = oAuthService.reissueAccessToken(reissueTokenRequestDto.getRefreshToken());
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
