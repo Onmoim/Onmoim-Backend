@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.onmoim.server.common.response.ResponseHandler;
-import com.onmoim.server.group.request.CreateGroupRequest;
+import com.onmoim.server.group.dto.request.CreateGroupRequestDTO;
 import com.onmoim.server.group.service.GroupService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,7 +35,7 @@ public class GroupController {
 			responseCode = "400",
 			description = "모임 생성 실패 - 이유: 이미 존재하는 모임 이름, 잘못된 정원 설정(최소:5, 최대:300), 요청 누락")})
 	public ResponseEntity<ResponseHandler<?>> createGroup(
-					@RequestBody @Valid CreateGroupRequest request) {
+					@RequestBody @Valid CreateGroupRequestDTO request) {
 		Long groupId = groupService.createGroup(request);
 		return ResponseEntity.ok(ResponseHandler.response(groupId));
 	}

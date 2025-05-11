@@ -11,7 +11,7 @@ import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupUserRepository;
-import com.onmoim.server.group.request.CreateGroupRequest;
+import com.onmoim.server.group.dto.request.CreateGroupRequestDTO;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.repository.LocationRepository;
 import com.onmoim.server.security.CustomOAuth2User;
@@ -35,7 +35,7 @@ public class GroupService {
 	 * @return 생성된 그룹 ID
 	 */
 	@Transactional
-	public Long createGroup(CreateGroupRequest request) {
+	public Long createGroup(CreateGroupRequestDTO request) {
 		User user = userRepository.findById(getCurrentUserId())
 			.orElseThrow(() -> new CustomException(ErrorCode.INVALID_USER));
 

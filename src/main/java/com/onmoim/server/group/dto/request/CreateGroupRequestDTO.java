@@ -1,4 +1,4 @@
-package com.onmoim.server.group.request;
+package com.onmoim.server.group.dto.request;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -11,7 +11,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @Setter
-public class CreateGroupRequest {
+public class CreateGroupRequestDTO {
 	@NotNull(message = "모임 지역 설정은 필수입니다.")
 	private Long locationId;
 
