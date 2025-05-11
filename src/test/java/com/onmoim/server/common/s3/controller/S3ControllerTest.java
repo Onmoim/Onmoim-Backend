@@ -1,14 +1,10 @@
 package com.onmoim.server.common.s3.controller;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
-import com.onmoim.server.config.SecurityConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,9 +20,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.common.exception.GlobalExceptionHandler;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
-import com.onmoim.server.common.exception.GlobalExceptionHandler;
+import com.onmoim.server.config.SecurityConfig;
 
 @WebMvcTest(S3Controller.class)
 @ContextConfiguration(classes = {S3Controller.class, SecurityConfig.class, GlobalExceptionHandler.class})
