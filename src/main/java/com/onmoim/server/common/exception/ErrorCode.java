@@ -24,6 +24,9 @@ public enum ErrorCode {
 	INVALID_USER(BAD_REQUEST,	"잘못된 사용자입니다."),
 	INVALID_LOCATION(BAD_REQUEST, "잘못된 위치 정보입니다."),
 	INVALID_CATEGORY(BAD_REQUEST, "잘못된 카테고리입니다."),
+	NOT_EXISTS_GROUP(BAD_REQUEST, "존재하지 않는 모임입니다."),
+	ALREADY_EXISTS_GROUP(BAD_REQUEST, "이미 존재하는 이름의 모임입니다."),
+	INVALID_GROUP_JOIN(BAD_REQUEST, "잘못된 가입 요청입니다."),
 
 	/* ------------------ 401 BAD_REQUEST : 권한 없음 ------------------ */
 	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다.");

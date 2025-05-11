@@ -1,6 +1,9 @@
 package com.onmoim.server.group.entity;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
+
 import com.onmoim.server.common.BaseEntity;
+import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.user.entity.User;
 
 import jakarta.persistence.EmbeddedId;
@@ -41,5 +44,12 @@ public class GroupUser extends BaseEntity {
 		groupUser.user = user;
 		groupUser.status = status;
 		return groupUser;
+	}
+
+	public void joinGroup() {
+		if (Status.BOOKMARK != status) {
+			throw new CustomException(INVALID_GROUP_JOIN);
+		}
+		this.status = Status.MEMBER;
 	}
 }

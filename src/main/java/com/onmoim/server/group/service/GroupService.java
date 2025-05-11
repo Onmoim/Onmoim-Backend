@@ -1,5 +1,7 @@
 package com.onmoim.server.group.service;
 
+import java.util.Optional;
+
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,7 +12,6 @@ import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
-import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.service.LocationQueryService;
 import com.onmoim.server.security.CustomUserDetails;
@@ -48,6 +49,19 @@ public class GroupService {
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
 		groupUserQueryService.save(groupUser);
 		return group.getId();
+	}
+
+	@Transactional
+	public void joinGroup(Long groupId) {
+		User user = userQueryService.findById(getCurrentUserId());
+		Group group = groupQueryService.findById(groupId);
+		Optional<GroupUser> optional = groupUserQueryService.findById(group.getId(), user.getId());
+		if (optional.isPresent()) {
+			optional.get().joinGroup();
+			return;
+		}
+		GroupUser groupUser = GroupUser.create(group, user, Status.MEMBER);
+		groupUserQueryService.save(groupUser);
 	}
 
 	private Long getCurrentUserId()	{
