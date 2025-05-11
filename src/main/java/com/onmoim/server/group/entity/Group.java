@@ -1,7 +1,6 @@
 package com.onmoim.server.group.entity;
 
 import org.hibernate.annotations.Comment;
-import org.hibernate.annotations.HQLSelect;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.common.BaseEntity;
@@ -17,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -55,12 +55,12 @@ public class Group extends BaseEntity {
 	@Comment("모임 대표 사진")
 	private String imgUrl;
 
-	public static Group create(String name, String description, int capacity, Location location) {
-		Group group = new Group();
-		group.name = name;
-		group.description = description;
-		group.capacity = capacity;
-		group.location = location;
-		return group;
+	@Builder(builderClassName = "GroupCreateBuilder", builderMethodName = "groupCreateBuilder")
+	public Group(String name, String description, int capacity, Location location, Category category) {
+		this.name = name;
+		this.description = description;
+		this.capacity = capacity;
+		this.location = location;
+		this.category = category;
 	}
 }
