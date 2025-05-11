@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class OAuthResponseDTO {
+public class OAuthResponseDto {
 
 	private String accessToken;
 

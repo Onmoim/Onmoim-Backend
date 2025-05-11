@@ -66,7 +66,8 @@ public class SecurityConfig {
 			.csrf(csrf -> csrf.disable())
 			.authorizeHttpRequests(
 				auth -> auth
-					.requestMatchers("/test-google-login.html", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+					.requestMatchers("/test-google-login.html", "/css/**", "/js/**",
+						"/images/**", "/favicon.ico").permitAll()
 					.requestMatchers("/auth/**").permitAll()
 					.requestMatchers("/api-docs/**", "/swagger-ui/**", "swagger-resources/**").permitAll()
 					.anyRequest().authenticated())

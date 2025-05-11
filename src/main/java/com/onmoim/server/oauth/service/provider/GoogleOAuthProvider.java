@@ -5,7 +5,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import com.onmoim.server.oauth.dto.OAuthUserDTO;
+import com.onmoim.server.oauth.dto.OAuthUserDto;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GoogleOAuthProvider implements OAuthProvider {
 
 	@Override
-	public OAuthUserDTO getUserInfo(String idToken) {
+	public OAuthUserDto getUserInfo(String idToken) {
 		String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
 		Map<?, ?> body = new RestTemplate().getForObject(url, Map.class);
 
@@ -24,7 +24,7 @@ public class GoogleOAuthProvider implements OAuthProvider {
 		log.info("sub = {}", sub);
 		log.info("email = {}", email);
 
-		return new OAuthUserDTO(sub, email);
+		return new OAuthUserDto(sub, email);
 	}
 
 }
