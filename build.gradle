@@ -69,7 +69,7 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 
-    def profile = project.hasProperty('profile') ? project.getProperty('profile') : 'local'
+    def profile = project.hasProperty('profile') ? project.getProperty('profile') : 'test'
     systemProperty 'spring.profiles.active', profile
 }
 
