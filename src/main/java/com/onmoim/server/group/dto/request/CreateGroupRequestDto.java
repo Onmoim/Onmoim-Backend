@@ -1,5 +1,7 @@
 package com.onmoim.server.group.dto.request;
 
+import static com.onmoim.server.group.dto.request.GroupRequestConstraints.*;
+
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -11,7 +13,10 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @Setter
-public class CreateGroupRequestDTO {
+public class CreateGroupRequestDto {
+	@NotNull(message = "모임 카테고리 설정은 필수입니다.")
+	private Long categoryId;
+
 	@NotNull(message = "모임 지역 설정은 필수입니다.")
 	private Long locationId;
 
@@ -21,7 +26,7 @@ public class CreateGroupRequestDTO {
 	@NotBlank(message = "모임 설명은 필수입니다.")
 	private String description;
 
-	@Min(value = 5, message = "모임 최소 정원은 5명입니다.")
-	@Max(value = 300, message = "모임 최대 정원은 300명입니다.")
+	@Min(value = CREATE_MIN_CAPACITY, message = "모임 최소 정원은 5명입니다.")
+	@Max(value = CREATE_MAX_CAPACITY, message = "모임 최대 정원은 300명입니다.")
 	private int capacity;
 }
