@@ -23,6 +23,7 @@ public enum ErrorCode {
 	FILE_SIZE_EXCEEDED(BAD_REQUEST, "파일 크기가 허용된 최대 크기를 초과했습니다."),
 	INVALID_USER(BAD_REQUEST,	"잘못된 사용자입니다."),
 	INVALID_LOCATION(BAD_REQUEST, "잘못된 위치 정보입니다."),
+	INVALID_CATEGORY(BAD_REQUEST, "잘못된 카테고리입니다."),
 
 	/* ------------------ 401 BAD_REQUEST : 권한 없음 ------------------ */
 	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다.");
