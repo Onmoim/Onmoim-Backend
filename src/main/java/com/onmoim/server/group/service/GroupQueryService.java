@@ -24,7 +24,7 @@ public class GroupQueryService {
 		}
 	}
 
-	public Group findById(Long groupId) {
+	public Group getById(Long groupId) {
 		return groupRepository.findById(groupId)
 			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
 	}

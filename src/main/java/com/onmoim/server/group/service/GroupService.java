@@ -34,8 +34,8 @@ public class GroupService {
 	@Transactional
 	public Long createGroup(CreateGroupRequestDto request) {
 		User user = userQueryService.findById(getCurrentUserId());
-		Location location = locationQueryService.findById(request.getLocationId());
-		Category category = categoryQueryService.findById(request.getCategoryId());
+		Location location = locationQueryService.getById(request.getLocationId());
+		Category category = categoryQueryService.getById(request.getCategoryId());
 
 		Group group = Group.groupCreateBuilder()
 			.name(request.getName())
@@ -54,14 +54,14 @@ public class GroupService {
 	@Transactional
 	public void joinGroup(Long groupId) {
 		User user = userQueryService.findById(getCurrentUserId());
-		Group group = groupQueryService.findById(groupId);
-		Optional<GroupUser> optional = groupUserQueryService.findById(group.getId(), user.getId());
-		if (optional.isPresent()) {
-			optional.get().joinGroup();
-			return;
-		}
-		GroupUser groupUser = GroupUser.create(group, user, Status.MEMBER);
-		groupUserQueryService.save(groupUser);
+		Group group = groupQueryService.getById(groupId);
+		// 이미 관계가 있는 경우 joinGroup() 동작, 없는 경우 바로 회원으로 가입 처리
+		groupUserQueryService.findById(groupId, user.getId()).ifPresentOrElse(
+			groupUser -> groupUser.joinGroup(),
+				() -> {
+					GroupUser groupUser = GroupUser.create(group, user, Status.MEMBER);
+					groupUserQueryService.save(groupUser);
+				});
 	}
 
 	private Long getCurrentUserId()	{

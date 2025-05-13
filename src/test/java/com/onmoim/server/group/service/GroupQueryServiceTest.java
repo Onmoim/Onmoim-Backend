@@ -51,7 +51,7 @@ class GroupQueryServiceTest {
 		groupQueryService.saveGroup(group);
 
 		// then
-		Group findGroup = groupQueryService.findById(group.getId());
+		Group findGroup = groupQueryService.getById(group.getId());
 		assertThat(findGroup).isEqualTo(group);
 		assertThat(findGroup.getCategory()).isEqualTo(category);
 		assertThat(findGroup.getLocation()).isEqualTo(location);

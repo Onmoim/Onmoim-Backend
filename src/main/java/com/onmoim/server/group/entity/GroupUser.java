@@ -46,10 +46,16 @@ public class GroupUser extends BaseEntity {
 		return groupUser;
 	}
 
+	//북마크(찜)한 경우 정상 가입, 차단 상태거나 가입된 경우 예외 처리
 	public void joinGroup() {
-		if (Status.BOOKMARK != status) {
-			throw new CustomException(INVALID_GROUP_JOIN);
+		switch (status) {
+			case BOOKMARK:
+				this.status = Status.MEMBER;
+				break;
+			case BAN:
+				throw new CustomException(GROUP_BANNED_MEMBER);
+			default:
+				throw new CustomException(GROUP_ALREADY_JOINED);
 		}
-		this.status = Status.MEMBER;
 	}
 }

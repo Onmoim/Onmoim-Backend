@@ -167,14 +167,14 @@ class GroupControllerTest {
 	@WithMockUser(roles = "USER")
 	void joinGroupFailure2() throws Exception {
 		// given
-		doThrow(new CustomException(ErrorCode.INVALID_GROUP_JOIN))
+		doThrow(new CustomException(ErrorCode.GROUP_ALREADY_JOINED))
 			.when(groupService).joinGroup(anyLong());
 
 		// when
 		mvc.perform(post("/api/v1/groups/{groupId}/join", 1L))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.message").value(ErrorCode.INVALID_GROUP_JOIN.toString()))
-			.andExpect(jsonPath("$.data").value(ErrorCode.INVALID_GROUP_JOIN.getDetail()))
+			.andExpect(jsonPath("$.message").value(ErrorCode.GROUP_ALREADY_JOINED.toString()))
+			.andExpect(jsonPath("$.data").value(ErrorCode.GROUP_ALREADY_JOINED.getDetail()))
 			.andDo(print());
 	}
 }

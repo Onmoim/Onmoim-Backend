@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 public class LocationQueryService {
 	private final LocationRepository locationRepository;
 
-	public Location findById(Long id) {
+	public Location getById(Long id) {
 		return locationRepository.findById(id)
 			.orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOCATION));
 	}
