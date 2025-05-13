@@ -65,8 +65,8 @@ public class User extends BaseEntity {
 	private String introduction;
 
 	@Builder
-	private User(Long roleId, String oauthId, String provider, String email, String name, String gender, LocalDateTime birth,
-		Long addressId, Long categoryId, String profileImgUrl, String introduction) {
+	private User(Long roleId, String oauthId, String provider, String email, String name, String gender,
+		LocalDateTime birth, Long addressId, Long categoryId, String profileImgUrl, String introduction) {
 		this.roleId = roleId;
 		this.provider = provider;
 		this.email = email;
