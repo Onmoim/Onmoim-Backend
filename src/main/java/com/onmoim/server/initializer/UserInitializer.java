@@ -1,7 +1,7 @@
 package com.onmoim.server.initializer;
 
-import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -36,15 +36,13 @@ public class UserInitializer {
 	public CommandLineRunner initDummyUsers() {
 		return args -> {
 			Faker faker = new Faker(new Locale("ko"));
-			Timestamp now = new Timestamp(System.currentTimeMillis());
 
 			// 1. 유저 생성
 			for (int i = 0; i < 100; i++) {
-
 				User user = User.builder()
 					.name(faker.name().fullName().replaceAll("\\s+", ""))
 					.gender(faker.gender().binaryTypes().equalsIgnoreCase("Male") ? "M" : "F")
-					.birth(Date.valueOf(faker.timeAndDate().birthday(20, 50)))
+					.birth(LocalDateTime.now())
 					.addressId(faker.number().numberBetween(1L, 300L))
 					.build();
 

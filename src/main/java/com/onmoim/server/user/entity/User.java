@@ -1,6 +1,6 @@
 package com.onmoim.server.user.entity;
 
-import java.sql.Date;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.Comment;
 
@@ -49,7 +49,7 @@ public class User extends BaseEntity {
 
 	@Comment("생년월일")
 	@Column(nullable = false)
-	private Date birth;
+	private LocalDateTime birth;
 
 	@Comment("지역 id")
 	@Column(nullable = false)
@@ -65,7 +65,7 @@ public class User extends BaseEntity {
 	private String introduction;
 
 	@Builder
-	private User(Long roleId, String oauthId, String provider, String email, String name, String gender, Date birth,
+	private User(Long roleId, String oauthId, String provider, String email, String name, String gender, LocalDateTime birth,
 		Long addressId, Long categoryId, String profileImgUrl, String introduction) {
 		this.roleId = roleId;
 		this.provider = provider;
@@ -81,7 +81,7 @@ public class User extends BaseEntity {
 	}
 
 	public static User create(Long roleId, String oauthId, String provider, String email,
-		String name, String gender, Date birth, Long addressId,
+		String name, String gender, LocalDateTime birth, Long addressId,
 		Long categoryId, String profileImgUrl, String introduction) {
 		return User.builder()
 			.roleId(roleId)
