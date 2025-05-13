@@ -17,7 +17,7 @@ import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.repository.LocationRepository;
 
 @Transactional
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
 class GroupQueryServiceTest {
 	@Autowired
 	private GroupQueryService groupQueryService;

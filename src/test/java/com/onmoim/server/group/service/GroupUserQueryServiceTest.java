@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 논의 이후 테스트 작성 예정
  */
 @Transactional
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
 class GroupUserQueryServiceTest {
 	@Autowired
 	private GroupUserQueryService groupUserQueryService;
