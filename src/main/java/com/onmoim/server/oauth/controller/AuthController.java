@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.onmoim.server.common.response.ResponseHandler;
-import com.onmoim.server.oauth.dto.OAuthRequestDTO;
-import com.onmoim.server.oauth.dto.OAuthResponseDTO;
-import com.onmoim.server.oauth.dto.ReissueTokenRequestDTO;
+import com.onmoim.server.oauth.dto.OAuthRequestDto;
+import com.onmoim.server.oauth.dto.OAuthResponseDto;
+import com.onmoim.server.oauth.dto.ReissueTokenRequestDto;
 import com.onmoim.server.oauth.service.OAuthService;
 import com.onmoim.server.user.dto.SignupRequest;
 import com.onmoim.server.user.service.UserService;
@@ -46,15 +46,13 @@ public class AuthController {
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = ResponseHandler.class)
-			)
-		),
+			)),
 		@ApiResponse(
 			responseCode = "500",
-			description = "서버 내부 오류"
-		)
-	})
-	public ResponseEntity<ResponseHandler<OAuthResponseDTO>> login(@Valid @RequestBody OAuthRequestDTO oAuthRequestDto) {
-		OAuthResponseDTO response = oAuthService.login(oAuthRequestDto.getProvider(), oAuthRequestDto.getToken());
+			description = "서버 내부 오류")})
+	public ResponseEntity<ResponseHandler<OAuthResponseDto>> login(
+		@Valid @RequestBody OAuthRequestDto oAuthRequestDto) {
+		OAuthResponseDto response = oAuthService.login(oAuthRequestDto.getProvider(), oAuthRequestDto.getToken());
 
 		String status = response.getStatus();
 
@@ -79,13 +77,10 @@ public class AuthController {
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = ResponseHandler.class)
-			)
-		),
+			)),
 		@ApiResponse(
 			responseCode = "500",
-			description = "서버 오류 - 이미 가입된 유저거나 DB 오류 발생"
-		)
-	})
+			description = "서버 오류 - 이미 가입된 유저거나 DB 오류 발생")})
 	public ResponseEntity<ResponseHandler<String>> signup(@RequestBody SignupRequest signupRequest) {
 		userService.signup(signupRequest);
 		return ResponseEntity.ok(ResponseHandler.response("회원가입이 정상적으로 완료되었습니다."));
@@ -104,16 +99,15 @@ public class AuthController {
 			content = @Content(
 				mediaType = "application/json",
 				schema = @Schema(implementation = ResponseHandler.class)
-			)
-		)
-		// TODO: responseHandler 수정해서 401 띄우기
-		// @ApiResponse(
-		// 	responseCode = "500",
-		// 	description = "서버 오류 - 이미 가입된 유저거나 DB 오류 발생"
-		// )
-	})
-	public ResponseEntity<ResponseHandler<OAuthResponseDTO>> reissueAccessToken(@RequestBody ReissueTokenRequestDTO reissueTokenRequestDto) {
-		OAuthResponseDTO response = oAuthService.reissueAccessToken(reissueTokenRequestDto.getRefreshToken());
+			))})
+	// TODO: responseHandler 수정해서 401 띄우기
+	// @ApiResponse(
+	// 	responseCode = "500",
+	// 	description = "서버 오류 - 이미 가입된 유저거나 DB 오류 발생"
+	// )
+	public ResponseEntity<ResponseHandler<OAuthResponseDto>> reissueAccessToken(
+		@RequestBody ReissueTokenRequestDto reissueTokenRequestDto) {
+		OAuthResponseDto response = oAuthService.reissueAccessToken(reissueTokenRequestDto.getRefreshToken());
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 

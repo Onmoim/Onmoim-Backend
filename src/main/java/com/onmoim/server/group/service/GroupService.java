@@ -1,22 +1,22 @@
 package com.onmoim.server.group.service;
 
+import java.util.Optional;
+
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.category.entity.Category;
+import com.onmoim.server.category.service.CategoryQueryService;
+import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
-import com.onmoim.server.group.repository.GroupRepository;
-import com.onmoim.server.group.repository.GroupUserRepository;
-import com.onmoim.server.group.request.CreateGroupRequest;
 import com.onmoim.server.location.entity.Location;
-import com.onmoim.server.location.repository.LocationRepository;
-import com.onmoim.server.security.CustomOAuth2User;
+import com.onmoim.server.location.service.LocationQueryService;
+import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.user.entity.User;
-import com.onmoim.server.user.repository.UserRepository;
+import com.onmoim.server.user.service.UserQueryService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,39 +25,50 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class GroupService {
-	private final GroupRepository groupRepository;
-	private final GroupUserRepository groupUserRepository;
-	private final UserRepository userRepository;
-	private final LocationRepository locationRepository;
+	private final GroupQueryService groupQueryService;
+	private final GroupUserQueryService groupUserQueryService;
+	private final UserQueryService userQueryService;
+	private final LocationQueryService locationQueryService;
+	private final CategoryQueryService categoryQueryService;
 
-	/**
-	 * 모임 이름 중복 처리 어떻게? try-catch-throw?
-	 * @return 생성된 그룹 ID
-	 */
 	@Transactional
-	public Long createGroup(CreateGroupRequest request) {
-		User user = userRepository.findById(getCurrentUserId())
-			.orElseThrow(() -> new CustomException(ErrorCode.INVALID_USER));
+	public Long createGroup(CreateGroupRequestDto request) {
+		User user = userQueryService.findById(getCurrentUserId());
+		Location location = locationQueryService.getById(request.getLocationId());
+		Category category = categoryQueryService.getById(request.getCategoryId());
 
-		Location location = locationRepository.findById(request.getLocationId())
-			.orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOCATION));
-
-		Group group = Group.create(
-				request.getName(), request.getDescription(), request.getCapacity(), location);
-		groupRepository.save(group);
+		Group group = Group.groupCreateBuilder()
+			.name(request.getName())
+			.description(request.getDescription())
+			.capacity(request.getCapacity())
+			.location(location)
+			.category(category)
+			.build();
+		groupQueryService.saveGroup(group);
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
-
-		groupUserRepository.save(groupUser);
-
+		groupUserQueryService.save(groupUser);
 		return group.getId();
 	}
 
+	@Transactional
+	public void joinGroup(Long groupId) {
+		User user = userQueryService.findById(getCurrentUserId());
+		Group group = groupQueryService.getById(groupId);
+		// 이미 관계가 있는 경우 joinGroup() 동작, 없는 경우 바로 회원으로 가입 처리
+		groupUserQueryService.findById(groupId, user.getId()).ifPresentOrElse(
+			groupUser -> groupUser.joinGroup(),
+				() -> {
+					GroupUser groupUser = GroupUser.create(group, user, Status.MEMBER);
+					groupUserQueryService.save(groupUser);
+				});
+	}
+
 	private Long getCurrentUserId()	{
-		CustomOAuth2User principal = (CustomOAuth2User)SecurityContextHolder.getContextHolderStrategy()
+		CustomUserDetails principal = (CustomUserDetails) SecurityContextHolder.getContextHolderStrategy()
 			.getContext()
 			.getAuthentication()
 			.getPrincipal();
-		return principal.getId();
+		return principal.getUserId();
 	}
 }

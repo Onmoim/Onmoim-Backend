@@ -35,11 +35,28 @@ public class CustomUserDetails implements UserDetails {
 		return List.of(); // 필요하면 ROLE 붙이기
 	}
 
-	@Override public String getPassword() { return null; }
-	@Override public String getUsername() { return email; } // or userId.toString()
-	@Override public boolean isAccountNonExpired() { return true; }
-	@Override public boolean isAccountNonLocked() { return true; }
-	@Override public boolean isCredentialsNonExpired() { return true; }
-	@Override public boolean isEnabled() { return true; }
+	@Override public String getPassword() {
+		return null;
+	}
+
+	@Override public String getUsername() {
+		return email; // or userId.toString()
+	}
+
+	@Override public boolean isAccountNonExpired() {
+		return true;
+	}
+
+	@Override public boolean isAccountNonLocked() {
+		return true;
+	}
+
+	@Override public boolean isCredentialsNonExpired() {
+		return true;
+	}
+
+	@Override public boolean isEnabled() {
+		return true;
+	}
 
 }

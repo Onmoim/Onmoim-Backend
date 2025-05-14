@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 
 @Getter
-public class OAuthRequestDTO {
+public class OAuthRequestDto {
 
 	@Schema(description = "소셜 프로바이더(google/kakao)")
 	@Pattern(regexp = "^(google|kakao)$", message = "provider는 google 또는 kakao만 가능합니다.")

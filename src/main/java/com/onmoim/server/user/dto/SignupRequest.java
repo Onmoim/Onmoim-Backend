@@ -1,6 +1,6 @@
 package com.onmoim.server.user.dto;
 
-import java.sql.Date;
+import java.time.LocalDateTime;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
@@ -27,7 +27,7 @@ public class SignupRequest {
 	private String gender;
 
 	@Schema(description = "생년월일")
-	private Date birth;
+	private LocalDateTime birth;
 
 	@Schema(description = "지역 id")
 	private Long addressId;

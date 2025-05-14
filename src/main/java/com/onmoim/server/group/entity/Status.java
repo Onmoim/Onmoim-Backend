@@ -1,5 +1,15 @@
 package com.onmoim.server.group.entity;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public enum Status {
-	OWNER, MEMBER, BOOKMARK, BAN;
+	OWNER("모임장"),
+	MEMBER("회원"),
+	BOOKMARK("북마크"),
+	BAN("차단");
+	private final String description;
 }
