@@ -1,5 +1,7 @@
 package com.onmoim.server.category.entity;
 
+import java.time.LocalDateTime;
+
 import org.hibernate.annotations.Comment;
 
 import com.onmoim.server.common.BaseEntity;
