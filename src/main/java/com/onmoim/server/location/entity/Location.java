@@ -24,6 +24,9 @@ public class Location extends BaseEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@Comment("코드")
+	private String code;
+
 	@Comment("시")
 	private String city;
 
@@ -33,11 +36,16 @@ public class Location extends BaseEntity {
 	@Comment("동")
 	private String dong;
 
-	public static Location create(String city, String district, String dong) {
+	@Comment("동리")
+	private String village;
+
+	public static Location create(String code, String city, String district, String dong, String village) {
 		Location location = new Location();
+		location.code = code;
 		location.city = city;
 		location.district = district;
 		location.dong = dong;
+		location.village = village;
 		return location;
 	}
 }

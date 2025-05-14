@@ -29,7 +29,7 @@ class GroupQueryServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		location = Location.create("도시", "구역", "동");
+		location = Location.create("코드", "도시", "구역", "동", "동리");
 		locationRepository.save(location);
 	}
 
