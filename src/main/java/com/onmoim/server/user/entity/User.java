@@ -40,19 +40,15 @@ public class User extends BaseEntity {
 	private String email;
 
 	@Comment("이름")
-	@Column(nullable = false)
 	private String name;
 
 	@Comment("성별")
-	@Column(nullable = false)
 	private String gender;
 
 	@Comment("생년월일")
-	@Column(nullable = false)
 	private LocalDateTime birth;
 
 	@Comment("지역 id")
-	@Column(nullable = false)
 	private Long addressId;
 
 	@Comment("관심사(카테고리)")
