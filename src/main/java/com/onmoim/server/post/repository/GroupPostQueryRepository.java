@@ -7,7 +7,6 @@ import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.entity.QGroupPost;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import jakarta.persistence.EntityManager;
