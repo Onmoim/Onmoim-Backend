@@ -22,16 +22,6 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 public class SecurityConfig {
 
-	// @Bean
-	// @Profile("local")
-	// public SecurityFilterChain localSecurityFilterChain(HttpSecurity http, StubAuthenticationFilter stubAuthenticationFilter) throws Exception {
-	// 	return http
-	// 		.csrf(csrf -> csrf.disable())
-	// 		.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-	// 		.addFilterBefore(stubAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-	// 		.build();
-	// }
-
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 

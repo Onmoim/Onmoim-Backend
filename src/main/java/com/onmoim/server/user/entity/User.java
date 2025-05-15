@@ -80,8 +80,8 @@ public class User extends BaseEntity {
 		this.introduction = introduction;
 	}
 
-	public static User create(Long roleId, String oauthId, String provider, String email, String name, String gender, Date birth,
-		Long addressId, Long categoryId, String profileImgUrl, String introduction) {
+	public static User create(Long roleId, String oauthId, String provider, String email, String name,
+		String gender, Date birth, Long addressId, Long categoryId, String profileImgUrl, String introduction) {
 		return User.builder()
 			.roleId(roleId)
 			.oauthId(oauthId)
