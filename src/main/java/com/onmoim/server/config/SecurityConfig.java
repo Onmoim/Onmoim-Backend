@@ -7,13 +7,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import com.onmoim.server.oauth.service.CustomOAuth2UserService;
-import com.onmoim.server.security.StubAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
 	@Bean
+	@Profile("!test")
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
 		http
@@ -62,4 +59,18 @@ public class SecurityConfig {
 		return source;
 	}
 
+	@Bean
+	@Profile("test")
+	public SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
+		return http
+			.csrf(csrf -> csrf.disable())
+			.authorizeHttpRequests(
+				auth -> auth
+					.requestMatchers("/test-google-login.html", "/css/**", "/js/**",
+						"/images/**", "/favicon.ico").permitAll()
+					.requestMatchers("/auth/**").permitAll()
+					.requestMatchers("/api-docs/**", "/swagger-ui/**", "swagger-resources/**").permitAll()
+					.anyRequest().authenticated())
+			.build();
+	}
 }

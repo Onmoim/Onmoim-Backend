@@ -1,7 +1,7 @@
 package com.onmoim.server.initializer;
 
-import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import net.datafaker.Faker;
@@ -17,15 +18,12 @@ import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.entity.UserCategory;
-import com.onmoim.server.user.entity.UserCategoryId;
 import com.onmoim.server.user.repository.UserCategoryRepository;
 import com.onmoim.server.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * 일단 IndexOutOfBoundsException 예외 발생해서 주석 처리했습니다..!
- */
+@Profile("local")
 @Component
 @RequiredArgsConstructor
 public class UserInitializer {
@@ -38,15 +36,13 @@ public class UserInitializer {
 	public CommandLineRunner initDummyUsers() {
 		return args -> {
 			Faker faker = new Faker(new Locale("ko"));
-			Timestamp now = new Timestamp(System.currentTimeMillis());
 
 			// 1. 유저 생성
 			for (int i = 0; i < 100; i++) {
-
 				User user = User.builder()
 					.name(faker.name().fullName().replaceAll("\\s+", ""))
 					.gender(faker.gender().binaryTypes().equalsIgnoreCase("Male") ? "M" : "F")
-					.birth(Date.valueOf(faker.timeAndDate().birthday(20, 50)))
+					.birth(LocalDateTime.now())
 					.addressId(faker.number().numberBetween(1L, 300L))
 					.build();
 

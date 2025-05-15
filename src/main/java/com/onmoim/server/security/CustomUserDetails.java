@@ -40,8 +40,8 @@ public class CustomUserDetails implements UserDetails {
 	}
 
 	@Override public String getUsername() {
-		return email;
-	} // or userId.toString()
+		return email; // or userId.toString()
+	} 
 
 	@Override public boolean isAccountNonExpired() {
 		return true;

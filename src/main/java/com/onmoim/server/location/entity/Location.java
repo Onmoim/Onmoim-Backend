@@ -32,4 +32,12 @@ public class Location extends BaseEntity {
 
 	@Comment("동")
 	private String dong;
+
+	public static Location create(String city, String district, String dong) {
+		Location location = new Location();
+		location.city = city;
+		location.district = district;
+		location.dong = dong;
+		return location;
+	}
 }

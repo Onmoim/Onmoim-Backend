@@ -1,6 +1,6 @@
 package com.onmoim.server.user.entity;
 
-import java.sql.Date;
+import java.time.LocalDateTime;
 
 import org.hibernate.annotations.Comment;
 
@@ -40,19 +40,15 @@ public class User extends BaseEntity {
 	private String email;
 
 	@Comment("이름")
-	@Column(nullable = false)
 	private String name;
 
 	@Comment("성별")
-	@Column(nullable = false)
 	private String gender;
 
 	@Comment("생년월일")
-	@Column(nullable = false)
-	private Date birth;
+	private LocalDateTime birth;
 
 	@Comment("지역 id")
-	@Column(nullable = false)
 	private Long addressId;
 
 	@Comment("관심사(카테고리)")
@@ -65,8 +61,8 @@ public class User extends BaseEntity {
 	private String introduction;
 
 	@Builder
-	private User(Long roleId, String oauthId, String provider, String email, String name, String gender, Date birth,
-		Long addressId, Long categoryId, String profileImgUrl, String introduction) {
+	private User(Long roleId, String oauthId, String provider, String email, String name, String gender,
+		LocalDateTime birth, Long addressId, Long categoryId, String profileImgUrl, String introduction) {
 		this.roleId = roleId;
 		this.provider = provider;
 		this.email = email;
@@ -80,8 +76,9 @@ public class User extends BaseEntity {
 		this.introduction = introduction;
 	}
 
-	public static User create(Long roleId, String oauthId, String provider, String email, String name,
-		String gender, Date birth, Long addressId, Long categoryId, String profileImgUrl, String introduction) {
+	public static User create(Long roleId, String oauthId, String provider, String email,
+		String name, String gender, LocalDateTime birth, Long addressId,
+		Long categoryId, String profileImgUrl, String introduction) {
 		return User.builder()
 			.roleId(roleId)
 			.oauthId(oauthId)

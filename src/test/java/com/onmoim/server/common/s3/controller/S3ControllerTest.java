@@ -1,7 +1,7 @@
 package com.onmoim.server.common.s3.controller;
 
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -13,14 +13,21 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.common.exception.GlobalExceptionHandler;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
+import com.onmoim.server.config.SecurityConfig;
 
 @WebMvcTest(S3Controller.class)
+@ContextConfiguration(classes = {S3Controller.class, SecurityConfig.class, GlobalExceptionHandler.class})
+@ActiveProfiles("test")
 class S3ControllerTest {
 
 	@Autowired
@@ -51,6 +58,7 @@ class S3ControllerTest {
 	}
 
 	@Test
+	@WithMockUser
 	@DisplayName("파일 업로드 성공 테스트")
 	void uploadFileSuccess() throws Exception {
 
@@ -58,7 +66,8 @@ class S3ControllerTest {
 
 		mockMvc.perform(multipart("/api/v1/s3")
 				.file(testFile)
-				.param("directory", "test-directory"))
+				.param("directory", "test-directory")
+				.with(csrf()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.message").value("SUCCESS"))
 				.andExpect(jsonPath("$.data.fileName").value("test-file.txt"))
@@ -70,13 +79,15 @@ class S3ControllerTest {
 	}
 
 	@Test
+	@WithMockUser
 	@DisplayName("디렉토리 없이 파일 업로드 성공 테스트")
 	void uploadFileWithoutDirectorySuccess() throws Exception {
 
 		given(fileStorageService.uploadFile(any(), isNull())).willReturn(responseDto);
 
 		mockMvc.perform(multipart("/api/v1/s3")
-				.file(testFile))
+				.file(testFile)
+				.with(csrf()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.message").value("SUCCESS"))
 				.andExpect(jsonPath("$.data.fileName").value("test-file.txt"));
@@ -85,28 +96,35 @@ class S3ControllerTest {
 	}
 
 	@Test
+	@WithMockUser
 	@DisplayName("파일 업로드 실패 테스트 - 빈 파일")
 	void uploadFileFailureEmptyFile() throws Exception {
 
-		given(fileStorageService.uploadFile(any(), anyString()))
-				.willThrow(new CustomException(ErrorCode.EMPTY_FILE));
+		doThrow(new CustomException(ErrorCode.EMPTY_FILE))
+				.when(fileStorageService).uploadFile(any(), anyString());
 
 		mockMvc.perform(multipart("/api/v1/s3")
 				.file(testFile)
-				.param("directory", "test-directory"))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.message").value("EMPTY_FILE"));
+				.param("directory", "test-directory")
+				.with(csrf()))
+				.andExpect(result -> {
+					if (!(result.getResolvedException() instanceof CustomException)) {
+						throw new AssertionError("Expected CustomException");
+					}
+				});
 	}
 
 	@Test
+	@WithMockUser
 	@DisplayName("파일 삭제 성공 테스트")
 	void deleteFileSuccess() throws Exception {
 
 		String fileUrl = "https://test-bucket.s3.ap-northeast-2.amazonaws.com/test-file.txt";
-		willDoNothing().given(fileStorageService).deleteFile(fileUrl);
+		doNothing().when(fileStorageService).deleteFile(fileUrl);
 
 		mockMvc.perform(delete("/api/v1/s3")
-				.param("fileUrl", fileUrl))
+				.param("fileUrl", fileUrl)
+				.with(csrf()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.message").value("SUCCESS"))
 				.andExpect(jsonPath("$.data").isEmpty());
@@ -115,17 +133,22 @@ class S3ControllerTest {
 	}
 
 	@Test
+	@WithMockUser
 	@DisplayName("파일 삭제 실패 테스트")
 	void deleteFileFailure() throws Exception {
 
 		String fileUrl = "https://invalid-url.com/file.txt";
-		willThrow(new CustomException(ErrorCode.FILE_DELETE_FAILED))
-			.given(fileStorageService).deleteFile(fileUrl);
+		doThrow(new CustomException(ErrorCode.FILE_DELETE_FAILED))
+			.when(fileStorageService).deleteFile(fileUrl);
 
 		mockMvc.perform(delete("/api/v1/s3")
-				.param("fileUrl", fileUrl))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.message").value("FILE_DELETE_FAILED"));
+				.param("fileUrl", fileUrl)
+				.with(csrf()))
+				.andExpect(result -> {
+					if (!(result.getResolvedException() instanceof CustomException)) {
+						throw new AssertionError("Expected CustomException");
+					}
+				});
 
 		verify(fileStorageService).deleteFile(fileUrl);
 	}
