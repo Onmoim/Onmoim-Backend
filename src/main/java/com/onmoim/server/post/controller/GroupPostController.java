@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
  * 모임 게시글 관련 API 컨트롤러
  *
  * TODO: 인증 구현 후 @RequestParam userId 대신 인증 객체 사용하도록 변경
- * TODO: 모임 멤버 여부 검증 로직 추가
  */
 @RestController
 @RequestMapping("/api")
@@ -41,7 +40,6 @@ public class GroupPostController {
             @PathVariable Long groupId,
             @Valid @RequestBody GroupPostRequestDto request,
             @RequestParam Long userId) {
-        // TODO: 모임 멤버인지 확인하는 검증 로직 추가
         GroupPostResponseDto response = groupPostService.createPost(groupId, userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -90,7 +88,6 @@ public class GroupPostController {
             @PathVariable Long postId,
             @Valid @RequestBody GroupPostRequestDto request,
             @RequestParam Long userId) {
-        // TODO: 게시글 작성자 또는 모임장인지 확인하는 검증 로직 추가
         GroupPostResponseDto response = groupPostService.updatePost(groupId, postId, userId, request);
         return ResponseEntity.ok(response);
     }
@@ -103,7 +100,6 @@ public class GroupPostController {
             @PathVariable Long groupId,
             @PathVariable Long postId,
             @RequestParam Long userId) {
-        // TODO: 게시글 작성자 또는 모임장인지 확인하는 검증 로직 추가
         groupPostService.deletePost(groupId, postId, userId);
         return ResponseEntity.noContent().build();
     }

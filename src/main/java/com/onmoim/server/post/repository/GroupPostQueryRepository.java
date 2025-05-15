@@ -17,18 +17,19 @@ import java.util.List;
  * 모임 게시글 QueryDSL 레포지토리
  */
 @Repository
-@RequiredArgsConstructor
 public class GroupPostQueryRepository {
 
-	private final EntityManager entityManager;
+	private final JPAQueryFactory queryFactory;
+	private final QGroupPost qGroupPost = QGroupPost.groupPost;
+
+	public GroupPostQueryRepository(EntityManager entityManager) {
+		this.queryFactory = new JPAQueryFactory(entityManager);
+	}
 
 	/**
 	 * 커서 기반 페이징으로 게시글 목록 조회
 	 */
 	public CursorPageResponseDto<GroupPost> findPostsWithCursor(Group group, GroupPostType type, Long cursorId, int size) {
-		JPAQueryFactory queryFactory = new JPAQueryFactory(entityManager);
-		QGroupPost qGroupPost = QGroupPost.groupPost;
-
 		// 기본 조건: 지정된 그룹의 게시글
 		BooleanBuilder builder = new BooleanBuilder();
 		builder.and(qGroupPost.group.eq(group));

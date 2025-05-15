@@ -1,8 +1,10 @@
 package com.onmoim.server.post.entity;
 
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+@Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public enum GroupPostType {
     ALL("전체"),

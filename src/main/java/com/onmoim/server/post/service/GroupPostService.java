@@ -31,13 +31,52 @@ public class GroupPostService {
     private final GroupPostQueryRepository groupPostQueryRepository;
     private final UserRepository userRepository;
 
+    /**
+     * 그룹 조회 - 존재하지 않으면 예외 발생
+     */
+    private Group findGroupById(Long groupId) {
+        return groupRepository.findById(groupId)
+                .orElseThrow(() -> new CustomException(ErrorCode.NOT_EXISTS_GROUP));
+    }
+
+    /**
+     * 사용자 조회 - 존재하지 않으면 예외 발생
+     */
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_USER));
+    }
+
+    /**
+     * 게시글 조회 - 존재하지 않으면 예외 발생
+     */
+    private GroupPost findPostById(Long postId) {
+        return groupPostRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+    }
+
+    /**
+     * 게시글이 해당 그룹에 속하는지 확인
+     */
+    private void validatePostBelongsToGroup(GroupPost post, Long groupId) {
+        if (!post.getGroup().getId().equals(groupId)) {
+            throw new CustomException(ErrorCode.POST_NOT_FOUND);
+        }
+    }
+
+    /**
+     * 사용자가 게시글 작성자인지 확인
+     */
+    private void validatePostAuthor(GroupPost post, Long userId) {
+        if (!post.getAuthor().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.DENIED_UNAUTHORIZED_USER);
+        }
+    }
+
     @Transactional
     public GroupPostResponseDto createPost(Long groupId, Long userId, GroupPostRequestDto request) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new CustomException(ErrorCode.NOT_EXISTS_GROUP));
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_USER));
+        Group group = findGroupById(groupId);
+        User user = findUserById(userId);
 
         // TODO: group 내 멤버 인지 확인하는 로직
 
@@ -55,15 +94,9 @@ public class GroupPostService {
     }
 
     public GroupPostResponseDto getPost(Long groupId, Long postId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new CustomException(ErrorCode.NOT_EXISTS_GROUP));
-
-        GroupPost post = groupPostRepository.findById(postId)
-                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-
-        if (!post.getGroup().getId().equals(groupId)) {
-            throw new CustomException(ErrorCode.POST_NOT_FOUND);
-        }
+        findGroupById(groupId);
+        GroupPost post = findPostById(postId);
+        validatePostBelongsToGroup(post, groupId);
 
         return GroupPostResponseDto.fromEntity(post);
     }
@@ -72,8 +105,7 @@ public class GroupPostService {
      * 커서 기반 페이징을 이용한 게시글 목록 조회
      */
     public CursorPageResponseDto<GroupPostResponseDto> getPostsWithCursor(Long groupId, GroupPostType type, CursorPageRequestDto request) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new CustomException(ErrorCode.NOT_EXISTS_GROUP));
+        Group group = findGroupById(groupId);
 
         CursorPageResponseDto<GroupPost> postsPage = groupPostQueryRepository.findPostsWithCursor(
                 group, type, request.getCursorId(), request.getSize());
@@ -92,19 +124,12 @@ public class GroupPostService {
 
     @Transactional
     public GroupPostResponseDto updatePost(Long groupId, Long postId, Long userId, GroupPostRequestDto request) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new CustomException(ErrorCode.NOT_EXISTS_GROUP));
+        findGroupById(groupId);
+        findUserById(userId);
 
-        GroupPost post = groupPostRepository.findById(postId)
-                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-
-        if (!post.getGroup().getId().equals(groupId)) {
-            throw new CustomException(ErrorCode.POST_NOT_FOUND);
-        }
-
-        if (!post.getAuthor().getId().equals(userId)) {
-            throw new CustomException(ErrorCode.DENIED_UNAUTHORIZED_USER);
-        }
+        GroupPost post = findPostById(postId);
+        validatePostBelongsToGroup(post, groupId);
+        validatePostAuthor(post, userId);
 
         post.update(request.getTitle(), request.getContent(), request.getType());
 
@@ -113,19 +138,12 @@ public class GroupPostService {
 
     @Transactional
     public void deletePost(Long groupId, Long postId, Long userId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new CustomException(ErrorCode.NOT_EXISTS_GROUP));
+        findGroupById(groupId);
+        findUserById(userId);
 
-        GroupPost post = groupPostRepository.findById(postId)
-                .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-
-        if (!post.getGroup().getId().equals(groupId)) {
-            throw new CustomException(ErrorCode.POST_NOT_FOUND);
-        }
-
-        if (!post.getAuthor().getId().equals(userId)) {
-            throw new CustomException(ErrorCode.DENIED_UNAUTHORIZED_USER);
-        }
+        GroupPost post = findPostById(postId);
+        validatePostBelongsToGroup(post, groupId);
+        validatePostAuthor(post, userId);
 
         groupPostRepository.delete(post);
     }
