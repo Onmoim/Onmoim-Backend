@@ -11,6 +11,7 @@ import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.entity.PostImage;
+import com.onmoim.server.post.repository.GroupPostQueryService;
 import com.onmoim.server.group.service.GroupQueryService;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.service.UserQueryService;
@@ -175,4 +176,4 @@ public class GroupPostService {
 		// 1. 일정 기간(예: 30일) 이후 하드 삭제 처리
 		// 2. 특정 시간대에 배치 작업으로 삭제 데이터 정리
 	}
-}
+} 
