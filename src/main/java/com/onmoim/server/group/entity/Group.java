@@ -54,18 +54,12 @@ public class Group extends BaseEntity {
 	@Comment("모임 최대 정원")
 	private int capacity;
 
-	@Comment("현재 모임 인원")
-	@Builder.Default
-	private int participantCount = 1;
-
 	@Comment("모임 대표 사진")
 	private String imgUrl;
 
-	public void join() {
-		if (capacity < participantCount + 1) {
+	public void join(Long current) {
+		if (capacity < current + 1) {
 			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
 		}
-		// 변경 감지
-		participantCount++;
 	}
 }

@@ -41,7 +41,6 @@ class GroupServiceTest {
 		Group group = groupRepository.save(Group.groupCreateBuilder()
 			.name("group")
 			.capacity(10)
-			.participantCount(1)
 			.build());
 		User owner = User.builder().name("모임장").build();
 		userRepository.save(owner);
@@ -83,10 +82,9 @@ class GroupServiceTest {
 
 		// then
 		Group updatedGroup = groupRepository.findById(group.getId()).orElseThrow();
-		assertThat(updatedGroup.getParticipantCount()).isLessThanOrEqualTo(updatedGroup.getCapacity());
 		Long count = groupUserRepository.countGroupMember(group.getId(), List.of(Status.MEMBER, Status.OWNER));
 		System.out.println("최종 모임 인원 by GroupUser = " + count);
-		assertThat(count).isEqualTo(updatedGroup.getParticipantCount());
-		System.out.println("최종 모임 인원 by Group = " + updatedGroup.getParticipantCount());
+		assertThat(count).isLessThanOrEqualTo(updatedGroup.getCapacity());
+		assertThat(count).isEqualTo(updatedGroup.getCapacity());
 	}
 }

@@ -1,5 +1,7 @@
 package com.onmoim.server.group.service;
 
+import java.util.List;
+
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -12,6 +14,7 @@ import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
+import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.service.LocationQueryService;
 import com.onmoim.server.security.CustomUserDetails;
@@ -30,6 +33,7 @@ public class GroupService {
 	private final UserQueryService userQueryService;
 	private final LocationQueryService locationQueryService;
 	private final CategoryQueryService categoryQueryService;
+	private final GroupUserRepository groupUserRepository;
 
 	@Transactional
 	public Long createGroup(CreateGroupRequestDto request) {
@@ -68,8 +72,10 @@ public class GroupService {
 			.orElseGet(() -> GroupUser.create(group, user, Status.PENDING));
 		// OWNER, MEMBER, BAN 검사
 		groupUser.joinValidate();
-		// 정원 검사, 참여 인원 늘리기
-		group.join();
+		// 현재 모임원 숫자 조회
+		Long current = groupUserRepository.countGroupMember(groupId, List.of(Status.MEMBER, Status.OWNER));
+		// 정원 초과 검사
+		group.join(current);
 		groupUserQueryService.joinGroup(groupUser);
 	}
 
