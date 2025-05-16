@@ -13,17 +13,20 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 모임 게시글 엔티티
  *
  * TODO: 조회수, 좋아요 수 필드 추가 (향후 구현)
- * TODO: 파일/이미지 첨부 관련 연관관계 추가 (향후 구현)
  * TODO: 댓글 관련 연관관계 추가 (향후 구현)
  * TODO: 게시글 카테고리 관계 추가 (향후 구현)
  */
@@ -35,7 +38,7 @@ public class GroupPost extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "post_id")
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -43,7 +46,7 @@ public class GroupPost extends BaseEntity {
     private Group group;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
     @Column(name = "title", nullable = false, length = 255)
@@ -56,6 +59,9 @@ public class GroupPost extends BaseEntity {
     @Column(name = "type", nullable = false)
     private GroupPostType type;
 
+    @OneToMany(mappedBy = "post", orphanRemoval = true)
+    private List<PostImage> postImages = new ArrayList<>();
+
     @Builder
     public GroupPost(Group group, User author, String title, String content, GroupPostType type) {
         this.group = group;
@@ -65,13 +71,14 @@ public class GroupPost extends BaseEntity {
         this.type = type;
     }
 
-    /**
-     * 게시글 정보 업데이트
-     */
     public void update(String title, String content, GroupPostType type) {
         this.title = title;
         this.content = content;
         this.type = type;
+    }
+
+    public void addImage(PostImage postImage) {
+        this.postImages.add(postImage);
     }
 
     // TODO: 조회수 증가 메서드 추가 (향후 구현)
