@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public enum Status {
-	PENDING("모임 가입용 임시 상태"),
+	PENDING("모임 임시 상태"),
 	OWNER("모임장"),
 	MEMBER("회원"),
 	BOOKMARK("북마크"),

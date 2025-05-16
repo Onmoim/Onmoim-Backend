@@ -62,4 +62,25 @@ public class GroupUser extends BaseEntity {
 	public void updateStatus(Status status) {
 		this.status = status;
 	}
+
+	/**
+	 * 북마크(찜) 상태 변경
+	 * 모임장, 회원, 벤 -> 예외
+	 * 북마크 -> 임시
+	 * 임시 -> 북마크
+	 */
+	public void like() {
+		switch (status) {
+			case OWNER:
+			case MEMBER:
+				throw new CustomException(GROUP_ALREADY_JOINED);
+			case BAN:
+				throw new CustomException(GROUP_BANNED_MEMBER);
+			case BOOKMARK:
+				this.status = Status.PENDING;
+				break;
+			case PENDING:
+				this.status = Status.BOOKMARK;
+		}
+	}
 }
