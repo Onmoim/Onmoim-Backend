@@ -14,9 +14,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/**
- * 게시글 이미지 연결 엔티티
- */
 @Entity
 @Getter
 @IdClass(PostImageId.class)
@@ -39,4 +36,4 @@ public class PostImage extends BaseEntity {
         this.post = post;
         this.image = image;
     }
-} 
+}

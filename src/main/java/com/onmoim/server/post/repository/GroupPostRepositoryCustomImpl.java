@@ -20,7 +20,7 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
 	private final JPAQueryFactory queryFactory;
 
 	@Override
-	public CursorPageResponseDto<GroupPost> findPostsWithCursor(Group group, GroupPostType type, Long cursorId, int size) {
+	public CursorPageResponseDto<GroupPost> findPosts(Group group, GroupPostType type, Long cursorId, int size) {
 		QGroupPost qGroupPost = QGroupPost.groupPost;
 
 		// 기본 조건: 지정된 그룹의 게시글  및 삭제되지 않은 게시글

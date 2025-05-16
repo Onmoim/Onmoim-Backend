@@ -160,16 +160,16 @@ public class GroupPostService {
 	/**
 	 * 커서 기반 페이징을 이용한 게시글 목록 조회
 	 */
-	public CursorPageResponseDto<GroupPostResponseDto> getPostsWithCursor(Long groupId, GroupPostType type, CursorPageRequestDto request) {
+	public CursorPageResponseDto<GroupPostResponseDto> getPosts(Long groupId, GroupPostType type, CursorPageRequestDto request) {
 		Group group = findGroupById(groupId);
 
-		CursorPageResponseDto<GroupPost> postsPage = groupPostRepository.findPostsWithCursor(
+		CursorPageResponseDto<GroupPost> postsPage = groupPostRepository.findPosts(
 			group, type, request.getCursorId(), request.getSize());
 
 		List<GroupPostResponseDto> content = postsPage.getContent()
 			.stream()
 			.map(GroupPostResponseDto::fromEntity)
-			.collect(Collectors.toList());
+			.toList();
 
 		return CursorPageResponseDto.<GroupPostResponseDto>builder()
 			.content(content)

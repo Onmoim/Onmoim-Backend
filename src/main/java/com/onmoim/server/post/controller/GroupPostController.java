@@ -64,7 +64,7 @@ public class GroupPostController {
      * 모임 게시글 목록 조회 (커서 기반 페이징 무한 스크롤)
      */
     @GetMapping("/v1/groups/{groupId}/posts")
-    public ResponseEntity<CursorPageResponseDto<GroupPostResponseDto>> getPostsWithCursor(
+    public ResponseEntity<CursorPageResponseDto<GroupPostResponseDto>> getPosts(
             @PathVariable Long groupId,
             @RequestParam(required = false) GroupPostType type,
             @RequestParam(required = false) Long cursorId,
@@ -76,7 +76,7 @@ public class GroupPostController {
                 .build();
 
         CursorPageResponseDto<GroupPostResponseDto> response =
-                groupPostService.getPostsWithCursor(groupId, type, cursorRequest);
+                groupPostService.getPosts(groupId, type, cursorRequest);
 
         return ResponseEntity.ok(response);
     }

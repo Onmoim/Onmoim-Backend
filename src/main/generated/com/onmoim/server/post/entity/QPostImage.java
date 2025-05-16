@@ -33,6 +33,9 @@ public class QPostImage extends EntityPathBase<PostImage> {
     public final com.onmoim.server.common.image.entity.QImage image;
 
     //inherited
+    public final BooleanPath isDeleted = _super.isDeleted;
+
+    //inherited
     public final DateTimePath<java.time.LocalDateTime> modifiedDate = _super.modifiedDate;
 
     public final QGroupPost post;
