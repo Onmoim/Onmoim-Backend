@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Order(1)
 public class NamedLockAspect {
+	private static final int LOCK_TIMEOUT_SECOND = 3;
 	private final GroupRepository groupRepository;
 
 	@Transactional
@@ -25,7 +26,7 @@ public class NamedLockAspect {
 	public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
 		Long groupId = (Long) joinPoint.getArgs()[0];
 		try {
-			groupRepository.getLock("group" + groupId);
+			groupRepository.getLock("group" + groupId, LOCK_TIMEOUT_SECOND);
 			return joinPoint.proceed();
 		} finally {
 			groupRepository.releaseLock("group" + groupId);
