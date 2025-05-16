@@ -4,6 +4,8 @@ import org.hibernate.annotations.Comment;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.common.BaseEntity;
+import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.location.entity.Location;
 
 import jakarta.persistence.Column;
@@ -16,6 +18,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,6 +27,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "group_table")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder(builderClassName = "GroupCreateBuilder", builderMethodName = "groupCreateBuilder")
 public class Group extends BaseEntity {
 	@Id
 	@Column(name = "group_id")
@@ -49,18 +54,12 @@ public class Group extends BaseEntity {
 	@Comment("모임 최대 정원")
 	private int capacity;
 
-	@Comment("현재 모임 인원")
-	private int participantCount;
-
 	@Comment("모임 대표 사진")
 	private String imgUrl;
 
-	@Builder(builderClassName = "GroupCreateBuilder", builderMethodName = "groupCreateBuilder")
-	public Group(String name, String description, int capacity, Location location, Category category) {
-		this.name = name;
-		this.description = description;
-		this.capacity = capacity;
-		this.location = location;
-		this.category = category;
+	public void join(Long current) {
+		if (capacity < current + 1) {
+			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
+		}
 	}
 }

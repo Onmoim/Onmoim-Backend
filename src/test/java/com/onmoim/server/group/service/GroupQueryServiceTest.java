@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
@@ -26,19 +27,18 @@ class GroupQueryServiceTest {
 	@Autowired
 	private CategoryRepository categoryRepository;
 	private Location location;
+	private Category category;
 
 	@BeforeEach
 	void setUp() {
-		location = Location.create("도시", "구역", "동");
-		locationRepository.save(location);
+		location = locationRepository.save(Location.create(null, null, null));
+		category = categoryRepository.save(Category.builder().name("카테고리").build());
 	}
 
 	@Test
 	@DisplayName("그룹 저장 성공")
 	void groupSaveSuccess() {
 		// given
-		var category = categoryRepository.findById(1L).get();
-
 		Group group = Group.groupCreateBuilder()
 			.capacity(10)
 			.category(category)
@@ -61,8 +61,6 @@ class GroupQueryServiceTest {
 	@DisplayName("그룹 저장 실패 이미 존재하는 모임 이름")
 	void groupSaveFailure() {
 		// given
-		var category = categoryRepository.findById(1L).get();
-
 		Group group1 = Group.groupCreateBuilder()
 			.capacity(10)
 			.category(category)

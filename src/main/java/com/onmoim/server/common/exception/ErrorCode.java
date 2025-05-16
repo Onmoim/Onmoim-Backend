@@ -30,6 +30,7 @@ public enum ErrorCode {
 	ALREADY_EXISTS_GROUP(BAD_REQUEST, "이미 존재하는 이름의 모임입니다."),
 	GROUP_ALREADY_JOINED(BAD_REQUEST, "이미 모임에 가입된 회원입니다."),
 	GROUP_BANNED_MEMBER(BAD_REQUEST, "모임에서 차단된 회원입니다."),
+	GROUP_CAPACITY_EXCEEDED(BAD_REQUEST, "정원이 가득 찼습니다."),
 
 	/* ------------------ 401 BAD_REQUEST : 권한 없음 ------------------ */
 	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다.");

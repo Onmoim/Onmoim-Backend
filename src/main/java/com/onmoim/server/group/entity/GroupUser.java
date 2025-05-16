@@ -17,9 +17,11 @@ import jakarta.persistence.MapsId;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GroupUser extends BaseEntity {
 	@EmbeddedId
@@ -43,19 +45,21 @@ public class GroupUser extends BaseEntity {
 		groupUser.group = group;
 		groupUser.user = user;
 		groupUser.status = status;
+		groupUser.id = new GroupUserId(group.getId(), user.getId());
 		return groupUser;
 	}
 
-	//북마크(찜)한 경우 정상 가입, 차단 상태거나 가입된 경우 예외 처리
-	public void joinGroup() {
+	public void joinValidate() {
 		switch (status) {
-			case BOOKMARK:
-				this.status = Status.MEMBER;
-				break;
+			case OWNER:
+			case MEMBER:
+				throw new CustomException(GROUP_ALREADY_JOINED);
 			case BAN:
 				throw new CustomException(GROUP_BANNED_MEMBER);
-			default:
-				throw new CustomException(GROUP_ALREADY_JOINED);
 		}
+	}
+
+	public void updateStatus(Status status) {
+		this.status = status;
 	}
 }
