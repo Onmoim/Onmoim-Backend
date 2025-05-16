@@ -35,6 +35,9 @@ public class QGroupUser extends EntityPathBase<GroupUser> {
     public final QGroupUserId id;
 
     //inherited
+    public final BooleanPath isDeleted = _super.isDeleted;
+
+    //inherited
     public final DateTimePath<java.time.LocalDateTime> modifiedDate = _super.modifiedDate;
 
     public final EnumPath<Status> status = createEnum("status", Status.class);

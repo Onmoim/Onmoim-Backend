@@ -3,7 +3,10 @@ package com.onmoim.server.post.repository;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.group.entity.GroupUser;
+import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.service.GroupQueryService;
+import com.onmoim.server.group.service.GroupUserQueryService;
 import com.onmoim.server.post.dto.request.CursorPageRequestDto;
 import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +26,7 @@ public class GroupPostQueryService {
     
     private final GroupPostRepository groupPostRepository;
     private final GroupQueryService groupQueryService;
+    private final GroupUserQueryService groupUserQueryService;
     
     /**
      * 게시글 조회 - 존재하지 않으면 예외 발생
@@ -46,6 +51,25 @@ public class GroupPostQueryService {
     public void validatePostAuthor(GroupPost post, Long userId) {
         if (!post.getAuthor().getId().equals(userId)) {
             throw new CustomException(ErrorCode.DENIED_UNAUTHORIZED_USER);
+        }
+    }
+    
+    /**
+     * 사용자가 그룹의 멤버인지 확인
+     * MEMBER 또는 OWNER만 게시글 관련 작업 가능
+     */
+    public void validateGroupMembership(Long groupId, Long userId) {
+        Optional<GroupUser> groupUserOpt = groupUserQueryService.findById(groupId, userId);
+        
+        if (groupUserOpt.isEmpty()) {
+            throw new CustomException(ErrorCode.NOT_GROUP_MEMBER);
+        }
+        
+        GroupUser groupUser = groupUserOpt.get();
+        Status status = groupUser.getStatus();
+        
+        if (status != Status.MEMBER && status != Status.OWNER) {
+            throw new CustomException(ErrorCode.NOT_GROUP_MEMBER);
         }
     }
     

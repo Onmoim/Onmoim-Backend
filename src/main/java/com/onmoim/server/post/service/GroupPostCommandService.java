@@ -1,5 +1,6 @@
 package com.onmoim.server.post.service;
 
+import com.onmoim.server.common.image.entity.Image;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
 import com.onmoim.server.post.dto.request.GroupPostRequestDto;
@@ -47,8 +48,13 @@ public class GroupPostCommandService {
 			// S3에 파일 업로드
 			FileUploadResponseDto uploadResult = fileStorageService.uploadFile(file, "posts");
 
+			// Image 엔티티 생성
+			Image image = Image.builder()
+				.imageUrl(uploadResult.getFileUrl())
+				.build();
+
 			// 이미지와 게시글 이미지 함께 저장
-			PostImage postImage = imagePostService.saveImageAndPostImage(post);
+			PostImage postImage = imagePostService.saveImageAndPostImage(image, post);
 			post.addImage(postImage);
 			postImages.add(postImage);
 		}
@@ -63,7 +69,8 @@ public class GroupPostCommandService {
 		Group group = groupQueryService.getById(groupId);
 		User user = userQueryService.findById(userId);
 
-		// TODO: group 내 멤버 인지 확인하는 로직
+		// 그룹 멤버 확인
+		groupPostQueryService.validateGroupMembership(groupId, userId);
 
 		GroupPost post = GroupPost.builder()
 			.group(group)
@@ -87,8 +94,9 @@ public class GroupPostCommandService {
 	 * 모임 게시글 수정
 	 */
 	public GroupPostResponseDto updatePost(Long groupId, Long postId, Long userId, GroupPostRequestDto request, List<MultipartFile> files) {
+		// 그룹 및 멤버십 확인
 		groupQueryService.getById(groupId);
-		userQueryService.findById(userId);
+		groupPostQueryService.validateGroupMembership(groupId, userId);
 
 		GroupPost post = groupPostQueryService.findById(postId);
 		groupPostQueryService.validatePostBelongsToGroup(post, groupId);
@@ -117,8 +125,9 @@ public class GroupPostCommandService {
 	 * 모임 게시글 삭제
 	 */
 	public void deletePost(Long groupId, Long postId, Long userId) {
+		// 그룹 및 멤버십 확인
 		groupQueryService.getById(groupId);
-		userQueryService.findById(userId);
+		groupPostQueryService.validateGroupMembership(groupId, userId);
 
 		GroupPost post = groupPostQueryService.findById(postId);
 		groupPostQueryService.validatePostBelongsToGroup(post, groupId);

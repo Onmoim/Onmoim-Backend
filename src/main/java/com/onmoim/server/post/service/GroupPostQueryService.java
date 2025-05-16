@@ -3,13 +3,17 @@ package com.onmoim.server.post.service;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.group.entity.GroupUser;
+import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.service.GroupQueryService;
+import com.onmoim.server.group.service.GroupUserQueryService;
 import com.onmoim.server.post.dto.request.CursorPageRequestDto;
 import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.repository.GroupPostRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +27,7 @@ public class GroupPostQueryService {
 
 	private final GroupPostRepository groupPostRepository;
 	private final GroupQueryService groupQueryService;
+	private final GroupUserQueryService groupUserQueryService;
 
 	/**
 	 * 게시글 조회 - 존재하지 않으면 예외 발생
@@ -48,6 +53,16 @@ public class GroupPostQueryService {
 		if (!post.getAuthor().getId().equals(userId)) {
 			throw new CustomException(ErrorCode.DENIED_UNAUTHORIZED_USER);
 		}
+	}
+
+	/**
+	 * 사용자가 그룹의 멤버인지 확인
+	 * MEMBER 또는 OWNER만 게시글 관련 작업 가능
+	 */
+	public void validateGroupMembership(Long groupId, Long userId) {
+		groupUserQueryService.findById(groupId, userId)
+			.filter(gu -> gu.getStatus() == Status.MEMBER || gu.getStatus() == Status.OWNER)
+			.orElseThrow(() -> new CustomException(ErrorCode.NOT_GROUP_MEMBER));
 	}
 
 	/**

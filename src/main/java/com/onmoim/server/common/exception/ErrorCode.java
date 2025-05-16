@@ -32,12 +32,16 @@ public enum ErrorCode {
 	GROUP_BANNED_MEMBER(BAD_REQUEST, "모임에서 차단된 회원입니다."),
 	GROUP_CAPACITY_EXCEEDED(BAD_REQUEST, "정원이 가득 찼습니다."),
 
+
 	/* ------------------ 400 BAD_REQUEST : 게시글 잘못된 요청 ------------------ */
 	POST_NOT_FOUND(BAD_REQUEST, "게시글을 찾을 수 없습니다."),
 
 
-	/* ------------------ 401 BAD_REQUEST : 권한 없음 ------------------ */
-	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다.");
+	/* ------------------ 401 UNAUTHORIZED : 인증되지 않은 사용자 ------------------ */
+	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다."),
+	
+	/* ------------------ 403 FORBIDDEN : 권한 없음 ------------------ */
+	NOT_GROUP_MEMBER(FORBIDDEN, "모임 멤버만 접근 가능합니다.");
 
 	private final HttpStatus httpStatus;
 	private final String detail;
