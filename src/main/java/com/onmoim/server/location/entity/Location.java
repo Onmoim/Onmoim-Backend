@@ -17,8 +17,8 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-	name = "location"
-	, indexes = {
+	name = "location",
+	indexes = {
 		@Index(name = "idx_location_dong", columnList = "dong")
 	}
 )
