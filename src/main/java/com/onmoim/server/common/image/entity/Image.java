@@ -33,4 +33,4 @@ public class Image extends BaseEntity {
     public Image(String imageUrl) {
         this.imageUrl = imageUrl;
     }
-} 
+}

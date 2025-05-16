@@ -32,6 +32,9 @@ public class QImage extends EntityPathBase<Image> {
     public final StringPath imageUrl = createString("imageUrl");
 
     //inherited
+    public final BooleanPath isDeleted = _super.isDeleted;
+
+    //inherited
     public final DateTimePath<java.time.LocalDateTime> modifiedDate = _super.modifiedDate;
 
     public QImage(String variable) {
