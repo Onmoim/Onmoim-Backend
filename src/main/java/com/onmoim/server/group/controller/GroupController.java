@@ -57,4 +57,21 @@ public class GroupController {
 		groupService.joinGroup(groupId);
 		return ResponseEntity.ok(ResponseHandler.response("모임 가입 성공"));
 	}
+
+	@Operation(
+		summary = "모임 좋아요(찜)",
+		description = "좋아요 또는 좋아요 취소로 동작합니다."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "모임 좋아요 성공 또는 취소 성공"),
+		@ApiResponse(
+			responseCode = "400",
+			description = "이미 가입된 회원 또는 모임에서 벤 당한 회원")})
+	@PostMapping("/v1/groups/{groupId}/like")
+	public ResponseEntity<ResponseHandler<?>> likeGroup(@PathVariable Long groupId) {
+		groupService.likeGroup(groupId);
+		return ResponseEntity.ok(ResponseHandler.response(null));
+	}
 }
