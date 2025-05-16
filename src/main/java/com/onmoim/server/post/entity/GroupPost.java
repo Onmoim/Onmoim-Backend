@@ -12,6 +12,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -33,7 +34,13 @@ import java.util.List;
  */
 @Entity
 @Getter
-@Table(name = "post")
+@Table(
+    name = "post", 
+    indexes = {
+        @Index(name = "idx_post_group_type_isdeleted", columnList = "group_id,type,isDeleted"),
+        @Index(name = "idx_post_author_isdeleted", columnList = "author_id,isDeleted")
+    }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GroupPost extends BaseEntity {
 
@@ -88,7 +95,14 @@ public class GroupPost extends BaseEntity {
         this.postImages.add(postImage);
     }
 
+    /**
+     * 게시글 소프트 삭제 처리
+     * BaseEntity의 소프트 삭제 메서드를 호출
+     */
+    public void softDelete() {
+        super.softDelete();
+    }
+
     // TODO: 조회수 증가 메서드 추가 (향후 구현)
     // TODO: 좋아요 추가/취소 메서드 추가 (향후 구현)
-    // TODO: 소프트 딜리트 메서드 추가 (향후 구현)
 }

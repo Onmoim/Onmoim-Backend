@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GroupPostResponseDto {
-    
+
     private Long id;
     private Long groupId;
     private Long authorId;
@@ -32,7 +32,7 @@ public class GroupPostResponseDto {
     private LocalDateTime createdDate;
     private LocalDateTime modifiedDate;
     private List<PostImageDto> images;
-    
+
     public static GroupPostResponseDto fromEntity(GroupPost post) {
         return GroupPostResponseDto.builder()
                 .id(post.getId())
@@ -45,12 +45,13 @@ public class GroupPostResponseDto {
                 .type(post.getType())
                 .createdDate(post.getCreatedDate())
                 .modifiedDate(post.getModifiedDate())
-                .images(post.getPostImages().stream()
-                        .map(PostImageDto::fromEntity)
-                        .collect(Collectors.toList()))
+				.images(post.getPostImages().stream()
+				.filter(postImage -> !postImage.isDeleted())
+				.map(PostImageDto::fromEntity)
+				.toList())
                 .build();
     }
-    
+
     @Getter
     @Builder
     @NoArgsConstructor
@@ -58,7 +59,7 @@ public class GroupPostResponseDto {
     public static class PostImageDto {
         private Long id;
         private String imageUrl;
-        
+
         public static PostImageDto fromEntity(PostImage postImage) {
             return PostImageDto.builder()
                     .id(postImage.getImage().getId())

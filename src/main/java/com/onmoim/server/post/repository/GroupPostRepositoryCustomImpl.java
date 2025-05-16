@@ -23,9 +23,10 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
 	public CursorPageResponseDto<GroupPost> findPostsWithCursor(Group group, GroupPostType type, Long cursorId, int size) {
 		QGroupPost qGroupPost = QGroupPost.groupPost;
 
-		// 기본 조건: 지정된 그룹의 게시글 (ID로 비교)
+		// 기본 조건: 지정된 그룹의 게시글  및 삭제되지 않은 게시글
 		BooleanBuilder builder = new BooleanBuilder();
-		builder.and(qGroupPost.group.id.eq(group.getId()));  // 그룹 객체 대신 ID로 비교
+		builder.and(qGroupPost.group.id.eq(group.getId()));
+		builder.and(qGroupPost.isDeleted.eq(false));
 
 		// 타입 필터링
 		if (type != null && type != GroupPostType.ALL) {

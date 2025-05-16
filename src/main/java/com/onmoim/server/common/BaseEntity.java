@@ -6,6 +6,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
@@ -22,6 +23,25 @@ public class BaseEntity {
 	@LastModifiedDate
 	private LocalDateTime modifiedDate;
 
-	// 삭제 시점 추가
+	// 소프트 삭제 여부 (기본값: false)
+	@Column(nullable = false)
+	private boolean isDeleted = false;
+	
+	// 삭제 시점
 	private LocalDateTime deletedDate;
+	
+	/**
+	 * 소프트 삭제 처리
+	 */
+	public void softDelete() {
+		this.isDeleted = true;
+		this.deletedDate = LocalDateTime.now();
+	}
+	
+	/**
+	 * 삭제 여부 확인
+	 */
+	public boolean isDeleted() {
+		return this.isDeleted;
+	}
 }

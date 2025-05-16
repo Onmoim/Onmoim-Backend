@@ -39,6 +39,9 @@ public class QGroupPost extends EntityPathBase<GroupPost> {
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     //inherited
+    public final BooleanPath isDeleted = _super.isDeleted;
+
+    //inherited
     public final DateTimePath<java.time.LocalDateTime> modifiedDate = _super.modifiedDate;
 
     public final ListPath<PostImage, QPostImage> postImages = this.<PostImage, QPostImage>createList("postImages", PostImage.class, QPostImage.class, PathInits.DIRECT2);
