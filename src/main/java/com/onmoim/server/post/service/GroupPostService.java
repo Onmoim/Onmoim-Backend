@@ -194,16 +194,13 @@ public class GroupPostService {
 
 		// 이미지 업데이트 처리 (파일이 있는 경우)
 		if (files != null && !files.isEmpty()) {
-			// 기존 파일 조회
+			// 기존 파일 조회 (전체 이미지)
 			List<PostImage> existingImages = postImageRepository.findAllByPost(post);
 
-			// S3에서 파일 삭제
+			// 소프트 삭제 처리
 			for (PostImage postImage : existingImages) {
-				fileStorageService.deleteFile(postImage.getImage().getImageUrl());
+				postImage.softDelete();
 			}
-
-			// DB에서 기존 파일 정보 삭제
-			postImageRepository.deleteAllByPost(post);
 
 			// 새 파일 업로드 처리
 			processImageUploads(post, files);
@@ -221,13 +218,18 @@ public class GroupPostService {
 		validatePostBelongsToGroup(post, groupId);
 		validatePostAuthor(post, userId);
 
-		// 게시글에 첨부된 이미지 삭제
+		// 소프트 삭제 처리 - 게시글
+		post.softDelete();
+
+		// 게시글에 첨부된 이미지도 소프트 삭제 처리
 		List<PostImage> images = postImageRepository.findAllByPost(post);
 		for (PostImage postImage : images) {
-			fileStorageService.deleteFile(postImage.getImage().getImageUrl());
+			postImage.softDelete();
 		}
 
-		postImageRepository.deleteAllByPost(post);
-		groupPostRepository.delete(post);
+		// TODO: 추후 스케줄링 및 배치 처리를 통해 실제 데이터와 S3 이미지 파일 삭제 구현
+		// 1. 일정 기간(예: 30일) 이후 하드 삭제 처리
+		// 2. 특정 시간대에 배치 작업으로 삭제 데이터 정리
+		// 3. 삭제 데이터 백업 고려
 	}
-}
+	}
