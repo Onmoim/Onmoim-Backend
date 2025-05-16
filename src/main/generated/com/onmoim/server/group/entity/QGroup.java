@@ -47,8 +47,6 @@ public class QGroup extends EntityPathBase<Group> {
 
     public final StringPath name = createString("name");
 
-    public final NumberPath<Integer> participantCount = createNumber("participantCount", Integer.class);
-
     public QGroup(String variable) {
         this(Group.class, forVariable(variable), INITS);
     }
