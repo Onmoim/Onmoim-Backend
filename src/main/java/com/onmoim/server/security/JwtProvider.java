@@ -38,10 +38,11 @@ public class JwtProvider {
 
 	// Access Token 생성
 	public String createAccessToken(Authentication authentication) {
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 		Date now = new Date();
-		Date expireDate = new Date(now.getTime() + tokenProperties.getAccessExpirationTime());
+		Date expireDate = new Date(now.getTime() + tokenProperties.getRefreshExpirationTime());
 
-		Claims claims = Jwts.claims().setSubject(authentication.getName()); // ex: userId or email
+		Claims claims = Jwts.claims().setSubject(userDetails.getUserId().toString());
 
 		return Jwts.builder()
 			.setClaims(claims)

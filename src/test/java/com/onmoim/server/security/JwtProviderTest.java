@@ -20,24 +20,39 @@ public class JwtProviderTest {
 	@Test
 	void createAccessTokenTest() {
 		// given
-		String userId = "123";
-		Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+		Long userId = 1L;
+		String email = "test@test.com";
+		String provider = "google";
 
+		CustomUserDetails userDetails = new CustomUserDetails(userId, email, provider);
+		Authentication authentication = new UsernamePasswordAuthenticationToken(
+			userDetails,
+			null
+			, Collections.emptyList()
+		);
 		// when
 		String accessToken = jwtProvider.createAccessToken(authentication);
 
 		// then
 		assertNotNull(accessToken);
 		assertTrue(jwtProvider.validateToken(accessToken));
-		assertEquals(userId, jwtProvider.getSubject(accessToken));
+		assertEquals(userId.toString(), jwtProvider.getSubject(accessToken));
 	}
 
 	@Test
 	@Disabled
 	void createRefreshTokenTest() {
 		// given
-		String userId = "123";
-		Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+		Long userId = 1L;
+		String email = "test@test.com";
+		String provider = "google";
+
+		CustomUserDetails userDetails = new CustomUserDetails(userId, email, provider);
+		Authentication authentication = new UsernamePasswordAuthenticationToken(
+			userDetails,
+			null
+			, Collections.emptyList()
+		);
 
 		// when
 		String refreshToken = jwtProvider.createRefreshToken(authentication);
@@ -45,13 +60,13 @@ public class JwtProviderTest {
 		// then
 		assertNotNull(refreshToken);
 		assertTrue(jwtProvider.validateToken(refreshToken));
-		assertEquals(userId, jwtProvider.getSubject(refreshToken));
+		assertEquals(userId.toString(), jwtProvider.getSubject(refreshToken));
 	}
 
 	@Test
 	void invalidTokenReturnFalse() {
 		// given
-		String invalidToken = "RMSidwlsWkdkanfjgrpskcla123";
+		String invalidToken = "sadasdfasdf123";
 
 		// when
 		boolean result = jwtProvider.validateToken(invalidToken);
