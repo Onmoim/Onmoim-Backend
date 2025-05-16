@@ -46,8 +46,8 @@ public class CategoryController {
 		@ApiResponse(
 			responseCode = "500",
 			description = "서버 내부 오류")})
-	public ResponseEntity<ResponseHandler<List<CategoryResponseDto>>> findLocationByDong() {
-		List<CategoryResponseDto> response = categoryQueryService.getAllCategories();
+	public ResponseEntity<ResponseHandler<List<CategoryResponseDto>>> findAllCategories() {
+		List<CategoryResponseDto> response = categoryQueryService.findAllCategories();
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 

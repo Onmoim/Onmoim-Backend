@@ -24,7 +24,7 @@ public class CategoryQueryService {
 			.orElseThrow(() -> new CustomException(INVALID_CATEGORY));
 	}
 
-	public List<CategoryResponseDto> getAllCategories() {
+	public List<CategoryResponseDto> findAllCategories() {
 		return categoryRepository.findAll().stream()
 			.map(CategoryResponseDto::from)
 			.collect(Collectors.toList());
