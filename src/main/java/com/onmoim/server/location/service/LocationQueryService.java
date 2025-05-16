@@ -24,7 +24,7 @@ public class LocationQueryService {
 	}
 
 	public List<LocationResponseDto> findByDong(String dong) {
-		return locationRepository.findByDongContainingAndVillageIsNull(dong).stream()
+		return locationRepository.findByDongStartingWithAndVillageIsNull(dong).stream()
 			.map(LocationResponseDto::from)
 			.collect(Collectors.toList());
 	}

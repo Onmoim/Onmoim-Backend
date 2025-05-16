@@ -8,6 +8,6 @@ import com.onmoim.server.location.entity.Location;
 
 public interface LocationRepository extends JpaRepository<Location, Long> {
 
-	List<Location> findByDongContainingAndVillageIsNull(String dong);
+	List<Location> findByDongStartingWithAndVillageIsNull(String dong);
 
 }
