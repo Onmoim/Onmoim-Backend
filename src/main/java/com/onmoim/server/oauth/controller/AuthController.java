@@ -41,17 +41,20 @@ public class AuthController {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
-			responseCode = "200",
-			description = "로그인 성공 또는 미가입 상태",
-			content = @Content(
-				mediaType = "application/json",
-				schema = @Schema(implementation = ResponseHandler.class)
-			)),
+				responseCode = "200",
+				description = "로그인 성공 또는 미가입 상태",
+				content = @Content(
+					mediaType = "application/json",
+					schema = @Schema(implementation = ResponseHandler.class)
+				)
+			),
 		@ApiResponse(
-			responseCode = "500",
-			description = "서버 내부 오류")})
+				responseCode = "500",
+				description = "서버 내부 오류"
+			)
+	})
 	public ResponseEntity<ResponseHandler<OAuthResponseDto>> login(
-		@Valid @RequestBody OAuthRequestDto oAuthRequestDto) {
+				@Valid @RequestBody OAuthRequestDto oAuthRequestDto) {
 		OAuthResponseDto response = oAuthService.login(oAuthRequestDto.getProvider(), oAuthRequestDto.getToken());
 
 		String status = response.getStatus();
@@ -72,15 +75,18 @@ public class AuthController {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
-			responseCode = "200",
-			description = "회원가입 성공",
-			content = @Content(
-				mediaType = "application/json",
-				schema = @Schema(implementation = ResponseHandler.class)
-			)),
+				responseCode = "200",
+				description = "회원가입 성공",
+				content = @Content(
+					mediaType = "application/json",
+					schema = @Schema(implementation = ResponseHandler.class)
+				)
+			),
 		@ApiResponse(
-			responseCode = "500",
-			description = "서버 오류 - 이미 가입된 유저거나 DB 오류 발생")})
+				responseCode = "500",
+				description = "서버 오류 - 이미 가입된 유저거나 DB 오류 발생"
+			)
+	})
 	public ResponseEntity<ResponseHandler<String>> signup(@RequestBody SignupRequest signupRequest) {
 		userService.signup(signupRequest);
 		return ResponseEntity.ok(ResponseHandler.response("회원가입이 정상적으로 완료되었습니다."));
@@ -94,17 +100,19 @@ public class AuthController {
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
-			responseCode = "200",
-			description = "Access Token 재발급 성공",
-			content = @Content(
-				mediaType = "application/json",
-				schema = @Schema(implementation = ResponseHandler.class)
-			))})
-	// TODO: responseHandler 수정해서 401 띄우기
-	// @ApiResponse(
-	// 	responseCode = "500",
-	// 	description = "서버 오류 - 이미 가입된 유저거나 DB 오류 발생"
-	// )
+				responseCode = "200",
+				description = "Access Token 재발급 성공",
+				content = @Content(
+					mediaType = "application/json",
+					schema = @Schema(implementation = ResponseHandler.class)
+				)
+			)
+		// TODO: responseHandler 수정해서 401 띄우기
+		// @ApiResponse(
+		// 	responseCode = "500",
+		// 	description = "서버 오류 - 이미 가입된 유저거나 DB 오류 발생"
+		// )
+	})
 	public ResponseEntity<ResponseHandler<OAuthResponseDto>> reissueAccessToken(
 		@RequestBody ReissueTokenRequestDto reissueTokenRequestDto) {
 		OAuthResponseDto response = oAuthService.reissueAccessToken(reissueTokenRequestDto.getRefreshToken());
