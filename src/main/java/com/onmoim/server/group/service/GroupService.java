@@ -12,7 +12,6 @@ import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
-import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.service.LocationQueryService;
 import com.onmoim.server.security.CustomUserDetails;
@@ -31,7 +30,6 @@ public class GroupService {
 	private final UserQueryService userQueryService;
 	private final LocationQueryService locationQueryService;
 	private final CategoryQueryService categoryQueryService;
-	private final GroupRepository groupRepository;
 
 	@Transactional
 	public Long createGroup(CreateGroupRequestDto request) {

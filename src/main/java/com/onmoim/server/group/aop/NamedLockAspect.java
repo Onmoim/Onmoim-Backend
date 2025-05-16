@@ -3,7 +3,9 @@ package com.onmoim.server.group.aop;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.group.repository.GroupRepository;
 
@@ -14,9 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 @Aspect
 @Component
 @RequiredArgsConstructor
+@Order(1)
 public class NamedLockAspect {
 	private final GroupRepository groupRepository;
 
+	@Transactional
 	@Around("@annotation(com.onmoim.server.group.aop.NamedLock)")
 	public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
 		Long groupId = (Long) joinPoint.getArgs()[0];

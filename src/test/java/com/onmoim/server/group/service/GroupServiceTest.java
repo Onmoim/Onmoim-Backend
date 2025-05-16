@@ -16,7 +16,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.group.entity.GroupUser;
+import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupRepository;
+import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.repository.UserRepository;
@@ -29,6 +32,8 @@ class GroupServiceTest {
 	private UserRepository userRepository;
 	@Autowired
 	private GroupRepository groupRepository;
+	@Autowired
+	private GroupUserRepository groupUserRepository;
 	@Test
 	@DisplayName("동시에 가입 요청 테스트")
 	void joinGroup_concurrencyTest() throws InterruptedException {
@@ -38,6 +43,9 @@ class GroupServiceTest {
 			.capacity(10)
 			.participantCount(1)
 			.build());
+		User owner = User.builder().name("모임장").build();
+		userRepository.save(owner);
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
 
 		List<User> userList = new ArrayList<>();
 		for (int i = 0; i < 20; i++) {
@@ -76,6 +84,9 @@ class GroupServiceTest {
 		// then
 		Group updatedGroup = groupRepository.findById(group.getId()).orElseThrow();
 		assertThat(updatedGroup.getParticipantCount()).isLessThanOrEqualTo(updatedGroup.getCapacity());
-		System.out.println("최종 모임 인원 = " + updatedGroup.getParticipantCount());
+		Long count = groupUserRepository.countGroupMember(group.getId(), List.of(Status.MEMBER, Status.OWNER));
+		System.out.println("최종 모임 인원 by GroupUser = " + count);
+		assertThat(count).isEqualTo(updatedGroup.getParticipantCount());
+		System.out.println("최종 모임 인원 by Group = " + updatedGroup.getParticipantCount());
 	}
 }
