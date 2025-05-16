@@ -9,5 +9,4 @@ import java.util.List;
 
 public interface PostImageRepository extends JpaRepository<PostImage, PostImageId> {
     List<PostImage> findAllByPost(GroupPost post);
-    void deleteAllByPost(GroupPost post);
 }
