@@ -35,7 +35,7 @@ public class LocationServiceTest {
 		Location location2 = Location.create("code", "경상북도", "경산시", "신교동", null);
 		List<Location> locations = List.of(location1, location2);
 
-		when(locationRepository.findByDongContainingAndVillageIsNull(dong)).thenReturn(locations);
+		when(locationRepository.findByDongStartingWithAndVillageIsNull(dong)).thenReturn(locations);
 
 		// when
 		List<LocationResponseDto> result = locationQueryService.findByDong(dong);
@@ -45,6 +45,6 @@ public class LocationServiceTest {
 		assertThat(result.get(0).getDong()).isEqualTo("신교동");
 		assertThat(result.get(1).getDistrict()).isEqualTo("경산시");
 
-		verify(locationRepository).findByDongContainingAndVillageIsNull(dong);
+		verify(locationRepository).findByDongStartingWithAndVillageIsNull(dong);
 	}
 }
