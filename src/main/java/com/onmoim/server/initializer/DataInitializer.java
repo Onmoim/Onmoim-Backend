@@ -108,7 +108,9 @@ public class DataInitializer implements CommandLineRunner {
 
 				String[] tokens = line.split(",", -1);
 
-				if (tokens.length < 5) continue;
+				if (tokens.length < 5) {
+					continue;
+				}
 
 				String code = tokens[0].trim();
 				String city = tokens[1].trim().isEmpty() ? null : tokens[1].trim();
