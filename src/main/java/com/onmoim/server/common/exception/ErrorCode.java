@@ -21,6 +21,7 @@ public enum ErrorCode {
 	EMPTY_FILE(BAD_REQUEST, "파일이 비어 있습니다."),
 	INVALID_FILE_TYPE(BAD_REQUEST, "지원하지 않는 파일 형식입니다."),
 	FILE_SIZE_EXCEEDED(BAD_REQUEST, "파일 크기가 허용된 최대 크기를 초과했습니다."),
+	IMAGE_COUNT_EXCEEDED(BAD_REQUEST, "이미지는 최대 5개까지만 업로드 가능합니다."),
 	INVALID_USER(BAD_REQUEST,	"잘못된 사용자입니다."),
 	INVALID_LOCATION(BAD_REQUEST, "잘못된 위치 정보입니다."),
 	INVALID_CATEGORY(BAD_REQUEST, "잘못된 카테고리입니다."),

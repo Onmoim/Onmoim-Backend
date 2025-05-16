@@ -1,5 +1,7 @@
 package com.onmoim.server.post.service;
 
+import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.image.entity.Image;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
@@ -14,10 +16,12 @@ import com.onmoim.server.user.service.UserQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,21 +34,43 @@ public class GroupPostCommandService {
 	private final ImagePostService imagePostService;
 	private final FileStorageService fileStorageService;
 
+	// 게시글당 최대 이미지 개수
+	private static final int MAX_IMAGES_PER_POST = 5;
+
 	/**
-	 * 이미지 업로드 처리
+	 * 이미지 개수 유효성 검증
+	 */
+	private List<MultipartFile> validateAndFilterImages(List<MultipartFile> files) {
+
+		if (CollectionUtils.isEmpty(files)) {
+			return new ArrayList<>();
+		}
+
+		List<MultipartFile> validFiles = files.stream()
+			.filter(file -> !file.isEmpty())
+			.toList();
+
+		// 최대 이미지 개수 검증
+		if (validFiles.size() > MAX_IMAGES_PER_POST) {
+			throw new CustomException(ErrorCode.IMAGE_COUNT_EXCEEDED);
+		}
+
+		return validFiles;
+	}
+
+	/**
+	 * 이미지 업로드 처리 (최대 5개까지)
 	 */
 	private List<PostImage> processImageUploads(GroupPost post, List<MultipartFile> files) {
-		if (files == null || files.isEmpty()) {
+		// 이미지 유효성 검증 및 필터링
+		List<MultipartFile> validFiles = validateAndFilterImages(files);
+		if (validFiles.isEmpty()) {
 			return new ArrayList<>();
 		}
 
 		List<PostImage> postImages = new ArrayList<>();
 
-		for (MultipartFile file : files) {
-			if (file.isEmpty()) {
-				continue;
-			}
-
+		for (MultipartFile file : validFiles) {
 			// S3에 파일 업로드
 			FileUploadResponseDto uploadResult = fileStorageService.uploadFile(file, "posts");
 
