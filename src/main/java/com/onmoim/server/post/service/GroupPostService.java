@@ -26,7 +26,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -230,6 +229,7 @@ public class GroupPostService {
 		// TODO: 추후 스케줄링 및 배치 처리를 통해 실제 데이터와 S3 이미지 파일 삭제 구현
 		// 1. 일정 기간(예: 30일) 이후 하드 삭제 처리
 		// 2. 특정 시간대에 배치 작업으로 삭제 데이터 정리
-		// 3. 삭제 데이터 백업 고려
+		//
+		//
 	}
 	}
