@@ -27,6 +27,6 @@ public class CategoryQueryService {
 	public List<CategoryResponseDto> findAllCategories() {
 		return categoryRepository.findAll().stream()
 			.map(CategoryResponseDto::from)
-			.collect(Collectors.toList());
+			.toList();
 	}
 }
