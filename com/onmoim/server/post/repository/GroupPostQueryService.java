@@ -23,11 +23,11 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class GroupPostQueryService {
-    
+
     private final GroupPostRepository groupPostRepository;
     private final GroupQueryService groupQueryService;
     private final GroupUserQueryService groupUserQueryService;
-    
+
     /**
      * 게시글 조회 - 존재하지 않으면 예외 발생
      */
@@ -35,7 +35,7 @@ public class GroupPostQueryService {
         return groupPostRepository.findById(postId)
             .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
     }
-    
+
     /**
      * 게시글이 해당 그룹에 속하는지 확인
      */
@@ -44,7 +44,7 @@ public class GroupPostQueryService {
             throw new CustomException(ErrorCode.POST_NOT_FOUND);
         }
     }
-    
+
     /**
      * 사용자가 게시글 작성자인지 확인
      */
@@ -53,26 +53,19 @@ public class GroupPostQueryService {
             throw new CustomException(ErrorCode.DENIED_UNAUTHORIZED_USER);
         }
     }
-    
+
     /**
      * 사용자가 그룹의 멤버인지 확인
      * MEMBER 또는 OWNER만 게시글 관련 작업 가능
      */
-    public void validateGroupMembership(Long groupId, Long userId) {
-        Optional<GroupUser> groupUserOpt = groupUserQueryService.findById(groupId, userId);
-        
-        if (groupUserOpt.isEmpty()) {
-            throw new CustomException(ErrorCode.NOT_GROUP_MEMBER);
-        }
-        
-        GroupUser groupUser = groupUserOpt.get();
-        Status status = groupUser.getStatus();
-        
-        if (status != Status.MEMBER && status != Status.OWNER) {
-            throw new CustomException(ErrorCode.NOT_GROUP_MEMBER);
-        }
-    }
-    
+
+	public void validateGroupMembership(Long groupId, Long userId) {
+		groupUserQueryService.findById(groupId, userId)
+			.filter(gu -> gu.getStatus() == Status.MEMBER || gu.getStatus() == Status.OWNER)
+			.orElseThrow(() -> new CustomException(ErrorCode.NOT_GROUP_MEMBER));
+	}
+
+
     /**
      * 게시글 저장
      */
@@ -80,14 +73,14 @@ public class GroupPostQueryService {
     public GroupPost save(GroupPost post) {
         return groupPostRepository.save(post);
     }
-    
+
     /**
      * 게시글 목록 조회 - 내부용
      */
     public CursorPageResponseDto<GroupPost> findPosts(Group group, GroupPostType type, Long cursorId, int size) {
         return groupPostRepository.findPosts(group, type, cursorId, size);
     }
-    
+
     /**
      * 단일 게시글 상세 조회
      */
@@ -98,7 +91,7 @@ public class GroupPostQueryService {
 
         return GroupPostResponseDto.fromEntity(post);
     }
-    
+
     /**
      * 커서 기반 페이징을 이용한 게시글 목록 조회
      */
@@ -119,4 +112,4 @@ public class GroupPostQueryService {
             .nextCursorId(postsPage.getNextCursorId())
             .build();
     }
-} 
+}
