@@ -35,7 +35,7 @@ import java.util.List;
 @Entity
 @Getter
 @Table(
-    name = "post", 
+    name = "post",
     indexes = {
         @Index(name = "idx_post_group_type_isdeleted", columnList = "group_id,type,isDeleted"),
         @Index(name = "idx_post_author_isdeleted", columnList = "author_id,isDeleted")
@@ -103,6 +103,5 @@ public class GroupPost extends BaseEntity {
         super.softDelete();
     }
 
-    // TODO: 조회수 증가 메서드 추가 (향후 구현)
     // TODO: 좋아요 추가/취소 메서드 추가 (향후 구현)
 }
