@@ -41,6 +41,8 @@ public class QGroupPost extends EntityPathBase<GroupPost> {
     //inherited
     public final DateTimePath<java.time.LocalDateTime> modifiedDate = _super.modifiedDate;
 
+    public final ListPath<PostImage, QPostImage> postImages = this.<PostImage, QPostImage>createList("postImages", PostImage.class, QPostImage.class, PathInits.DIRECT2);
+
     public final StringPath title = createString("title");
 
     public final EnumPath<GroupPostType> type = createEnum("type", GroupPostType.class);

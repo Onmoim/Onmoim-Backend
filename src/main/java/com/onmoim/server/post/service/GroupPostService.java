@@ -14,7 +14,6 @@ import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.entity.PostImage;
-import com.onmoim.server.post.repository.GroupPostQueryRepository;
 import com.onmoim.server.post.repository.GroupPostRepository;
 import com.onmoim.server.post.repository.PostImageRepository;
 import com.onmoim.server.group.repository.GroupRepository;
@@ -36,7 +35,6 @@ public class GroupPostService {
 
 	private final GroupRepository groupRepository;
 	private final GroupPostRepository groupPostRepository;
-	private final GroupPostQueryRepository groupPostQueryRepository;
 	private final UserRepository userRepository;
 	private final ImageRepository imageRepository;
 	private final PostImageRepository postImageRepository;
@@ -165,7 +163,7 @@ public class GroupPostService {
 	public CursorPageResponseDto<GroupPostResponseDto> getPostsWithCursor(Long groupId, GroupPostType type, CursorPageRequestDto request) {
 		Group group = findGroupById(groupId);
 
-		CursorPageResponseDto<GroupPost> postsPage = groupPostQueryRepository.findPostsWithCursor(
+		CursorPageResponseDto<GroupPost> postsPage = groupPostRepository.findPostsWithCursor(
 			group, type, request.getCursorId(), request.getSize());
 
 		List<GroupPostResponseDto> content = postsPage.getContent()
@@ -181,7 +179,7 @@ public class GroupPostService {
 	}
 
 	/**
-	 * 모임 게시글 수정
+	 * 모임 게시글 수정 - 파일 첨부 가능
 	 */
 	@Transactional
 	public GroupPostResponseDto updatePost(Long groupId, Long postId, Long userId, GroupPostRequestDto request, List<MultipartFile> files) {

@@ -7,31 +7,25 @@ import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.entity.QGroupPost;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import org.springframework.stereotype.Repository;
+import lombok.RequiredArgsConstructor;
 
-import jakarta.persistence.EntityManager;
 import java.util.List;
 
 /**
- * 모임 게시글 QueryDSL 레포지토리
+ * 모임 게시글을 위한 커스텀 레포지토리 구현체 (Querydsl 구현)
  */
-@Repository
-public class GroupPostQueryRepository {
+@RequiredArgsConstructor
+public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom {
 
 	private final JPAQueryFactory queryFactory;
-	private final QGroupPost qGroupPost = QGroupPost.groupPost;
 
-	public GroupPostQueryRepository(EntityManager entityManager) {
-		this.queryFactory = new JPAQueryFactory(entityManager);
-	}
-
-	/**
-	 * 커서 기반 페이징으로 게시글 목록 조회
-	 */
+	@Override
 	public CursorPageResponseDto<GroupPost> findPostsWithCursor(Group group, GroupPostType type, Long cursorId, int size) {
-		// 기본 조건: 지정된 그룹의 게시글
+		QGroupPost qGroupPost = QGroupPost.groupPost;
+
+		// 기본 조건: 지정된 그룹의 게시글 (ID로 비교)
 		BooleanBuilder builder = new BooleanBuilder();
-		builder.and(qGroupPost.group.eq(group));
+		builder.and(qGroupPost.group.id.eq(group.getId()));  // 그룹 객체 대신 ID로 비교
 
 		// 타입 필터링
 		if (type != null && type != GroupPostType.ALL) {
