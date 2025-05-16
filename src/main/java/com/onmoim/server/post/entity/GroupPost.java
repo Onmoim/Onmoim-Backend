@@ -1,7 +1,6 @@
 package com.onmoim.server.post.entity;
 
 import com.onmoim.server.common.BaseEntity;
-import com.onmoim.server.common.image.entity.Image;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.user.entity.User;
 import jakarta.persistence.Column;
@@ -28,7 +27,7 @@ import java.util.List;
 /**
  * 모임 게시글 엔티티
  *
- * TODO: 조회수, 좋아요 수 필드 추가 (향후 구현)
+ * TODO: 좋아요 수 필드 추가 (향후 구현)
  * TODO: 댓글 관련 연관관계 추가 (향후 구현)
  * TODO: 게시글 카테고리 관계 추가 (향후 구현)
  */
@@ -50,21 +49,21 @@ public class GroupPost extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id", nullable = false)
+    @JoinColumn(name = "group_id")
     private Group group;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id", nullable = false)
+    @JoinColumn(name = "author_id")
     private User author;
 
-    @Column(name = "title", nullable = false, length = 255)
+    @Column(name = "title", length = 255)
     private String title;
 
-    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
+    @Column(name = "type")
     private GroupPostType type;
 
     @OneToMany(mappedBy = "post", orphanRemoval = true)
