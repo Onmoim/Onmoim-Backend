@@ -55,7 +55,6 @@ public class GroupPostCommandService {
 
 			// 이미지와 게시글 이미지 함께 저장
 			PostImage postImage = imagePostService.saveImageAndPostImage(image, post);
-			post.addImage(postImage);
 			postImages.add(postImage);
 		}
 

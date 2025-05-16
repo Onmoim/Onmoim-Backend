@@ -33,7 +33,7 @@ public class ImagePostService {
 	public PostImage saveImageAndPostImage(Image image, GroupPost post) {
 		// 이미지 저장
 		imageRepository.save(image);
-		
+
 		// 게시글 이미지 생성 및 저장
 		PostImage postImage = PostImage.builder()
 			.post(post)
@@ -41,6 +41,10 @@ public class ImagePostService {
 			.build();
 
 		postImageRepository.save(postImage);
+
+		// 메모리 상의 객체 관계 설정
+		post.addImage(postImage);
+
 		return postImage;
 	}
 }
