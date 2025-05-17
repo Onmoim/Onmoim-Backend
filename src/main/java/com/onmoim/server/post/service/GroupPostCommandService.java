@@ -114,11 +114,12 @@ public class GroupPostCommandService {
                 .build();
         groupPostQueryService.save(post);
 
+        List<PostImage> postImages = new ArrayList<>();
         if (files != null && !files.isEmpty()) {
-            processImageUploads(post, files);
+            postImages = processImageUploads(post, files);
         }
 
-        return GroupPostResponseDto.fromEntity(post);
+        return GroupPostResponseDto.fromEntityWithImages(post, postImages);
     }
 
     /**
@@ -144,12 +145,13 @@ public class GroupPostCommandService {
                 request.getType()
         );
 
+        List<PostImage> postImages = imagePostService.findAllByPost(post);
         if (!CollectionUtils.isEmpty(files)) {
             imagePostService.softDeleteAllByPostId(post.getId());
-            processImageUploads(post, files);
+            postImages = processImageUploads(post, files);
         }
 
-        return GroupPostResponseDto.fromEntity(post);
+        return GroupPostResponseDto.fromEntityWithImages(post, postImages);
     }
 
     /**

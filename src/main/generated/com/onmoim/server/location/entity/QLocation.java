@@ -36,6 +36,9 @@ public class QLocation extends EntityPathBase<Location> {
     public final NumberPath<Long> id = createNumber("id", Long.class);
 
     //inherited
+    public final BooleanPath isDeleted = _super.isDeleted;
+
+    //inherited
     public final DateTimePath<java.time.LocalDateTime> modifiedDate = _super.modifiedDate;
 
     public QLocation(String variable) {

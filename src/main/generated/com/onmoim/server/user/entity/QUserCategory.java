@@ -35,6 +35,9 @@ public class QUserCategory extends EntityPathBase<UserCategory> {
     public final QUserCategoryId id;
 
     //inherited
+    public final BooleanPath isDeleted = _super.isDeleted;
+
+    //inherited
     public final DateTimePath<java.time.LocalDateTime> modifiedDate = _super.modifiedDate;
 
     public final QUser user;

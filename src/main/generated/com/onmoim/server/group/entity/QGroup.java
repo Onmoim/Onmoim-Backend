@@ -40,6 +40,9 @@ public class QGroup extends EntityPathBase<Group> {
 
     public final StringPath imgUrl = createString("imgUrl");
 
+    //inherited
+    public final BooleanPath isDeleted = _super.isDeleted;
+
     public final com.onmoim.server.location.entity.QLocation location;
 
     //inherited

@@ -42,6 +42,9 @@ public class QUser extends EntityPathBase<User> {
     public final StringPath introduction = createString("introduction");
 
     //inherited
+    public final BooleanPath isDeleted = _super.isDeleted;
+
+    //inherited
     public final DateTimePath<java.time.LocalDateTime> modifiedDate = _super.modifiedDate;
 
     public final StringPath name = createString("name");

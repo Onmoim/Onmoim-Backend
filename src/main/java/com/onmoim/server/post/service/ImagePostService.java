@@ -50,11 +50,8 @@ public class ImagePostService {
                     .build();
 
             postImages.add(postImage);
-            post.addImage(postImage);
         }
 
-        postImageRepository.saveAll(postImages);
-
-        return postImages;
+        return postImageRepository.saveAll(postImages);
     }
 }

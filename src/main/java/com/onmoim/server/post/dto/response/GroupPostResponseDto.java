@@ -2,12 +2,10 @@ package com.onmoim.server.post.dto.response;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.entity.PostImage;
@@ -45,13 +43,16 @@ public class GroupPostResponseDto {
                 .type(post.getType())
                 .createdDate(post.getCreatedDate())
                 .modifiedDate(post.getModifiedDate())
-                .images(
-                        post.getPostImages().stream()
-                                .filter(pi -> !pi.isDeleted())
-                                .map(PostImageDto::fromEntity)
-                                .toList()
-                )
                 .build();
+    }
+
+    public static GroupPostResponseDto fromEntityWithImages(GroupPost post, List<PostImage> postImages) {
+        GroupPostResponseDto dto = fromEntity(post);
+        dto.images = postImages.stream()
+                .filter(pi -> !pi.isDeleted())
+                .map(PostImageDto::fromEntity)
+                .toList();
+        return dto;
     }
 
     @Getter
