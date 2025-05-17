@@ -81,10 +81,6 @@ public class GroupPost extends BaseEntity {
         this.type = type;
     }
 
-    /**
-     * 게시글 소프트 삭제 처리
-     * BaseEntity의 소프트 삭제 메서드를 호출
-     */
     public void softDelete() {
         super.softDelete();
     }

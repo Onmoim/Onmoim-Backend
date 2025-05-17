@@ -3,9 +3,7 @@ package com.onmoim.server.post.repository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import com.onmoim.server.group.entity.Group;
@@ -20,8 +18,7 @@ import com.onmoim.server.post.entity.QGroupPost;
  * 모임 게시글을 위한 커스텀 레포지토리 구현체 (Querydsl 구현)
  */
 @RequiredArgsConstructor
-public class GroupPostRepositoryCustomImpl
-        implements GroupPostRepositoryCustom {
+public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
     private final PostImageRepository postImageRepository;
@@ -33,66 +30,75 @@ public class GroupPostRepositoryCustomImpl
             Long cursorId,
             int size
     ) {
-        QGroupPost qGroupPost = QGroupPost.groupPost;
 
-        BooleanBuilder builder = new BooleanBuilder();
-        builder.and(qGroupPost.group.id.eq(group.getId()));
-        builder.and(qGroupPost.isDeleted.eq(false));
+        BooleanBuilder predicate = buildPredicate(group, type, cursorId);
 
-        if (type != null && type != GroupPostType.ALL) {
-            builder.and(qGroupPost.type.eq(type));
-        }
+        Deque<GroupPost> pagedPosts = fetchPagedPosts(predicate, size);
 
-        if (cursorId != null) {
-            builder.and(qGroupPost.id.lt(cursorId));
-        }
+        boolean hasNext = pagedPosts.size() > size;
+        Long nextCursorId = extractNextCursor(pagedPosts, size, hasNext);
 
-        // 1. 게시글 목록만 먼저 조회 (페이징 처리)
-        List<GroupPost> posts = queryFactory
-                .selectFrom(qGroupPost)
-                .where(builder)
-                .orderBy(qGroupPost.id.desc())
-                .limit(size + 1)
-                .fetch();
+        List<GroupPostResponseDto> dtos = mapToDtoWithImages(pagedPosts);
 
-        boolean hasNext = posts.size() > size;
-        if (hasNext) {
-            posts.remove(posts.size() - 1);
-        }
-
-        Long nextCursorId = hasNext
-                ? posts.get(posts.size() - 1).getId()
-                : null;
-
-        // 2. 조회된 게시글이 있으면 이미지 일괄 조회
-        List<GroupPostResponseDto> postDtos = Collections.emptyList();
-        if (!posts.isEmpty()) {
-            // 게시글 ID 목록 추출
-            List<Long> postIds = posts.stream()
-                    .map(GroupPost::getId)
-                    .toList();
-
-            // 3. 이미지를 게시글 ID 기준으로 일괄 조회
-            Map<Long, List<PostImage>> postImagesMap = postImageRepository
-                    .findByPostIdInAndIsDeletedFalse(postIds)
-                    .stream()
-                    .collect(Collectors.groupingBy(pi -> pi.getPost().getId()));
-
-            // 4. 메모리에서 게시글-이미지 매핑하여 DTO 변환
-            postDtos = posts.stream()
-                    .map(post -> GroupPostResponseDto.fromEntityWithImages(
-                            post,
-                            postImagesMap.getOrDefault(post.getId(), Collections.emptyList())
-                    ))
-                    .toList();
-        }
-
-        // 5. 페이징 정보와 함께 결과 반환
-        return CursorPageResponseDto
-                .<GroupPostResponseDto>builder()
-                .content(postDtos)
+        return CursorPageResponseDto.<GroupPostResponseDto>builder()
+                .content(dtos)
                 .hasNext(hasNext)
                 .nextCursorId(nextCursorId)
                 .build();
+    }
+
+    private BooleanBuilder buildPredicate(Group group, GroupPostType type, Long cursorId) {
+        QGroupPost q = QGroupPost.groupPost;
+        BooleanBuilder b = new BooleanBuilder()
+                .and(q.group.id.eq(group.getId()))
+                .and(q.isDeleted.eq(false));
+
+        if (type != null && type != GroupPostType.ALL) {
+            b.and(q.type.eq(type));
+        }
+        if (cursorId != null) {
+            b.and(q.id.lt(cursorId));
+        }
+        return b;
+    }
+
+    private Deque<GroupPost> fetchPagedPosts(BooleanBuilder predicate, int size) {
+        QGroupPost q = QGroupPost.groupPost;
+        List<GroupPost> fetched = queryFactory
+                .selectFrom(q)
+                .where(predicate)
+                .orderBy(q.id.desc())
+                .limit((long) size + 1)
+                .fetch();
+        return new LinkedList<>(fetched);
+    }
+
+    private Long extractNextCursor(Deque<GroupPost> posts, int size, boolean hasNext) {
+        if (!hasNext) return null;
+        posts.removeLast();
+        return posts.getLast().getId();
+    }
+
+    private List<GroupPostResponseDto> mapToDtoWithImages(Collection<GroupPost> posts) {
+        if (posts.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 게시글 ID만 뽑아서 이미지 조회
+        List<Long> ids = posts.stream()
+                .map(GroupPost::getId)
+                .toList();
+
+        Map<Long, List<PostImage>> imagesByPostId = postImageRepository
+                .findByPostIdInAndIsDeletedFalse(ids)
+                .stream()
+                .collect(Collectors.groupingBy(pi -> pi.getPost().getId()));
+
+        return posts.stream()
+                .map(post -> GroupPostResponseDto.fromEntityWithImages(
+                        post,
+                        imagesByPostId.getOrDefault(post.getId(), Collections.emptyList())
+                ))
+                .toList();
     }
 }
