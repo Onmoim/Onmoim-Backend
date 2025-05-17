@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -19,32 +20,36 @@ public class ImagePostService {
 	private final PostImageRepository postImageRepository;
 	private final ImageRepository imageRepository;
 
-	/**
-	 * 게시글에 속한 모든 이미지 조회
-	 */
 	public List<PostImage> findAllByPost(GroupPost post) {
 		return postImageRepository.findAllByPost(post);
 	}
 
-	/**
-	 * 이미지와 게시글 이미지 함께 저장
-	 */
 	@Transactional
-	public PostImage saveImageAndPostImage(Image image, GroupPost post) {
-		// 이미지 저장
-		imageRepository.save(image);
+	public void softDeleteAllByPostId(Long postId) {
+		postImageRepository.softDeleteAllByPostId(postId);
+	}
 
-		// 게시글 이미지 생성 및 저장
-		PostImage postImage = PostImage.builder()
-			.post(post)
-			.image(image)
-			.build();
+	@Transactional
+	public List<PostImage> saveImages(List<Image> images, GroupPost post) {
+		if (images.isEmpty()) {
+			return new ArrayList<>();
+		}
 
-		postImageRepository.save(postImage);
+		imageRepository.saveAll(images);
 
-		// 메모리 상의 객체 관계 설정
-		post.addImage(postImage);
+		List<PostImage> postImages = new ArrayList<>();
+		for (Image image : images) {
+			PostImage postImage = PostImage.builder()
+				.post(post)
+				.image(image)
+				.build();
 
-		return postImage;
+			postImages.add(postImage);
+			post.addImage(postImage);
+		}
+
+		postImageRepository.saveAll(postImages);
+
+		return postImages;
 	}
 }

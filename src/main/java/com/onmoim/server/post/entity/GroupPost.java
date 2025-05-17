@@ -78,18 +78,12 @@ public class GroupPost extends BaseEntity {
         this.type = type;
     }
 
-    /**
-     * 게시글 정보 업데이트
-     */
     public void update(String title, String content, GroupPostType type) {
         this.title = title;
         this.content = content;
         this.type = type;
     }
 
-    /**
-     * 이미지 연결 추가
-     */
     public void addImage(PostImage postImage) {
         this.postImages.add(postImage);
     }

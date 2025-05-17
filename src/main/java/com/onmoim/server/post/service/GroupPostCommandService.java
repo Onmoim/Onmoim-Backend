@@ -21,7 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +49,6 @@ public class GroupPostCommandService {
 			.filter(file -> !file.isEmpty())
 			.toList();
 
-		// 최대 이미지 개수 검증
 		if (validFiles.size() > MAX_IMAGES_PER_POST) {
 			throw new CustomException(ErrorCode.IMAGE_COUNT_EXCEEDED);
 		}
@@ -68,8 +66,8 @@ public class GroupPostCommandService {
 			return new ArrayList<>();
 		}
 
-		List<PostImage> postImages = new ArrayList<>();
-
+		// S3에 파일 업로드 후 Image 엔티티 생성
+		List<Image> images = new ArrayList<>();
 		for (MultipartFile file : validFiles) {
 			// S3에 파일 업로드
 			FileUploadResponseDto uploadResult = fileStorageService.uploadFile(file, "posts");
@@ -79,12 +77,11 @@ public class GroupPostCommandService {
 				.imageUrl(uploadResult.getFileUrl())
 				.build();
 
-			// 이미지와 게시글 이미지 함께 저장
-			PostImage postImage = imagePostService.saveImageAndPostImage(image, post);
-			postImages.add(postImage);
+			images.add(image);
 		}
 
-		return postImages;
+		// 이미지와 게시글 이미지 함께 일괄 저장
+		return imagePostService.saveImages(images, post);
 	}
 
 	/**
@@ -130,14 +127,9 @@ public class GroupPostCommandService {
 		post.update(request.getTitle(), request.getContent(), request.getType());
 
 		// 이미지 업데이트 처리 (파일이 있는 경우)
-		if (files != null && !files.isEmpty()) {
-			// 기존 파일 조회 (전체 이미지)
-			List<PostImage> existingImages = imagePostService.findAllByPost(post);
-
-			// 소프트 삭제 처리
-			for (PostImage postImage : existingImages) {
-				postImage.softDelete();
-			}
+		if (!CollectionUtils.isEmpty(files)) {
+			// 기존 이미지 일괄 소프트 삭제
+			imagePostService.softDeleteAllByPostId(post.getId());
 
 			// 새 파일 업로드 처리
 			processImageUploads(post, files);
@@ -161,11 +153,8 @@ public class GroupPostCommandService {
 		// 소프트 삭제 처리 - 게시글
 		post.softDelete();
 
-		// 게시글에 첨부된 이미지도 소프트 삭제 처리
-		List<PostImage> images = imagePostService.findAllByPost(post);
-		for (PostImage postImage : images) {
-			postImage.softDelete();
-		}
+		// 게시글에 첨부된 이미지도 일괄 소프트 삭제 처리
+		imagePostService.softDeleteAllByPostId(post.getId());
 
 		// TODO: 추후 스케줄링 및 배치 처리를 통해 실제 데이터와 S3 이미지 파일 삭제 구현
 		// 1. 일정 기간(예: 30일) 이후 하드 삭제 처리
