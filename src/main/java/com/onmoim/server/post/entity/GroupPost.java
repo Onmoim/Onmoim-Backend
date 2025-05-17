@@ -1,8 +1,8 @@
 package com.onmoim.server.post.entity;
 
-import com.onmoim.server.common.BaseEntity;
-import com.onmoim.server.group.entity.Group;
-import com.onmoim.server.user.entity.User;
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,13 +16,15 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.onmoim.server.common.BaseEntity;
+import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.user.entity.User;
 
 /**
  * 모임 게시글 엔티티
@@ -34,11 +36,17 @@ import java.util.List;
 @Entity
 @Getter
 @Table(
-    name = "post",
-    indexes = {
-        @Index(name = "idx_post_group_type_isdeleted", columnList = "group_id,type,isDeleted"),
-        @Index(name = "idx_post_author_isdeleted", columnList = "author_id,isDeleted")
-    }
+        name = "post",
+        indexes = {
+                @Index(
+                        name = "idx_post_group_type_isdeleted",
+                        columnList = "group_id,type,isDeleted"
+                ),
+                @Index(
+                        name = "idx_post_author_isdeleted",
+                        columnList = "author_id,isDeleted"
+                )
+        }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GroupPost extends BaseEntity {
@@ -70,7 +78,13 @@ public class GroupPost extends BaseEntity {
     private List<PostImage> postImages = new ArrayList<>();
 
     @Builder
-    public GroupPost(Group group, User author, String title, String content, GroupPostType type) {
+    public GroupPost(
+            Group group,
+            User author,
+            String title,
+            String content,
+            GroupPostType type
+    ) {
         this.group = group;
         this.author = author;
         this.title = title;
@@ -78,7 +92,11 @@ public class GroupPost extends BaseEntity {
         this.type = type;
     }
 
-    public void update(String title, String content, GroupPostType type) {
+    public void update(
+            String title,
+            String content,
+            GroupPostType type
+    ) {
         this.title = title;
         this.content = content;
         this.type = type;

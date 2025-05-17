@@ -1,15 +1,16 @@
 package com.onmoim.server.post.dto.response;
 
-import com.onmoim.server.post.entity.GroupPost;
-import com.onmoim.server.post.entity.GroupPostType;
-import com.onmoim.server.post.entity.PostImage;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.onmoim.server.post.entity.GroupPost;
+import com.onmoim.server.post.entity.GroupPostType;
+import com.onmoim.server.post.entity.PostImage;
 
 /**
  * 모임 게시글 응답 DTO
@@ -44,10 +45,12 @@ public class GroupPostResponseDto {
                 .type(post.getType())
                 .createdDate(post.getCreatedDate())
                 .modifiedDate(post.getModifiedDate())
-				.images(post.getPostImages().stream()
-				.filter(postImage -> !postImage.isDeleted())
-				.map(PostImageDto::fromEntity)
-				.toList())
+                .images(
+                        post.getPostImages().stream()
+                                .filter(pi -> !pi.isDeleted())
+                                .map(PostImageDto::fromEntity)
+                                .toList()
+                )
                 .build();
     }
 

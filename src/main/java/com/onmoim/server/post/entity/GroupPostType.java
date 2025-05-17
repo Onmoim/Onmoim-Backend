@@ -12,5 +12,6 @@ public enum GroupPostType {
     INTRODUCTION("가입인사"),
     REVIEW("모임 후기"),
     FREE("자유 게시판");
-	private final String description;
+
+    private final String description;
 }

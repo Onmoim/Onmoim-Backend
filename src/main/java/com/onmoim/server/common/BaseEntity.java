@@ -26,10 +26,10 @@ public class BaseEntity {
 	// 소프트 삭제 여부 (기본값: false)
 	@Column(nullable = false)
 	private boolean isDeleted = false;
-	
+
 	// 삭제 시점
 	private LocalDateTime deletedDate;
-	
+
 	/**
 	 * 소프트 삭제 처리
 	 */
@@ -37,7 +37,7 @@ public class BaseEntity {
 		this.isDeleted = true;
 		this.deletedDate = LocalDateTime.now();
 	}
-	
+
 	/**
 	 * 삭제 여부 확인
 	 */
