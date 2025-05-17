@@ -11,7 +11,6 @@ import com.onmoim.server.user.entity.User;
 
 /**
  * 모임 게시글 엔티티
- * <p>
  * TODO: 좋아요 수 필드 추가 (향후 구현)
  * TODO: 댓글 관련 연관관계 추가 (향후 구현)
  * TODO: 게시글 카테고리 관계 추가 (향후 구현)

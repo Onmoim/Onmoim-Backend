@@ -1,32 +1,25 @@
 package com.onmoim.server.post.service;
 
+import java.util.ArrayList;
 import java.util.List;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
-
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.image.entity.Image;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
 import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.group.service.GroupQueryService;
 import com.onmoim.server.post.dto.request.GroupPostRequestDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.PostImage;
-import com.onmoim.server.post.service.GroupPostQueryService;
-import com.onmoim.server.post.service.ImagePostService;
-import com.onmoim.server.group.service.GroupQueryService;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.service.UserQueryService;
-
-import org.springframework.util.CollectionUtils;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor

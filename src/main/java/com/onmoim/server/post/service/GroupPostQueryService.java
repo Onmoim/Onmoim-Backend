@@ -1,12 +1,8 @@
 package com.onmoim.server.post.service;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import lombok.RequiredArgsConstructor;
-
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.entity.Group;
@@ -77,18 +73,6 @@ public class GroupPostQueryService {
     }
 
     /**
-     * 게시글 목록 조회 - 내부용
-     */
-    public CursorPageResponseDto<GroupPost> findPosts(
-            Group group,
-            GroupPostType type,
-            Long cursorId,
-            int size
-    ) {
-        return groupPostRepository.findPosts(group, type, cursorId, size);
-    }
-
-    /**
      * 단일 게시글 상세 조회
      */
     public GroupPostResponseDto getPost(Long groupId, Long postId) {
@@ -100,7 +84,7 @@ public class GroupPostQueryService {
     }
 
     /**
-     * 커서 기반 페이징을 이용한 게시글 목록 조회
+     * 커서 기반 페이징을 이용한 게시글 목록 조회 (N+1 문제 해결)
      */
     public CursorPageResponseDto<GroupPostResponseDto> getPosts(
             Long groupId,
@@ -109,22 +93,12 @@ public class GroupPostQueryService {
     ) {
         Group group = groupQueryService.getById(groupId);
 
-        CursorPageResponseDto<GroupPost> postsPage = findPosts(
+        // 최적화된 메서드 사용 - 게시글과 이미지를 함께 조회
+        return groupPostRepository.findPostsWithImages(
                 group,
                 type,
                 request.getCursorId(),
                 request.getSize()
         );
-
-        List<GroupPostResponseDto> content = postsPage.getContent()
-                .stream()
-                .map(GroupPostResponseDto::fromEntity)
-                .toList();
-
-        return CursorPageResponseDto.<GroupPostResponseDto>builder()
-                .content(content)
-                .hasNext(postsPage.isHasNext())
-                .nextCursorId(postsPage.getNextCursorId())
-                .build();
     }
 }
