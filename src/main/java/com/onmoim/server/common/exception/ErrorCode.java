@@ -35,20 +35,17 @@ public enum ErrorCode {
 	GROUP_FORBIDDEN(BAD_REQUEST, "권한이 부족합니다."),
 	GROUP_OWNER_TRANSFER_REQUIRED(BAD_REQUEST, "모임장은 모임장을 넘기고 탈퇴할 수 있습니다."),
 
-	/* ------------------ 401 BAD_REQUEST : 권한 없음 ------------------ */
-	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다."),
-
-	/* ------------------ 409 CONFLICT : 권한 없음 ------------------ */
-	TOO_MANY_REQUESTS(CONFLICT, "잠시 후 다시 시도해 주세요");
-
 	/* ------------------ 400 BAD_REQUEST : 게시글 관련 오류 ------------------ */
 	POST_NOT_FOUND(BAD_REQUEST, "게시글을 찾을 수 없습니다."),
 
-	/* ------------------ 400 BAD_REQUEST : 인증 관련 오류 ------------------ */
+	/* ------------------ 400 BAD_REQUEST : 권한 관련 오류 ------------------ */
+	NOT_GROUP_MEMBER(FORBIDDEN, "모임 멤버만 접근 가능합니다."),
+
+	/* ------------------ 401 BAD_REQUEST : 권한 없음 ------------------ */
 	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다."),
 
-	/* ------------------ 400 BAD_REQUEST : 권한 관련 오류 ------------------ */
-	NOT_GROUP_MEMBER(FORBIDDEN, "모임 멤버만 접근 가능합니다.");
+	/* ------------------ 409 CONFLICT : 요청 충돌 ------------------ */
+	TOO_MANY_REQUESTS(CONFLICT, "잠시 후 다시 시도해 주세요");
 
 	private final HttpStatus httpStatus;
 	private final String detail;

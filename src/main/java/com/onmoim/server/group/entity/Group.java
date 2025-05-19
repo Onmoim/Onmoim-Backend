@@ -62,12 +62,4 @@ public class Group extends BaseEntity {
 			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
 		}
 	}
-
-	public void deleteGroup() {
-		this.delete();
-	}
-
-	public boolean isGroupAvailable() {
-		return this.isActive();
-	}
 }

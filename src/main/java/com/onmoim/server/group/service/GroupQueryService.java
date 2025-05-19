@@ -32,11 +32,11 @@ public class GroupQueryService {
 	public Group getById(Long groupId) {
 		System.out.println("getById");
 		return groupRepository.findById(groupId)
-			.filter(Group::isGroupAvailable)
+			.filter(Group::isActive)
 			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
 	}
 
 	public void deleteGroup(Group group) {
-		group.deleteGroup();
+		group.softDelete();
 	}
 }
