@@ -61,8 +61,8 @@ public class GroupPostController {
                     )
             ),
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @ApiResponse(responseCode = "403", description = "모임 멤버가 아님"),
-            @ApiResponse(responseCode = "404", description = "모임 또는 사용자를 찾을 수 없음")
+            @ApiResponse(responseCode = "400", description = "모임 멤버가 아님"),
+            @ApiResponse(responseCode = "400", description = "모임 또는 사용자를 찾을 수 없음")
     })
     @PostMapping(
             value = "/v1/groups/{groupId}/posts",
@@ -99,7 +99,7 @@ public class GroupPostController {
                             schema = @Schema(implementation = GroupPostResponseDto.class)
                     )
             ),
-            @ApiResponse(responseCode = "404", description = "게시글 또는 모임을 찾을 수 없음")
+            @ApiResponse(responseCode = "400", description = "게시글 또는 모임을 찾을 수 없음")
     })
     @GetMapping("/v1/groups/{groupId}/posts/{postId}")
     public ResponseEntity<GroupPostResponseDto> getPost(
@@ -128,7 +128,7 @@ public class GroupPostController {
                             schema = @Schema(implementation = CursorPageResponseDto.class)
                     )
             ),
-            @ApiResponse(responseCode = "404", description = "모임을 찾을 수 없음")
+            @ApiResponse(responseCode = "400", description = "모임을 찾을 수 없음")
     })
     @GetMapping("/v1/groups/{groupId}/posts")
     public ResponseEntity<CursorPageResponseDto<GroupPostResponseDto>> getPosts(
@@ -174,8 +174,8 @@ public class GroupPostController {
                     )
             ),
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @ApiResponse(responseCode = "403", description = "게시글 수정 권한 없음"),
-            @ApiResponse(responseCode = "404", description = "게시글 또는 모임을 찾을 수 없음")
+            @ApiResponse(responseCode = "400", description = "게시글 수정 권한 없음"),
+            @ApiResponse(responseCode = "400", description = "게시글 또는 모임을 찾을 수 없음")
     })
     @PutMapping(
             value = "/v1/groups/{groupId}/posts/{postId}",
@@ -213,8 +213,8 @@ public class GroupPostController {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "게시글 삭제 성공"),
-            @ApiResponse(responseCode = "403", description = "게시글 삭제 권한 없음"),
-            @ApiResponse(responseCode = "404", description = "게시글 또는 모임을 찾을 수 없음")
+            @ApiResponse(responseCode = "400", description = "게시글 삭제 권한 없음"),
+            @ApiResponse(responseCode = "400", description = "게시글 또는 모임을 찾을 수 없음")
     })
     @DeleteMapping("/v1/groups/{groupId}/posts/{postId}")
     public ResponseEntity<Void> deletePost(
