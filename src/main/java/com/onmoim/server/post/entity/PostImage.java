@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import com.onmoim.server.common.BaseEntity;
-import com.onmoim.server.common.image.entity.Image;
 
 /**
  * 모임 게시글 이미지 연결 엔티티

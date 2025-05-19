@@ -2,16 +2,13 @@ package com.onmoim.server.post.service;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import lombok.RequiredArgsConstructor;
-
-import com.onmoim.server.common.image.entity.Image;
-import com.onmoim.server.common.image.repository.ImageRepository;
 import com.onmoim.server.post.entity.GroupPost;
+import com.onmoim.server.post.entity.Image;
 import com.onmoim.server.post.entity.PostImage;
+import com.onmoim.server.post.repository.ImageRepository;
 import com.onmoim.server.post.repository.PostImageRepository;
 
 @Service
