@@ -31,7 +31,7 @@ class GroupQueryServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		location = locationRepository.save(Location.create(null, null, null));
+		location = locationRepository.save(Location.create(null, null, null, null, null));
 		category = categoryRepository.save(Category.builder().name("카테고리").build());
 	}
 
