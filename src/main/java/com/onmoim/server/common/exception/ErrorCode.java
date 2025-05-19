@@ -31,9 +31,14 @@ public enum ErrorCode {
 	GROUP_ALREADY_JOINED(BAD_REQUEST, "이미 모임에 가입된 회원입니다."),
 	GROUP_BANNED_MEMBER(BAD_REQUEST, "모임에서 차단된 회원입니다."),
 	GROUP_CAPACITY_EXCEEDED(BAD_REQUEST, "정원이 가득 찼습니다."),
+	GROUP_FORBIDDEN(BAD_REQUEST, "권한이 부족합니다."),
+	GROUP_OWNER_TRANSFER_REQUIRED(BAD_REQUEST, "모임장은 모임장을 넘기고 탈퇴할 수 있습니다."),
 
 	/* ------------------ 401 BAD_REQUEST : 권한 없음 ------------------ */
-	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다.");
+	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다."),
+
+	/* ------------------ 409 CONFLICT : 권한 없음 ------------------ */
+	TOO_MANY_REQUESTS(CONFLICT, "잠시 후 다시 시도해 주세요");
 
 	private final HttpStatus httpStatus;
 	private final String detail;

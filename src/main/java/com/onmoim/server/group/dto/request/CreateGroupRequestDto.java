@@ -26,7 +26,7 @@ public class CreateGroupRequestDto {
 	@NotNull(message = "모임 지역 설정은 필수입니다.")
 	private Long locationId;
 
-	@Schema(description = "모임 이름", example = "차이나타운 풋살 모임")
+	@Schema(description = "모임 이름", example = "풋살 모임")
 	@NotBlank(message = "모임 이름은 필수입니다.")
 	private String name;
 

@@ -24,4 +24,14 @@ public class BaseEntity {
 
 	// 삭제 시점 추가
 	private LocalDateTime deletedDate;
+
+	// soft delete
+	protected final void delete() {
+		deletedDate = LocalDateTime.now();
+	}
+
+	// soft delete 삭제 확인
+	protected final boolean isActive() {
+		return deletedDate == null;
+	}
 }

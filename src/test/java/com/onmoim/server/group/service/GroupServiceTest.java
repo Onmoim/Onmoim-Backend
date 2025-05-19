@@ -8,7 +8,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -27,6 +27,10 @@ import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.repository.UserRepository;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
 
 @SpringBootTest
 class GroupServiceTest {
@@ -38,33 +42,47 @@ class GroupServiceTest {
 	private GroupRepository groupRepository;
 	@Autowired
 	private GroupUserRepository groupUserRepository;
+	@Autowired
+	private EntityManagerFactory emf;
 
-	@AfterEach
-	void tearDown() {
-		groupUserRepository.deleteAll();
-		groupRepository.deleteAll();
-		userRepository.deleteAll();
-	}
-
+	/**
+	 * 버전 추가로 발생한 테스트 코드 리팩토링
+	 * save GroupUser(group, user) -> group, user detached error
+	 * 버전이 없을 때는 괜찮았지만 버전이 생기면서 detached 엔티티를 포함하는 persist 동작은 불가능
+	 * 테스트에서 트랜잭션을 시작하면 아직 커밋되지 않은 상태이기 떄문에 없는 데이터로 조회
+	 * 그래서 명시적으로 트랜잭션 시작, 커밋으로 데이터 초기화 & 테스트
+	 */
 	@Test
 	@DisplayName("동시에 가입 요청 테스트")
 	void joinGroupConcurrencyTest() throws InterruptedException {
 		// given
-		Group group = groupRepository.save(Group.groupCreateBuilder()
-			.name("group")
-			.capacity(10)
-			.build());
-		User owner = User.builder().name("모임장").build();
-		userRepository.save(owner);
-		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
-
+		EntityManager em = emf.createEntityManager();
+		EntityTransaction tx = em.getTransaction();
 		List<User> userList = new ArrayList<>();
-		for (int i = 0; i < 20; i++) {
-			User user = userRepository.save(User.builder()
-				.name("test" + i)
-				.build());
-			userList.add(user);
+		Long groupId = null;
+		try {
+			tx.begin();
+			Group group = Group.groupCreateBuilder()
+				.name("group")
+				.capacity(10)
+				.build();
+			User owner = User.builder().name("모임장").build();
+			em.persist(group);
+			em.persist(owner);
+			em.persist(GroupUser.create(group, owner, Status.OWNER));
+			groupId = group.getId();
+			for (int i = 0; i < 20; i++) {
+				User user = User.builder()
+					.name("test" + i)
+					.build();
+				userList.add(user);
+				em.persist(user);
+			}
+			tx.commit();
+		} finally {
+			em.close();
 		}
+		final Long groupFinalId = groupId;
 		// when
 		int taskCount = 20;
 		ExecutorService executorService = Executors.newFixedThreadPool(10);
@@ -81,7 +99,7 @@ class GroupServiceTest {
 					SecurityContextHolder.getContext().setAuthentication(authenticated);
 
 					// 동시성 테스트
-					groupService.joinGroup(group.getId());
+					groupService.joinGroup(groupFinalId);
 				} finally {
 					// 쓰레드 인증 정보 삭제
 					SecurityContextHolder.clearContext();
@@ -93,11 +111,15 @@ class GroupServiceTest {
 		executorService.shutdown();
 
 		// then
-		Group updatedGroup = groupRepository.findById(group.getId()).orElseThrow();
-		Long count = groupUserRepository.countByGroupAndStatus(group.getId(), List.of(Status.MEMBER, Status.OWNER));
+		Group updatedGroup = groupRepository.findById(groupId).orElseThrow();
+		Long count = groupUserRepository.countByGroupAndStatuses(groupId, List.of(Status.MEMBER, Status.OWNER));
 		System.out.println("최종 모임 인원 by GroupUser = " + count);
 		assertThat(count).isLessThanOrEqualTo(updatedGroup.getCapacity());
 		assertThat(count).isEqualTo(updatedGroup.getCapacity());
+
+		groupUserRepository.deleteAll();
+		userRepository.deleteAll();
+		groupRepository.deleteAll();
 	}
 
 	@Test
@@ -126,7 +148,7 @@ class GroupServiceTest {
 		groupService.likeGroup(group.getId());
 
 		// then
-		Long likeCount = groupUserRepository.countByGroupAndStatus(group.getId(), List.of(Status.BOOKMARK));
+		Long likeCount = groupUserRepository.countByGroupAndStatuses(group.getId(), List.of(Status.BOOKMARK));
 		assertThat(likeCount).isEqualTo(1);
 
 		SecurityContextHolder.clearContext();
@@ -159,7 +181,7 @@ class GroupServiceTest {
 		groupService.likeGroup(group.getId());
 
 		// then
-		Long likeCount = groupUserRepository.countByGroupAndStatus(group.getId(), List.of(Status.BOOKMARK));
+		Long likeCount = groupUserRepository.countByGroupAndStatuses(group.getId(), List.of(Status.BOOKMARK));
 		assertThat(likeCount).isEqualTo(1);
 
 		SecurityContextHolder.clearContext();
@@ -222,9 +244,41 @@ class GroupServiceTest {
 		groupService.likeGroup(group.getId());
 
 		// then
-		Long likeCount = groupUserRepository.countByGroupAndStatus(group.getId(), List.of(Status.PENDING));
+		Long likeCount = groupUserRepository.countByGroupAndStatuses(group.getId(), List.of(Status.PENDING));
 		assertThat(likeCount).isEqualTo(1);
 
 		SecurityContextHolder.clearContext();
+	}
+
+	@Test
+	@DisplayName("모임 회원 조회")
+	@Transactional
+	void selectGroupMembers() {
+		// given
+		Group group = Group.groupCreateBuilder()
+			.name("group")
+			.description("description")
+			.capacity(100)
+			.build();
+		groupRepository.save(group);
+
+		for (int i = 0; i < 40; i++) {
+			User user = User.builder()
+				.name("test" + i)
+				.profileImgUrl("img_url" + i)
+				.build();
+			userRepository.save(user);
+			if (i >= 20) continue;
+			if (i == 0) {
+				groupUserRepository.save(GroupUser.create(group, user, Status.OWNER));
+				continue;
+			}
+			groupUserRepository.save(GroupUser.create(group, user, Status.MEMBER));
+		}
+		// when
+		List<GroupMembersResponseDto> groupMembers = groupService.getGroupMembers(group.getId());
+
+		// then
+		assertThat(groupMembers.size()).isEqualTo(20);
 	}
 }
