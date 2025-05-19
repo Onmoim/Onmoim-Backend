@@ -2,7 +2,6 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.2'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'checkstyle'
 }
 
 group = 'com.onmoim'
@@ -48,9 +47,6 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    // checkStyle
-    checkstyle 'com.puppycrawl.tools:checkstyle:10.3.2'
-
     // datafaker
     implementation 'net.datafaker:datafaker:2.4.2'
 
@@ -86,11 +82,3 @@ tasks.register('copySecretForTest', Copy) {
     include '*.yml', 'application-env.properties'
     into 'src/test/resources'
 }
-
-checkstyle {
-    maxWarnings = 0
-    configFile = file("/${rootDir}/checkstyle/naver-checkstyle-rules.xml")
-    configProperties = ["suppressionFile": "${rootDir}/checkstyle/naver-checkstyle-suppressions.xml"]
-    toolVersion = "10.22.0"
-}
-checkstyleMain.source = fileTree('src/main/java') //검사 대상
