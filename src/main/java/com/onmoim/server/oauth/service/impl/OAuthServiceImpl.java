@@ -1,6 +1,5 @@
 package com.onmoim.server.oauth.service.impl;
 
-import java.util.Collections;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
@@ -80,15 +79,17 @@ public class OAuthServiceImpl implements OAuthService {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
 		}
 
-		String userId = jwtProvider.getSubject(refreshToken);  // JWT subject (userId)
-		String savedToken = refreshTokenService.getRefreshToken(Long.parseLong(userId));
+		Long userId = Long.parseLong(jwtProvider.getSubject(refreshToken));  // JWT subject (userId)
+		String savedToken = refreshTokenService.getRefreshToken(userId);
 
 		if (!refreshToken.equals(savedToken)) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "저장된 refresh token과 일치하지 않습니다.");
 		}
 
-		// accessToken 재발급
-		Authentication authentication = new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "존재하지 않는 유저입니다."));
+
+		Authentication authentication = createAuthentication(user);
 		String newAccessToken = jwtProvider.createAccessToken(authentication);
 
 		return new OAuthResponseDto(newAccessToken, refreshToken, "EXISTS");
