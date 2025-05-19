@@ -15,7 +15,6 @@ public interface GroupUserRepository extends JpaRepository<GroupUser, GroupUserI
 	@Query("select gu from GroupUser gu where gu.id.groupId = :groupId and gu.id.userId = :userId")
 	Optional<GroupUser> findGroupUser(@Param("groupId") Long groupId, @Param("userId") Long userId);
 
-	// 모임 가입 정합성 테스트용 쿼리
 	@Query("select count(gu) from GroupUser gu where gu.id.groupId = :groupId and gu.status in (:statuses)")
-	Long countGroupMember(@Param("groupId") Long groupId, @Param("statuses") List<Status> statuses);
+	Long countByGroupAndStatus(@Param("groupId") Long groupId, @Param("statuses") List<Status> statuses);
 }
