@@ -21,12 +21,12 @@ import com.onmoim.server.user.entity.User;
         name = "post",
         indexes = {
                 @Index(
-                        name = "idx_post_group_type_isdeleted",
-                        columnList = "group_id,type,isDeleted"
+                        name = "idx_post_group_type_deleted",
+                        columnList = "group_id,type,deleted_date"
                 ),
                 @Index(
-                        name = "idx_post_author_isdeleted",
-                        columnList = "author_id,isDeleted"
+                        name = "idx_post_author_deleted",
+                        columnList = "author_id,deleted_date"
                 )
         }
 )

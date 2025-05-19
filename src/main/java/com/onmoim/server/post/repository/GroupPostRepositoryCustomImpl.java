@@ -51,7 +51,7 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
         QGroupPost q = QGroupPost.groupPost;
         BooleanBuilder b = new BooleanBuilder()
                 .and(q.group.id.eq(group.getId()))
-                .and(q.isDeleted.eq(false));
+                .and(q.deletedDate.isNull());
 
         if (type != null && type != GroupPostType.ALL) {
             b.and(q.type.eq(type));

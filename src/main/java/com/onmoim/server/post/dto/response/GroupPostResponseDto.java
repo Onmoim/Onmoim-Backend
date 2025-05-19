@@ -49,7 +49,7 @@ public class GroupPostResponseDto {
     public static GroupPostResponseDto fromEntityWithImages(GroupPost post, List<PostImage> postImages) {
         GroupPostResponseDto dto = fromEntity(post);
         dto.images = postImages.stream()
-                .filter(pi -> !pi.isDeleted())
+                .filter(pi -> pi.getDeletedDate() == null)
                 .map(PostImageDto::fromEntity)
                 .toList();
         return dto;

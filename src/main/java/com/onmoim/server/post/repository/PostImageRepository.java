@@ -13,18 +13,18 @@ public interface PostImageRepository extends JpaRepository<PostImage, PostImageI
     List<PostImage> findAllByPost(GroupPost post);
 
     @Modifying
-    @Query("UPDATE PostImage pi SET pi.isDeleted = true WHERE pi.post.id = :postId")
+    @Query("UPDATE PostImage pi SET pi.deletedDate = CURRENT_TIMESTAMP WHERE pi.post.id = :postId")
     void softDeleteAllByPostId(@Param("postId") Long postId);
 
     /**
      * 여러 게시글 ID에 해당하는 이미지들을 일괄 조회
      */
-    @Query("SELECT pi FROM PostImage pi WHERE pi.post.id IN :postIds AND pi.isDeleted = false")
+    @Query("SELECT pi FROM PostImage pi WHERE pi.post.id IN :postIds AND pi.deletedDate IS NULL")
     List<PostImage> findByPostIdInAndIsDeletedFalse(@Param("postIds") List<Long> postIds);
 
     /**
      * 단일 게시글 ID에 해당하는 이미지들 조회
      */
-    @Query("SELECT pi FROM PostImage pi WHERE pi.post.id = :postId AND pi.isDeleted = false")
+    @Query("SELECT pi FROM PostImage pi WHERE pi.post.id = :postId AND pi.deletedDate IS NULL")
     List<PostImage> findByPostIdAndIsDeletedFalse(@Param("postId") Long postId);
 }
