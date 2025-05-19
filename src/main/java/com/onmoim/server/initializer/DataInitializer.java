@@ -13,6 +13,7 @@ import java.util.Set;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import net.datafaker.Faker;
@@ -38,7 +39,39 @@ public class DataInitializer implements CommandLineRunner {
 	private final UserCategoryRepository userCategoryRepository;
 	private final LocationRepository locationRepository;
 
+	/**
+	 * 카테고리 데이터 생성
+	 */
 	@Bean
+	@Order(1)
+	public CommandLineRunner initCategories(CategoryRepository categoryRepository) {
+		return args -> {
+			if (categoryRepository.count() > 0) {
+				System.out.println("Category 데이터 존재");
+				return;
+			}
+
+			List<String> names = List.of(
+				"운동/스포츠", "사교/인맥", "인문학/책/글", "아웃도어/여행",
+				"음악/악기", "업종/직무", "문화/공연/축제", "외국/언어",
+				"게임/오락", "공예/만들기", "댄스/무용", "봉사활동",
+				"사진/영상", "자기계발", "스포츠관람", "반려동물",
+				"요리/제조", "차/바이크"
+			);
+
+			List<Category> categories = names.stream()
+				.map(name -> Category.create(name, null))
+				.toList();
+
+			categoryRepository.saveAll(categories);
+		};
+	}
+
+	/**
+	 * 유저 데이터 생성
+	 */
+	@Bean
+	@Order(2)
 	public CommandLineRunner initDummyUsers() {
 		return args -> {
 			// User 데이터 존재할 경우 다시 들어가지 않도록 함
@@ -83,7 +116,11 @@ public class DataInitializer implements CommandLineRunner {
 		};
 	}
 
+	/**
+	 * 지역 데이터 생성
+	 */
 	@Override
+	@Order(3)
 	public void run(String... args) throws Exception {
 		// Location 데이터 존재할 경우 다시 들어가지 않도록 함
 		if (locationRepository.count() > 0) {
@@ -124,5 +161,4 @@ public class DataInitializer implements CommandLineRunner {
 			}
 		}
 	}
-
 }
