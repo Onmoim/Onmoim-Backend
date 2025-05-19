@@ -84,15 +84,19 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
             return Collections.emptyList();
         }
 
-        // 게시글 ID만 뽑아서 이미지 조회
         List<Long> ids = posts.stream()
                 .map(GroupPost::getId)
                 .toList();
 
-        Map<Long, List<PostImage>> imagesByPostId = postImageRepository
-                .findByPostIdInAndIsDeletedFalse(ids)
-                .stream()
-                .collect(Collectors.groupingBy(pi -> pi.getPost().getId()));
+        Map<Long, List<PostImage>> imagesByPostId = Collections.unmodifiableMap(
+                postImageRepository
+                        .findByPostIdInAndIsDeletedFalse(ids)
+                        .stream()
+                        .collect(Collectors.groupingBy(
+                                pi -> pi.getPost().getId(),
+                                Collectors.toUnmodifiableList()
+                        ))
+        );
 
         return posts.stream()
                 .map(post -> GroupPostResponseDto.fromEntityWithImages(
