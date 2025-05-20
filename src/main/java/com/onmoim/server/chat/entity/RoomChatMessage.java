@@ -10,6 +10,8 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -20,6 +22,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "chat_messages")
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class RoomChatMessage extends BaseEntity {
 
 	@Id
@@ -44,17 +47,6 @@ public class RoomChatMessage extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(name = "delivery_status")
 	private DeliveryStatus deliveryStatus = DeliveryStatus.PENDING; // 기본값은 PENDING
-
-	private RoomChatMessage(String id, Long roomId, String senderId, String content, LocalDateTime timestamp,
-		MessageType type, DeliveryStatus deliveryStatus) {
-		this.id = id;
-		this.roomId = roomId;
-		this.senderId = senderId;
-		this.content = content;
-		this.timestamp = timestamp;
-		this.type = type;
-		this.deliveryStatus = deliveryStatus;
-	}
 
 	public static RoomChatMessage create(
 		String id,
