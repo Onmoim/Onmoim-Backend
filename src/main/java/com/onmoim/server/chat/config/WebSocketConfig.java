@@ -1,6 +1,7 @@
 package com.onmoim.server.chat.config;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -10,6 +11,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.support.ChannelInterceptor;
@@ -20,6 +23,9 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,7 +44,6 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 @Slf4j
 @EnableWebSocketMessageBroker
-
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	private final ThreadPoolTaskExecutor stompInboundExecutor;
@@ -99,6 +104,20 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	@Override
 	public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
 		registry.setMessageSizeLimit(256 * 1024); // 메시지 크기제한 : 256KB까지 허용
+	}
+	
+	/**
+	 * STOMP 메시지 변환을 위한 메시지 컨버터 설정
+	 * LocalDateTime과 같은 Java 8 날짜/시간 타입을 처리하기 위한 JavaTimeModule을 등록합니다.
+	 */
+	@Override
+	public boolean configureMessageConverters(List<MessageConverter> messageConverters) {
+		MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new JavaTimeModule());
+		converter.setObjectMapper(objectMapper);
+		messageConverters.add(converter);
+		return false; // false는 기본 컨버터도 추가하도록 함
 	}
 
 	//아하 Principal 관련 Spring Security와 통합 예정입니다.
