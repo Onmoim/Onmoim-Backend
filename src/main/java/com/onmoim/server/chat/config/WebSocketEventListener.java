@@ -11,7 +11,9 @@ import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 
-import com.onmoim.server.chat.dto.ChatMessage;
+import com.onmoim.server.chat.entity.MessageType;
+import com.onmoim.server.chat.entity.SubscribeRegistry;
+import com.onmoim.server.chat.example.TestChatMessage;
 import com.onmoim.server.chat.exception.StompErrorEvent;
 
 import lombok.RequiredArgsConstructor;
@@ -38,8 +40,7 @@ public class WebSocketEventListener {
 	public void onSubscribe(SessionSubscribeEvent event) {
 		SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
 		log.debug("구독됨: sessionId={}, user={}, destination={}, subscriptionId={}", accessor.getSessionId(),
-			accessor.getUser() != null ? accessor.getUser().getName() : "null", accessor.getDestination(),
-			accessor.getSubscriptionId());
+			accessor.getUser(), accessor.getDestination(), accessor.getSubscriptionId());
 	}
 
 	/**
@@ -51,14 +52,15 @@ public class WebSocketEventListener {
 		log.debug("Websocket StompErrorEvent 수신");
 		System.out.println(event);
 
-		ChatMessage errorMessage = ChatMessage.builder()
+		TestChatMessage errorMessage = TestChatMessage.builder()
 			.messageId(UUID.randomUUID().toString())
 			.senderId("SYSTEM")
-			.type(ChatMessage.MessageType.ERROR)
+			.type(MessageType.ERROR)
 			.content(event.getErrorMessage())
 			.timestamp(LocalDateTime.now())
 			.build();
 
-		messagingTemplate.convertAndSendToUser(event.getUserIdOrSessionId(), "/queue/error", errorMessage);
+		String destination = SubscribeRegistry.ERROR_SUBSCRIBE_DESTINATION.getDestination();
+		messagingTemplate.convertAndSendToUser(event.getUserIdOrSessionId(), destination, errorMessage);
 	}
 }

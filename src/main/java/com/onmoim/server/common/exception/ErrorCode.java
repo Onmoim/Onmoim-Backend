@@ -24,6 +24,7 @@ public enum ErrorCode {
 	INVALID_USER(BAD_REQUEST,	"잘못된 사용자입니다."),
 	INVALID_LOCATION(BAD_REQUEST, "잘못된 위치 정보입니다."),
 	INVALID_CATEGORY(BAD_REQUEST, "잘못된 카테고리입니다."),
+	NOT_FOUND_MESSAGE(BAD_REQUEST, "잘못된 MessageID 입니다."),
 
 	/* ------------------ 400 BAD_REQUEST : 모임 잘못된 요청 ------------------ */
 	NOT_EXISTS_GROUP(BAD_REQUEST, "존재하지 않는 모임입니다."),
