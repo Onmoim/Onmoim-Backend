@@ -33,7 +33,7 @@
                     .then(res => res.json())
                     .then(data => {
                         console.log("백엔드 응답:", data);
-                        alert("AccessToken: " + data.accessToken);
+                        alert("token: " + authObj.access_token);
                     })
                     .catch(err => {
                         console.error("요청 실패:", err);
