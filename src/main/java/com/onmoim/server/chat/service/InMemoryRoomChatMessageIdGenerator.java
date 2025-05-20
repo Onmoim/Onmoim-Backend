@@ -81,7 +81,6 @@ public class InMemoryRoomChatMessageIdGenerator implements RoomChatMessageIdGene
 		} catch (Exception e) {
 			log.error("시퀀스 DB 업데이트 실패, roomId: {}, sequence: {}, 오류: {}",
 				roomId, sequence, e.getMessage());
-			// 실패해도 메모리에는 이미 업데이트되었으므로 서비스 동작에는 영향 없음
 		}
 	}
 }
