@@ -14,6 +14,7 @@ import com.onmoim.server.oauth.dto.OAuthUserDto;
 import com.onmoim.server.oauth.service.OAuthService;
 import com.onmoim.server.oauth.service.RefreshTokenService;
 import com.onmoim.server.oauth.service.provider.GoogleOAuthProvider;
+import com.onmoim.server.oauth.service.provider.KakaoOAuthProvider;
 import com.onmoim.server.oauth.service.provider.OAuthProvider;
 import com.onmoim.server.oauth.service.provider.OAuthProviderFactory;
 import com.onmoim.server.security.CustomUserDetails;

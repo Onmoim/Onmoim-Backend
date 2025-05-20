@@ -57,14 +57,7 @@ public class AuthController {
 				@Valid @RequestBody OAuthRequestDto oAuthRequestDto) {
 		OAuthResponseDto response = oAuthService.login(oAuthRequestDto.getProvider(), oAuthRequestDto.getToken());
 
-		String status = response.getStatus();
-
-		if (status.equals("EXISTS")) {
-			return ResponseEntity.ok(ResponseHandler.response(response));
-		} else {
-			// TODO: 프론트와 상의 후 return 값 수정 필요
-			return ResponseEntity.ok(ResponseHandler.errorResponse(response, "ERROR"));
-		}
+		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
 

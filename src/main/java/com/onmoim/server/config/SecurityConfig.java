@@ -24,7 +24,7 @@ public class SecurityConfig {
 
 		http
 			.authorizeHttpRequests(authorizeRequests -> authorizeRequests
-			.requestMatchers("/test-google-login.html", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+			.requestMatchers("/test-google-login.html", "/test-kakao-login.html", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
 			.requestMatchers("/auth/**").permitAll()
 			.requestMatchers("/api/v1/location", "api/v1/category").permitAll() // 가입 시 필요하므로 제외
 			.requestMatchers("/api-docs/**", "/swagger-ui/**", "swagger-resources/**").permitAll()
