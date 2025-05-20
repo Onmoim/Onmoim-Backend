@@ -11,8 +11,6 @@ import com.onmoim.server.oauth.dto.OAuthRequestDto;
 import com.onmoim.server.oauth.dto.OAuthResponseDto;
 import com.onmoim.server.oauth.dto.ReissueTokenRequestDto;
 import com.onmoim.server.oauth.service.OAuthService;
-import com.onmoim.server.user.dto.SignupRequest;
-import com.onmoim.server.user.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -25,14 +23,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Auth", description = "Auth 관련 API")
 public class AuthController {
 
 	private final OAuthService oAuthService;
-	private final UserService userService;
 
 	@PostMapping("/oauth")
 	@Operation(
@@ -61,31 +58,6 @@ public class AuthController {
 	}
 
 
-	@PostMapping("/signup")
-	@Operation(
-		summary = "회원가입",
-		description = "소셜 로그인 후 미가입 상태인 유저가 추가 정보를 입력하여 회원가입을 완료합니다."
-	)
-	@ApiResponses(value = {
-		@ApiResponse(
-				responseCode = "200",
-				description = "회원가입 성공",
-				content = @Content(
-					mediaType = "application/json",
-					schema = @Schema(implementation = ResponseHandler.class)
-				)
-			),
-		@ApiResponse(
-				responseCode = "500",
-				description = "서버 오류 - 이미 가입된 유저거나 DB 오류 발생"
-			)
-	})
-	public ResponseEntity<ResponseHandler<String>> signup(@RequestBody SignupRequest signupRequest) {
-		userService.signup(signupRequest);
-		return ResponseEntity.ok(ResponseHandler.response("회원가입이 정상적으로 완료되었습니다."));
-	}
-
-
 	@PostMapping("/reissue-tkn")
 	@Operation(
 		summary = "Access Token 재발급",
@@ -99,12 +71,11 @@ public class AuthController {
 					mediaType = "application/json",
 					schema = @Schema(implementation = ResponseHandler.class)
 				)
-			)
-		// TODO: responseHandler 수정해서 401 띄우기
-		// @ApiResponse(
-		// 	responseCode = "500",
-		// 	description = "서버 오류 - 이미 가입된 유저거나 DB 오류 발생"
-		// )
+			),
+		@ApiResponse(
+			responseCode = "401",
+			description = "UNAUTHORIZED - 유효하지 않은 refresh token, 일치하지 않는 refresh token, 존재하지 않는 사용자"
+		)
 	})
 	public ResponseEntity<ResponseHandler<OAuthResponseDto>> reissueAccessToken(
 		@RequestBody ReissueTokenRequestDto reissueTokenRequestDto) {
