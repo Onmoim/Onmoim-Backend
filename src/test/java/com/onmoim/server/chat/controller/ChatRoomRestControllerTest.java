@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.chat.dto.CreateRoomRequest;
+import com.onmoim.server.chat.facade.ChatRoomFacade;
 import com.onmoim.server.chat.service.ChatRoomService;
 import com.onmoim.server.common.exception.GlobalExceptionHandler;
 import com.onmoim.server.config.SecurityConfig;
@@ -34,7 +35,7 @@ public class ChatRoomRestControllerTest {
 	private ObjectMapper objectMapper;
 
 	@MockBean
-	private ChatRoomService chatRoomService;
+	private ChatRoomFacade chatRoomFacade;
 
 	private CreateRoomRequest createRoomRequest;
 	private ChatRoomResponse chatRoomResponse;
@@ -58,7 +59,7 @@ public class ChatRoomRestControllerTest {
 	@DisplayName("채팅방 생성 API 테스트")
 	void testCreateRoom() throws Exception {
 		// given
-		when(chatRoomService.createRoom(any(), any(), any()))
+		when(chatRoomFacade.createRoom(any(), any()))
 			.thenReturn(chatRoomResponse);
 
 		// when & then
@@ -131,8 +132,8 @@ public class ChatRoomRestControllerTest {
 		CreateRoomRequest validRequest = new CreateRoomRequest();
 		validRequest.setName("Test Chat Room");
 		validRequest.setDescription(null); // null 설명
-		
-		when(chatRoomService.createRoom(any(), any(), any()))
+
+		when(chatRoomFacade.createRoom(any(), any()))
 			.thenReturn(chatRoomResponse);
 
 		// when & then

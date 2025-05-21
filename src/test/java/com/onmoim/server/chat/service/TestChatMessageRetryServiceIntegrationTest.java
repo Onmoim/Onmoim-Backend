@@ -13,6 +13,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.chat.dto.RoomChatMessageDto;
+import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.entity.DeliveryStatus;
 
 @SpringBootTest
@@ -40,8 +41,10 @@ public class TestChatMessageRetryServiceIntegrationTest {
 	void testRetryAndRecover() throws Exception {
 		// 테스트 데이터 설정
 		RoomChatMessageDto testMessage = new RoomChatMessageDto();
-		testMessage.setMessageId("test-message-id");
-		testMessage.setRoomId(1L);
+		long roomId = 1L;
+		ChatRoomMessageId messageId = ChatRoomMessageId.create(roomId, 1L);
+		testMessage.setMessageId(messageId);
+		testMessage.setRoomId(roomId);
 		String testDestination = "/topic/chat.room.1";
 
 		// 항상 예외를 발생시키도록 설정
@@ -63,7 +66,7 @@ public class TestChatMessageRetryServiceIntegrationTest {
 
 		// 최종적으로 FAILED_PERMANENTLY 상태로 업데이트되었는지 확인
 		verify(chatMessageService).updateMessageDeliveryStatus(
-			eq("test-message-id"),
+			eq(messageId),
 			eq(DeliveryStatus.FAILED_PERMANENTLY));
 	}
 
@@ -72,8 +75,10 @@ public class TestChatMessageRetryServiceIntegrationTest {
 	void shouldRetryThreeTimesAndUpdateToFailedPermanently() throws Exception {
 		// 테스트 데이터 준비
 		RoomChatMessageDto testMessage = new RoomChatMessageDto();
-		testMessage.setMessageId("test-message-id");
-		testMessage.setRoomId(1L);
+		long roomId = 1L;
+		ChatRoomMessageId messageId = ChatRoomMessageId.create(roomId, 1L);
+		testMessage.setMessageId(messageId);
+		testMessage.setRoomId(roomId);
 		String testDestination = "/topic/chat.room.1";
 
 		// messagingTemplate가 항상 예외를 발생시키도록 설정
@@ -96,7 +101,7 @@ public class TestChatMessageRetryServiceIntegrationTest {
 
 		// recoverFailedMessage 메소드의 효과로 FAILED_PERMANENTLY 상태로 업데이트되었는지 확인
 		verify(chatMessageService).updateMessageDeliveryStatus(
-			eq("test-message-id"),
+			eq(messageId),
 			eq(DeliveryStatus.FAILED_PERMANENTLY));
 	}
 }
