@@ -9,6 +9,7 @@ import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.chat.entity.ChatRoom;
 import com.onmoim.server.chat.entity.ChatRoomMember;
 import com.onmoim.server.chat.entity.SubscribeRegistry;
+import com.onmoim.server.chat.repository.ChatRoomMemberRepository;
 import com.onmoim.server.chat.repository.ChatRoomRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ChatRoomService {
 
 	private final ChatRoomRepository chatRoomRepository;
+	private final ChatRoomMemberRepository chatRoomMemberRepository;
 
 	/**
 	 * 채팅방 생성
@@ -47,5 +49,9 @@ public class ChatRoomService {
 
 		return ChatRoomResponse.fromChatRoom(room, room.getChatRoomMembers().size(),
 			SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + room.getId());
+	}
+
+	public boolean isMember(Long roomId, Long userId) {
+		return chatRoomMemberRepository.findByChatRoomIdAndUserId(roomId, userId).isPresent();
 	}
 }
