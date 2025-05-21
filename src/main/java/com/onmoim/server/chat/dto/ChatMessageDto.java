@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor
-public class RoomChatMessageDto {
+public class ChatMessageDto {
     
     /** 메시지 고유 ID */
     private ChatRoomMessageId messageId;
@@ -46,8 +46,8 @@ public class RoomChatMessageDto {
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    public static RoomChatMessageDto from(ChatRoomMessage entity) {
-        return RoomChatMessageDto.builder()
+    public static ChatMessageDto from(ChatRoomMessage entity) {
+        return ChatMessageDto.builder()
             .messageId(entity.getId())
             .type(entity.getType())
             .content(entity.getContent())

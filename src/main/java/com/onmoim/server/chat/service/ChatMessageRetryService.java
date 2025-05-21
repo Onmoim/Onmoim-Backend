@@ -6,7 +6,7 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
-import com.onmoim.server.chat.dto.RoomChatMessageDto;
+import com.onmoim.server.chat.dto.ChatMessageDto;
 import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.entity.DeliveryStatus;
 
@@ -25,7 +25,7 @@ public class ChatMessageRetryService {
 		maxAttempts = 3,
 		backoff = @Backoff(delay = 100, multiplier = 1.5, maxDelay = 1000, random = true)
 	) // 약 100ms -> 150ms -> 225ms
-	public void failedProcess(RoomChatMessageDto message, String destination) {
+	public void failedProcess(ChatMessageDto message, String destination) {
 		ChatRoomMessageId messageId = message.getMessageId();
 		log.debug("메시지 재전송 시도: ID: {}, 방ID: {}", messageId, message.getRoomId());
 
@@ -39,7 +39,7 @@ public class ChatMessageRetryService {
 	}
 
 	@Recover
-	public void recoverFailedMessage(Exception e, RoomChatMessageDto message, String destination) {
+	public void recoverFailedMessage(Exception e, ChatMessageDto message, String destination) {
 		ChatRoomMessageId messageId = message.getMessageId();
 
 		log.warn("메시지 재전송 최종 실패: ID: {}, 방ID: {}, 최대 시도 횟수 초과(3회), 오류: {}",

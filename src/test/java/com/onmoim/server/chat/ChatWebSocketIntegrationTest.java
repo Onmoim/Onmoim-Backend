@@ -37,7 +37,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.onmoim.server.TestSecurityConfig;
 import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.chat.dto.CreateRoomRequest;
-import com.onmoim.server.chat.dto.RoomChatMessageDto;
+import com.onmoim.server.chat.dto.ChatMessageDto;
 import com.onmoim.server.chat.entity.MessageType;
 import com.onmoim.server.common.response.ResponseHandler;
 
@@ -103,7 +103,7 @@ public class ChatWebSocketIntegrationTest {
 	@DisplayName("채팅방 생성 후 시스템 메시지 수신 테스트")
 	public void testSystemMessageAfterRoomCreation() throws Exception {
 		// given-1. 메시지 수신을 위한 CompletableFuture 설정
-		CompletableFuture<RoomChatMessageDto> messageFuture = new CompletableFuture<>();
+		CompletableFuture<ChatMessageDto> messageFuture = new CompletableFuture<>();
 
 		// given-2. 채팅방 생성 요청 데이터 준비
 		CreateRoomRequest createRoomRequest = new CreateRoomRequest();
@@ -121,7 +121,7 @@ public class ChatWebSocketIntegrationTest {
 		Thread.sleep(1000);
 
 		//when 채팅방 메시지 전송
-		RoomChatMessageDto testMessage = RoomChatMessageDto.builder()
+		ChatMessageDto testMessage = ChatMessageDto.builder()
 			.roomId(roomResponse.getId())
 			.sessionId("sessionId")
 			.type(MessageType.SYSTEM)
@@ -134,7 +134,7 @@ public class ChatWebSocketIntegrationTest {
 		//then 메시지 수진
 		try {
 			// 10. WebSocket으로 시스템 메시지가 수신되는지 확인
-			RoomChatMessageDto receivedMessage = messageFuture.get(3, TimeUnit.SECONDS);
+			ChatMessageDto receivedMessage = messageFuture.get(3, TimeUnit.SECONDS);
 			assertNotNull(receivedMessage, "수신된 메시지가 null이 아니어야 합니다");
 		} finally {
 			// 구독 해제
@@ -143,19 +143,19 @@ public class ChatWebSocketIntegrationTest {
 	}
 
 	private StompSession.Subscription stompSubscribe(String subscribeDestination,
-		CompletableFuture<RoomChatMessageDto> messageFuture) {
+		CompletableFuture<ChatMessageDto> messageFuture) {
 		StompSession.Subscription subscription = session.subscribe(
 			subscribeDestination,
 			new StompFrameHandler() {
 				@Override
 				public Type getPayloadType(StompHeaders headers) {
-					return RoomChatMessageDto.class;
+					return ChatMessageDto.class;
 				}
 
 				@Override
 				public void handleFrame(StompHeaders headers, Object payload) {
 					System.out.println("메시지 수신: " + payload);
-					messageFuture.complete((RoomChatMessageDto)payload);
+					messageFuture.complete((ChatMessageDto)payload);
 				}
 			}
 		);

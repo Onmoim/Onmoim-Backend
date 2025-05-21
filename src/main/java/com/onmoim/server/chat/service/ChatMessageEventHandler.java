@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.onmoim.server.chat.dto.RoomChatMessageDto;
+import com.onmoim.server.chat.dto.ChatMessageDto;
 import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.entity.DeliveryStatus;
 
@@ -26,7 +26,7 @@ public class ChatMessageEventHandler {
 
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handleMessageSend(MessageSendEvent event) {
-		RoomChatMessageDto message = event.message();
+		ChatMessageDto message = event.message();
 		ChatRoomMessageId messageId = message.getMessageId();
 		String destination = event.destination();
 
