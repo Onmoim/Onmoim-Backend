@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ChatRoomService {
 
 	private final ChatRoomRepository chatRoomRepository;
-	private final ChatRoomMemberRepository chatRoomMemberRepository;
 
 	/**
 	 * 채팅방 생성
