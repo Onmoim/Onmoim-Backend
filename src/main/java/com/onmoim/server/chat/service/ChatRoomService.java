@@ -36,7 +36,7 @@ public class ChatRoomService {
 			.chatRoomMembers(new HashSet<>())
 			.build();
 
-		// 생성자를 채팅방 멤버로 추가
+		// 채팅방 멤버로 추가
 		ChatRoomMember memberEntity = ChatRoomMember.builder()
 			.userId(creatorId)
 			.build();
