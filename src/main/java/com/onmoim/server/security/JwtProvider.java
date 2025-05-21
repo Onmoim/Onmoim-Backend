@@ -40,7 +40,7 @@ public class JwtProvider {
 	public String createAccessToken(Authentication authentication) {
 		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 		Date now = new Date();
-		Date expireDate = new Date(now.getTime() + tokenProperties.getRefreshExpirationTime());
+		Date expireDate = new Date(now.getTime() + tokenProperties.getAccessExpirationTime());
 
 		Claims claims = Jwts.claims().setSubject(userDetails.getUserId().toString());
 
