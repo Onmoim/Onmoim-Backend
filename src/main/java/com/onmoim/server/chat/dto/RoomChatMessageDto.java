@@ -2,8 +2,9 @@ package com.onmoim.server.chat.dto;
 
 import java.time.LocalDateTime;
 
+import com.onmoim.server.chat.entity.ChatRoomMessage;
 import com.onmoim.server.chat.entity.MessageType;
-import com.onmoim.server.chat.entity.RoomChatMessage;
+import com.onmoim.server.chat.entity.ChatRoomMessageId;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -21,7 +22,7 @@ import lombok.NoArgsConstructor;
 public class RoomChatMessageDto {
     
     /** 메시지 고유 ID */
-    private String messageId;
+    private ChatRoomMessageId messageId;
     
     /** 채팅방 ID */
     private Long roomId;
@@ -45,10 +46,9 @@ public class RoomChatMessageDto {
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    public static RoomChatMessageDto from(RoomChatMessage entity) {
+    public static RoomChatMessageDto from(ChatRoomMessage entity) {
         return RoomChatMessageDto.builder()
             .messageId(entity.getId())
-            .roomId(entity.getRoomId())
             .type(entity.getType())
             .content(entity.getContent())
             .senderId(entity.getSenderId())
