@@ -17,6 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.chat.dto.RoomChatMessageDto;
+import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.entity.DeliveryStatus;
 
 @SpringBootTest
@@ -36,7 +37,7 @@ public class TestChatMessageEventHandlerIntegrationTest {
 
 	private RoomChatMessageDto testMessage;
 	private String testDestination;
-	private String testMessageId;
+	private ChatRoomMessageId testMessageId;
 
 	@AfterEach
 	void tearDown() {
@@ -46,10 +47,11 @@ public class TestChatMessageEventHandlerIntegrationTest {
 
 	@BeforeEach
 	void setUp() {
-		testMessageId = UUID.randomUUID().toString();
+		long roomId = 1L;
+		testMessageId = ChatRoomMessageId.create(roomId, roomId);
 		testMessage = RoomChatMessageDto.builder()
 			.messageId(testMessageId)
-			.roomId(1L)
+			.roomId(roomId)
 			.content("테스트 메시지")
 			.senderId("user-123")
 			.build();
@@ -64,7 +66,7 @@ public class TestChatMessageEventHandlerIntegrationTest {
 
 		// 메시지 전송 성공 시나리오
 		doNothing().when(messagingTemplate).convertAndSend(anyString(), any(RoomChatMessageDto.class));
-		doNothing().when(chatMessageService).updateMessageDeliveryStatus(anyString(), any(DeliveryStatus.class));
+		doNothing().when(chatMessageService).updateMessageDeliveryStatus(any(), any(DeliveryStatus.class));
 
 		// 이벤트 핸들러 호출
 		chatMessageEventHandler.handleMessageSend(event);

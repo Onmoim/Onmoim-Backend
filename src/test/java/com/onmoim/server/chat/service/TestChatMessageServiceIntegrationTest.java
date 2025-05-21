@@ -12,7 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.chat.entity.DeliveryStatus;
 import com.onmoim.server.chat.entity.MessageType;
-import com.onmoim.server.chat.entity.RoomChatMessage;
+import com.onmoim.server.chat.entity.ChatRoomMessage;
+import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.repository.ChatMessageRepository;
 
 @SpringBootTest
@@ -38,16 +39,15 @@ public class TestChatMessageServiceIntegrationTest {
 		String content = "테스트 시스템 메시지";
 
 		// when
-		String messageId = chatMessageService.sendSystemMessage(roomId, content);
+		ChatRoomMessageId messageId = chatMessageService.sendSystemMessage(roomId, content);
 
 		// then
-		RoomChatMessage roomChatMessage = chatMessageRepository.findById(messageId).orElse(null);
-		assertThat(roomChatMessage).isNotNull();
-		assertThat(roomChatMessage.getId()).isEqualTo(messageId);
-		assertThat(roomChatMessage.getRoomId()).isEqualTo(roomId);
-		assertThat(roomChatMessage.getSenderId()).isEqualTo("SYSTEM");
-		assertThat(roomChatMessage.getContent()).isEqualTo(content);
-		assertThat(roomChatMessage.getType()).isEqualTo(MessageType.SYSTEM);
+		ChatRoomMessage chatRoomMessage = chatMessageRepository.findById(messageId).orElse(null);
+		assertThat(chatRoomMessage).isNotNull();
+		assertThat(chatRoomMessage.getId()).isEqualTo(messageId);
+		assertThat(chatRoomMessage.getSenderId()).isEqualTo("SYSTEM");
+		assertThat(chatRoomMessage.getContent()).isEqualTo(content);
+		assertThat(chatRoomMessage.getType()).isEqualTo(MessageType.SYSTEM);
 	}
 
 	@Test
@@ -56,9 +56,8 @@ public class TestChatMessageServiceIntegrationTest {
 	void testUpdateMessageDeliveryStatus() {
 		// given
 		Long roomId = 1L;
-		RoomChatMessage message = RoomChatMessage.create(
-			roomChatMessageIdGenerator.createId(roomId),
-			roomId,
+		ChatRoomMessage message = ChatRoomMessage.create(
+			ChatRoomMessageId.create(roomId, roomChatMessageIdGenerator.getSequence(roomId)),
 			"user123",
 			"테스트 메시지",
 			LocalDateTime.now(),
@@ -70,7 +69,7 @@ public class TestChatMessageServiceIntegrationTest {
 		// when
 		chatMessageService.updateMessageDeliveryStatus(message.getId(), DeliveryStatus.FAILED);
 		// then
-		RoomChatMessage updatedMessage = chatMessageRepository.findById(message.getId()).orElse(null);
+		ChatRoomMessage updatedMessage = chatMessageRepository.findById(message.getId()).orElse(null);
 		assertThat(updatedMessage).isNotNull();
 		assertThat(updatedMessage.getDeliveryStatus()).isEqualTo(DeliveryStatus.FAILED);
 	}

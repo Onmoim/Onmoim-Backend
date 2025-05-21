@@ -7,9 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.chat.dto.RoomChatMessageDto;
+import com.onmoim.server.chat.entity.ChatRoomMessage;
 import com.onmoim.server.chat.entity.DeliveryStatus;
 import com.onmoim.server.chat.entity.MessageType;
-import com.onmoim.server.chat.entity.RoomChatMessage;
+import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.entity.SubscribeRegistry;
 import com.onmoim.server.chat.repository.ChatMessageRepository;
 import com.onmoim.server.common.exception.CustomException;
@@ -22,18 +23,17 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class ChatMessageService {
-	private final RoomChatMessageIdGenerator roomChatMessageIdGenerator;
 	private final ChatMessageRepository chatMessageRepository;
 	private final ApplicationEventPublisher eventPublisher;
+	private final RoomChatMessageIdGenerator roomChatMessageIdGenerator;
 
 	/**
 	 * 시스템 메시지 전송
 	 */
 	@Transactional
-	public String sendSystemMessage(Long roomId, String content) {
-		RoomChatMessage systemMessage = RoomChatMessage.create(
-			roomChatMessageIdGenerator.createId(roomId),
-			roomId,
+	public ChatRoomMessageId sendSystemMessage(Long roomId, String content) {
+		ChatRoomMessage systemMessage = ChatRoomMessage.create(
+			ChatRoomMessageId.create(roomId, roomChatMessageIdGenerator.getSequence(roomId)),
 			"SYSTEM",
 			content,
 			LocalDateTime.now(),
@@ -57,8 +57,8 @@ public class ChatMessageService {
 	 * 메시지 전송 상태 업데이트
 	 */
 	@Transactional
-	public void updateMessageDeliveryStatus(String messageId, DeliveryStatus status) {
-		RoomChatMessage message = chatMessageRepository.findById(messageId)
+	public void updateMessageDeliveryStatus(ChatRoomMessageId messageId, DeliveryStatus status) {
+		ChatRoomMessage message = chatMessageRepository.findById(messageId)
 			.orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_MESSAGE));
 
 		message.setDeliveryStatus(status);

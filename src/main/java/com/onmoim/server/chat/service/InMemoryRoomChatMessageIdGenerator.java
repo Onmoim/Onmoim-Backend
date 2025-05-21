@@ -28,7 +28,7 @@ public class InMemoryRoomChatMessageIdGenerator implements RoomChatMessageIdGene
 
 	@Override
 	@Transactional
-	public String createId(Long roomId) {
+	public Long getSequence(Long roomId) {
 		// 1. 메모리에서 시퀀스 값 조회 (없으면 새로 생성)
 		AtomicLong sequenceCounter = SEQUENCE_MAP.computeIfAbsent(roomId, this::loadSequenceFromDb);
 
@@ -38,7 +38,7 @@ public class InMemoryRoomChatMessageIdGenerator implements RoomChatMessageIdGene
 		updateSequenceInDatabase(roomId, nextSequence);
 
 		// 4. roomId와 시퀀스를 결합한 ID 반환
-		return roomId + "-" + nextSequence;
+		return nextSequence;
 	}
 
 	/**
