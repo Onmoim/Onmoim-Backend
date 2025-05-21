@@ -38,7 +38,7 @@ public class ChatRoomMember extends BaseEntity {
     private ChatRoom chatRoom;
     
     @Column(name = "user_id", nullable = false)
-    private String userId;
+    private Long userId;
     
     // 연관관계 편의 메소드를 위한 setter
     public void setChatRoom(ChatRoom chatRoom) {

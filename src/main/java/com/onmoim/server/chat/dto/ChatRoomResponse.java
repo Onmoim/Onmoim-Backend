@@ -19,7 +19,7 @@ public class ChatRoomResponse {
     private Long id;
     private String name;
     private String description;
-    private String creatorId;
+    private Long creatorId;
     private int memberCount;
     private String subscribeDestination;
 

@@ -34,7 +34,7 @@ public class ChatMessageDto {
     private String content;
     
     /** 발신자 ID (서버에서 Principal 기반으로 설정) */
-    private String senderId;
+    private Long senderId;
     
     /** 발신자 이름 (UI 표시용) */
     private String senderName;

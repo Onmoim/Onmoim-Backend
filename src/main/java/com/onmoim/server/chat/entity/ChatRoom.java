@@ -39,7 +39,7 @@ public class ChatRoom extends BaseEntity {
     private String description;
     
     @Column(name = "creator_id", nullable = false)
-    private String creatorId;
+    private Long creatorId;
 
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ChatRoomMember> chatRoomMembers = new HashSet<>();
