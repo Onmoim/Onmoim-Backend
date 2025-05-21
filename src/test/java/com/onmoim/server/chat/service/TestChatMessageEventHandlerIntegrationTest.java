@@ -3,8 +3,6 @@ package com.onmoim.server.chat.service;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import java.util.UUID;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +14,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.onmoim.server.chat.dto.RoomChatMessageDto;
+import com.onmoim.server.chat.dto.ChatMessageDto;
 import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.entity.DeliveryStatus;
 
@@ -35,7 +33,7 @@ public class TestChatMessageEventHandlerIntegrationTest {
 	private ChatMessageService chatMessageService;
 
 
-	private RoomChatMessageDto testMessage;
+	private ChatMessageDto testMessage;
 	private String testDestination;
 	private ChatRoomMessageId testMessageId;
 
@@ -49,7 +47,7 @@ public class TestChatMessageEventHandlerIntegrationTest {
 	void setUp() {
 		long roomId = 1L;
 		testMessageId = ChatRoomMessageId.create(roomId, roomId);
-		testMessage = RoomChatMessageDto.builder()
+		testMessage = ChatMessageDto.builder()
 			.messageId(testMessageId)
 			.roomId(roomId)
 			.content("테스트 메시지")
@@ -65,7 +63,7 @@ public class TestChatMessageEventHandlerIntegrationTest {
 		MessageSendEvent event = new MessageSendEvent(testDestination, testMessage);
 
 		// 메시지 전송 성공 시나리오
-		doNothing().when(messagingTemplate).convertAndSend(anyString(), any(RoomChatMessageDto.class));
+		doNothing().when(messagingTemplate).convertAndSend(anyString(), any(ChatMessageDto.class));
 		doNothing().when(chatMessageService).updateMessageDeliveryStatus(any(), any(DeliveryStatus.class));
 
 		// 이벤트 핸들러 호출
@@ -86,13 +84,13 @@ public class TestChatMessageEventHandlerIntegrationTest {
 		// 첫 번째 전송 시도에서 예외 발생
 		doThrow(new RuntimeException("전송 실패 시뮬레이션"))
 			.doNothing() // 두 번째 시도에서는 성공
-			.when(messagingTemplate).convertAndSend(anyString(), any(RoomChatMessageDto.class));
+			.when(messagingTemplate).convertAndSend(anyString(), any(ChatMessageDto.class));
 
 		// 이벤트 핸들러 호출
 		chatMessageEventHandler.handleMessageSend(event);
 
 		// 메시지 전송이 총 2번 시도되었는지 확인 (최초 1번 + 재시도 1번)
-		verify(messagingTemplate, times(2)).convertAndSend(anyString(), any(RoomChatMessageDto.class));
+		verify(messagingTemplate, times(2)).convertAndSend(anyString(), any(ChatMessageDto.class));
 
 		// 상태가 FAILED로 업데이트된 후 SENT로 업데이트되었는지 확인
 		verify(chatMessageService, times(1)).updateMessageDeliveryStatus(testMessageId, DeliveryStatus.FAILED);
