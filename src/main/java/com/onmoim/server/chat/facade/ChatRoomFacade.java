@@ -6,6 +6,7 @@ import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.chat.dto.CreateRoomRequest;
 import com.onmoim.server.chat.service.ChatMessageService;
 import com.onmoim.server.chat.service.ChatRoomService;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
