@@ -20,7 +20,7 @@ public class ChatRoomFacade {
 	 * 채팅방 생성 이후 ChatRoomResponse.subscribeDestination 응답을 통해 Client가 구독합니다.
 	 * 이 때문에 "채팅방이 생성되었습니다." 메시지는 즉시 전달되지는 않지만, "채팅 이력 조회(DB)"를 통해 [채팅방 목록 || 채팅방 진입]시 조회됩니다.
 	 */
-	public ChatRoomResponse createRoom(CreateRoomRequest request, String userId) {
+	public ChatRoomResponse createRoom(CreateRoomRequest request, Long userId) {
 
 		ChatRoomResponse room = chatRoomService.createRoom(request.getName(), request.getDescription(), userId);
 

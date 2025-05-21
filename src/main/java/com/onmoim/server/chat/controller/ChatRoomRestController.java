@@ -34,7 +34,7 @@ public class ChatRoomRestController {
 	public ResponseEntity<?> createRoom(
 		@Valid @RequestBody CreateRoomRequest request, Principal principal) {
 		log.debug("ChatRoomRestController.createRoom");
-		String userId = principal.getName();
+		Long userId = Long.parseLong(principal.getName());
 		ChatRoomResponse roomDto = chatRoomFacade.createRoom(request, userId);
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(ResponseHandler.response(roomDto));

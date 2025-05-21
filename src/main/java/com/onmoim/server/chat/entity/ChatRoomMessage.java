@@ -29,7 +29,7 @@ public class ChatRoomMessage extends BaseEntity {
 	private ChatRoomMessageId id;
 
 	@Column(name = "sender_id")
-	private String senderId;
+	private Long senderId;
 
 	@Column(nullable = false, columnDefinition = "TEXT")
 	private String content;
@@ -47,7 +47,7 @@ public class ChatRoomMessage extends BaseEntity {
 
 	public static ChatRoomMessage create(
 		ChatRoomMessageId id,
-		String senderId,
+		Long senderId,
 		String content,
 		LocalDateTime timestamp,
 		MessageType type,
