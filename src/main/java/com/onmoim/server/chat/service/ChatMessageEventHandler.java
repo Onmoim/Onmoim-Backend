@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 이 곳에서 예외메시지를 제외한 모든 메시지 발송을 책임집니다.
- * 비즈니스 로직 커밋 후에 진행되도록 구성하기 위해 SpringEvent를 이용했습니다.
+ * DB 메시지 저장 커밋 후에 진행되도록 구성하기 위해 SpringEvent를 이용했습니다.
  */
 @Slf4j
 @Component
