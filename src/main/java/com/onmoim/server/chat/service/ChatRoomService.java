@@ -9,7 +9,6 @@ import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.chat.entity.ChatRoom;
 import com.onmoim.server.chat.entity.ChatRoomMember;
 import com.onmoim.server.chat.entity.SubscribeRegistry;
-import com.onmoim.server.chat.repository.ChatRoomMemberRepository;
 import com.onmoim.server.chat.repository.ChatRoomRepository;
 
 import lombok.RequiredArgsConstructor;
