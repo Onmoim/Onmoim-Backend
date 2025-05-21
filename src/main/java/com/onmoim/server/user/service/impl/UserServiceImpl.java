@@ -1,5 +1,7 @@
 package com.onmoim.server.user.service.impl;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
+
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -26,7 +28,7 @@ public class UserServiceImpl implements UserService {
 		);
 
 		if (existingUser.isPresent()) {
-			throw new IllegalStateException("이미 가입된 사용자입니다.");
+			throw new CustomException(ALREADY_EXISTS_USER);
 		}
 
 		User user = User.builder()

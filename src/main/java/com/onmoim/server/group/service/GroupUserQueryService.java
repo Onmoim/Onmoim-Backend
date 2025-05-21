@@ -33,4 +33,13 @@ public class GroupUserQueryService {
 			save(groupUser);
 		}
 	}
+
+	// 북마크 취소(BOOKMARK -> PENDING) 신규 저장(PENDING -> BOOKMARK)
+	public void likeGroup(GroupUser groupUser) {
+		Status prevStatus = groupUser.getStatus();
+		groupUser.like();
+		if (prevStatus == Status.PENDING) {
+			save(groupUser);
+		}
+	}
 }

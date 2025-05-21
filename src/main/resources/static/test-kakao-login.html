@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Kakao Login Test</title>
+    <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
+</head>
+<body>
+<h1>Kakao Login Test</h1>
+<button onclick="kakaoLogin()">카카오 로그인</button>
+
+<script>
+    // 여기엔 본인의 JavaScript 키를 넣어야 함
+    Kakao.init('de2bc229fd6cebd54ec2a333fb38d1d8');
+    console.log(Kakao.isInitialized()); // true 나오면 정상
+
+    function kakaoLogin() {
+        Kakao.Auth.login({
+            // scope: 'profile_nickname, account_email',
+            scope: 'profile_nickname',
+            success: function(authObj) {
+                console.log("Kakao 로그인 성공:", authObj);
+
+                // access_token을 백엔드로 전송
+                fetch("http://localhost:8080/api/v1/auth/oauth", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        provider: "kakao",
+                        token: authObj.access_token
+                    })
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        console.log("백엔드 응답:", data);
+                        alert("token: " + authObj.access_token);
+                    })
+                    .catch(err => {
+                        console.error("요청 실패:", err);
+                    });
+            },
+            fail: function(err) {
+                console.error("Kakao 로그인 실패:", err);
+            }
+        });
+    }
+</script>
+</body>
+</html>

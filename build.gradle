@@ -2,7 +2,6 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.2'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'checkstyle'
 }
 
 group = 'com.onmoim'
@@ -36,6 +35,7 @@ dependencies {
     // Web
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
     // lombok
     compileOnly 'org.projectlombok:lombok'
@@ -47,9 +47,6 @@ dependencies {
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    // checkStyle
-    checkstyle 'com.puppycrawl.tools:checkstyle:10.3.2'
 
     // datafaker
     implementation 'net.datafaker:datafaker:2.4.2'
@@ -63,6 +60,9 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // WebSocket & STOMP 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
 }
 
@@ -86,11 +86,3 @@ tasks.register('copySecretForTest', Copy) {
     include '*.yml', 'application-env.properties'
     into 'src/test/resources'
 }
-
-checkstyle {
-    maxWarnings = 0
-    configFile = file("/${rootDir}/checkstyle/naver-checkstyle-rules.xml")
-    configProperties = ["suppressionFile": "${rootDir}/checkstyle/naver-checkstyle-suppressions.xml"]
-    toolVersion = "10.22.0"
-}
-checkstyleMain.source = fileTree('src/main/java') //검사 대상

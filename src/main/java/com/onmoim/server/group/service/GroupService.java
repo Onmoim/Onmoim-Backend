@@ -73,13 +73,23 @@ public class GroupService {
 		// OWNER, MEMBER, BAN 검사
 		groupUser.joinValidate();
 		// 현재 모임원 숫자 조회
-		Long current = groupUserRepository.countGroupMember(groupId, List.of(Status.MEMBER, Status.OWNER));
+		Long current = groupUserRepository.countByGroupAndStatus(groupId, List.of(Status.MEMBER, Status.OWNER));
 		// 정원 초과 검사
 		group.join(current);
 		groupUserQueryService.joinGroup(groupUser);
 	}
 
-	private Long getCurrentUserId()	{
+	@Transactional
+	public void likeGroup(Long groupId) {
+		User user = userQueryService.findById(getCurrentUserId());
+		Group group = groupQueryService.getById(groupId);
+		// 관계가 없었던 경우 PENDING 상태
+		GroupUser groupUser = groupUserQueryService.findById(groupId, user.getId())
+			.orElseGet(() -> GroupUser.create(group, user, Status.PENDING));
+		groupUserQueryService.likeGroup(groupUser);
+	}
+
+	private Long getCurrentUserId() {
 		CustomUserDetails principal = (CustomUserDetails) SecurityContextHolder.getContextHolderStrategy()
 			.getContext()
 			.getAuthentication()
