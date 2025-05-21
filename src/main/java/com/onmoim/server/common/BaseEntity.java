@@ -28,10 +28,6 @@ public class BaseEntity {
         this.deletedDate = LocalDateTime.now();
     }
 
-	public boolean isActive() {
-		return deletedDate == null;
-	}
-
     // 삭제 확인
     public boolean isDeleted() {
         return deletedDate != null;

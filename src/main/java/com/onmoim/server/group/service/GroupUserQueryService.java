@@ -68,7 +68,7 @@ public class GroupUserQueryService {
 		groupUser.updateStatus(Status.PENDING);
 	}
 
-	public void transferOwnerShip(GroupUser owner, GroupUser member) {
+	public void transferOwnership(GroupUser owner, GroupUser member) {
 		owner.updateStatus(Status.MEMBER);
 		member.updateStatus(Status.OWNER);
 	}

@@ -147,7 +147,7 @@ public class GroupService {
 		// 권한 위임 대상 확인
 		GroupUser user = groupUserQueryService.checkAndGetMember(groupId, to.getId());
 		// 권한 위임
-		groupUserQueryService.transferOwnerShip(owner, user);
+		groupUserQueryService.transferOwnership(owner, user);
 	}
 
 	// 현재 사용자
