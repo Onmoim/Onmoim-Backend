@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
 		log.warn("[handleCustomException] : {} \n message: {}", exception.getErrorCode(),
 			exception.getMessage());
 
-		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+		return ResponseEntity.status(exception.getErrorCode().getHttpStatus())
 			.body(ResponseHandler.errorResponse(exception.getMessage(), exception.getErrorCode().name()));
 	}
 

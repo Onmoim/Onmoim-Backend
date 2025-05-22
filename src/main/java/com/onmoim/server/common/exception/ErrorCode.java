@@ -45,8 +45,8 @@ public enum ErrorCode {
 	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다."),
 
 	/* ------------------ 409 CONFLICT : 요청 충돌 ------------------ */
-	TOO_MANY_REQUESTS(CONFLICT, "잠시 후 다시 시도해 주세요");
-  
+	TOO_MANY_REQUESTS(CONFLICT, "잠시 후 다시 시도해 주세요"),
+
 	/* ------------------ 400 BAD_REQUEST : 권한 관련 오류 ------------------ */
 	NOT_GROUP_MEMBER(FORBIDDEN, "모임 멤버만 접근 가능합니다."),
 

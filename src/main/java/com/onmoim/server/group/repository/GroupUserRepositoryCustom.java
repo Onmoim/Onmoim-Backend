@@ -5,5 +5,6 @@ import java.util.List;
 import com.onmoim.server.group.entity.GroupUser;
 
 public interface GroupUserRepositoryCustom {
-	List<GroupUser> findGroupUserAndMembers(Long groupId);
+	Long countGroupMembers(Long groupId);
+	List<GroupUser> findGroupUsers(Long groupId, Long cursorId, int size);
 }

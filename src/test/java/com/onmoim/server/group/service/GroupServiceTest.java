@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
@@ -262,6 +263,7 @@ class GroupServiceTest {
 			.build();
 		groupRepository.save(group);
 
+		// 유저: 40  모임장: 1 모임원: 19
 		for (int i = 0; i < 40; i++) {
 			User user = User.builder()
 				.name("test" + i)
@@ -275,10 +277,36 @@ class GroupServiceTest {
 			}
 			groupUserRepository.save(GroupUser.create(group, user, Status.MEMBER));
 		}
-		// when
-		List<GroupMembersResponseDto> groupMembers = groupService.getGroupMembers(group.getId());
 
-		// then
-		assertThat(groupMembers.size()).isEqualTo(20);
+		// expected
+
+		// 1 ~ 10
+		CursorPageResponseDto<GroupMembersResponseDto> result1 =
+			groupService.getGroupMembers(group.getId(), null, 10);
+
+		List<GroupMembersResponseDto> content1 = result1.getContent();
+		assertThat(result1.getTotalCount()).isEqualTo(20);
+		assertThat(result1.isHasNext()).isTrue();
+		assertThat(content1.size()).isEqualTo(10);
+		System.out.println(content1);
+		Long cursorId1 = result1.getCursorId();
+
+		// 11 ~ 20
+		CursorPageResponseDto<GroupMembersResponseDto> result2 =
+			groupService.getGroupMembers(group.getId(), cursorId1, 10);
+
+		List<GroupMembersResponseDto> content2 = result2.getContent();
+		assertThat(result2.isHasNext()).isFalse();
+		assertThat(result2.getCursorId()).isNotNull();
+		assertThat(content2.size()).isEqualTo(10);
+		System.out.println(content2);
+
+		CursorPageResponseDto<GroupMembersResponseDto> result3 =
+			groupService.getGroupMembers(group.getId(), 50L, 10);
+
+		List<GroupMembersResponseDto> content3 = result3.getContent();
+		assertThat(result3.isHasNext()).isFalse();
+		assertThat(result3.getCursorId()).isNull();
+		assertThat(content3).isEmpty();
 	}
 }

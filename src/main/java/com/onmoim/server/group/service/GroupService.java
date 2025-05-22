@@ -12,6 +12,7 @@ import com.onmoim.server.category.service.CategoryQueryService;
 import com.onmoim.server.group.aop.NamedLock;
 import com.onmoim.server.group.aop.Retry;
 import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
+import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
@@ -100,10 +101,9 @@ public class GroupService {
 
 	// 모임 회원 조회
 	@Transactional(readOnly = true)
-	public List<GroupMembersResponseDto> getGroupMembers(Long groupId) {
+	public CursorPageResponseDto<GroupMembersResponseDto> getGroupMembers(Long groupId, Long cursorId, int size) {
 		groupQueryService.getById(groupId);
-		return groupUserQueryService.findGroupUserAndMembers(groupId)
-			.stream().map(GroupMembersResponseDto::new).toList();
+		return groupUserQueryService.findGroupUserAndMembers(groupId, cursorId, size);
 	}
 
 	// 모임 삭제
