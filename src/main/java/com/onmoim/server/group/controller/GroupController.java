@@ -8,16 +8,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.onmoim.server.common.response.ResponseHandler;
 import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
 import com.onmoim.server.group.dto.request.TransferOwnerRequestDto;
+import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.service.GroupService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -87,14 +91,9 @@ public class GroupController {
 		return ResponseEntity.ok(ResponseHandler.response(null));
 	}
 
-	/**
-	 * 체크리스트
-	 * - 모임 커서 페이징 필요 유무 확인
-	 * - 유저 이미지 분리? 현재는 유저 엔티티에서 관리
-	 */
 	@Operation(
 		summary = "모임 회원 조회",
-		description = "모임에 가입한 회원들을 조회합니다."
+		description = "모임에 가입한 회원들을 커서 기반 페이징으로 조회합니다."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
@@ -102,13 +101,22 @@ public class GroupController {
 			description = "모임 조회 성공"),
 		@ApiResponse(
 			responseCode = "400",
-			description = "존재하지 않는 모임")})
-	@Deprecated
+			description = "존재하지 않는 모임",
+			content = @Content(
+				schema = @Schema(implementation = CursorPageResponseDto.class)
+			)
+		)
+	})
 	@GetMapping("/v1/groups/{groupId}/members")
 	public ResponseEntity<ResponseHandler<?>> getGroupMembers(
-		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
-		@PathVariable Long groupId) {
-		return ResponseEntity.ok(ResponseHandler.response(groupService.getGroupMembers(groupId)));
+		@Parameter(description = "모임 ID", required = true, in = ParameterIn.PATH)
+		@PathVariable Long groupId,
+		@Parameter(description = "커서 ID (마지막 조회한 커서 ID)", in = ParameterIn.QUERY)
+		@RequestParam(required = false) Long cursorId,
+		@Parameter(description = "페이지 크기 (고정 크기 = 10)", in = ParameterIn.QUERY)
+		@RequestParam(required = false, defaultValue = "10") int size) {
+		var response = groupService.getGroupMembers(groupId, cursorId, size);
+		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
 	@Operation(
