@@ -23,16 +23,12 @@ public class BaseEntity {
     // 삭제 시점
     private LocalDateTime deletedDate;
 
-    /**
-     * 소프트 삭제 처리
-     */
+    // soft delete
     public void softDelete() {
         this.deletedDate = LocalDateTime.now();
     }
 
-    /**
-     * 삭제 여부 확인
-     */
+    // 삭제 확인
     public boolean isDeleted() {
         return deletedDate != null;
     }

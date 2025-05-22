@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Aspect
 @Component
 @RequiredArgsConstructor
-@Order(1)
+@Order(2)
 public class NamedLockAspect {
 	private static final int LOCK_TIMEOUT_SECOND = 3;
 	private final GroupRepository groupRepository;

@@ -24,8 +24,19 @@ public class GroupQueryService {
 		}
 	}
 
+	/**
+	 * group 존재 X -> CustomException
+	 * group 존재 O, deletedDate 존재 O -> CustomException
+	 * group 존재 O, deletedDate 존재 X -> group 반환
+	 */
 	public Group getById(Long groupId) {
+		System.out.println("getById");
 		return groupRepository.findById(groupId)
+			.filter(group -> !group.isDeleted())
 			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
+	}
+
+	public void deleteGroup(Group group) {
+		group.softDelete();
 	}
 }
