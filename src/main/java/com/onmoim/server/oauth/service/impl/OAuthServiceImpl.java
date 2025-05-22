@@ -1,19 +1,21 @@
 package com.onmoim.server.oauth.service.impl;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
+
 import java.util.Optional;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.oauth.dto.OAuthResponseDto;
 import com.onmoim.server.oauth.dto.OAuthUserDto;
 import com.onmoim.server.oauth.service.OAuthService;
 import com.onmoim.server.oauth.service.RefreshTokenService;
 import com.onmoim.server.oauth.service.provider.GoogleOAuthProvider;
+import com.onmoim.server.oauth.service.provider.KakaoOAuthProvider;
 import com.onmoim.server.oauth.service.provider.OAuthProvider;
 import com.onmoim.server.oauth.service.provider.OAuthProviderFactory;
 import com.onmoim.server.security.CustomUserDetails;
@@ -76,18 +78,18 @@ public class OAuthServiceImpl implements OAuthService {
 	@Override
 	public OAuthResponseDto reissueAccessToken(String refreshToken) {
 		if (!jwtProvider.validateToken(refreshToken)) {
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
+			throw new CustomException(INVALID_REFRESH_TOKEN);
 		}
 
 		Long userId = Long.parseLong(jwtProvider.getSubject(refreshToken));  // JWT subject (userId)
 		String savedToken = refreshTokenService.getRefreshToken(userId);
 
 		if (!refreshToken.equals(savedToken)) {
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "저장된 refresh token과 일치하지 않습니다.");
+			throw new CustomException(REFRESH_TOKEN_MISMATCH);
 		}
 
 		User user = userRepository.findById(userId)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "존재하지 않는 유저입니다."));
+			.orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
 		Authentication authentication = createAuthentication(user);
 		String newAccessToken = jwtProvider.createAccessToken(authentication);

@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 @Profile("local")
 @Component
 @RequiredArgsConstructor
-public class DataInitializer implements CommandLineRunner {
+public class DataInitializer {
 
 	private final UserRepository userRepository;
 	private final CategoryRepository categoryRepository;
@@ -119,46 +119,47 @@ public class DataInitializer implements CommandLineRunner {
 	/**
 	 * 지역 데이터 생성
 	 */
-	@Override
+	@Bean
 	@Order(3)
-	public void run(String... args) throws Exception {
-		// Location 데이터 존재할 경우 다시 들어가지 않도록 함
-		if (locationRepository.count() > 0) {
-			System.out.println("Location 데이터 존재");
-			return;
-		}
-
-		InputStream is = getClass().getClassLoader().getResourceAsStream("location.csv");
-		if (is == null) {
-			throw new FileNotFoundException("location.csv not found");
-		}
-
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-			String line;
-			boolean isFirstLine = true;
-
-			while ((line = reader.readLine()) != null) {
-				if (isFirstLine) { // 첫줄 제외
-					isFirstLine = false;
-					continue;
-				}
-
-				String[] tokens = line.split(",", -1);
-
-				if (tokens.length < 5) {
-					continue;
-				}
-
-				String code = tokens[0].trim();
-				String city = tokens[1].trim().isEmpty() ? null : tokens[1].trim();
-				String district = tokens[2].trim().isEmpty() ? null : tokens[2].trim();
-				String dong = tokens[3].trim().isEmpty() ? null : tokens[3].trim();
-				String village = tokens[4].trim().isEmpty() ? null : tokens[4].trim();
-
-				Location location = Location.create(code, city, district, dong, village);
-				locationRepository.save(location);
-
+	public CommandLineRunner initLocations(LocationRepository locationRepository) {
+		return args -> {
+			// Location 데이터 존재할 경우 다시 들어가지 않도록 함
+			if (locationRepository.count() > 0) {
+				System.out.println("Location 데이터 존재");
+				return;
 			}
-		}
+
+			InputStream is = getClass().getClassLoader().getResourceAsStream("location.csv");
+			if (is == null) {
+				throw new FileNotFoundException("location.csv not found");
+			}
+
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+				String line;
+				boolean isFirstLine = true;
+
+				while ((line = reader.readLine()) != null) {
+					if (isFirstLine) { // 첫줄 제외
+						isFirstLine = false;
+						continue;
+					}
+
+					String[] tokens = line.split(",", -1);
+
+					if (tokens.length < 5) {
+						continue;
+					}
+
+					String code = tokens[0].trim();
+					String city = tokens[1].trim().isEmpty() ? null : tokens[1].trim();
+					String district = tokens[2].trim().isEmpty() ? null : tokens[2].trim();
+					String dong = tokens[3].trim().isEmpty() ? null : tokens[3].trim();
+					String village = tokens[4].trim().isEmpty() ? null : tokens[4].trim();
+
+					Location location = Location.create(code, city, district, dong, village);
+					locationRepository.save(location);
+				}
+			}
+		};
 	}
 }

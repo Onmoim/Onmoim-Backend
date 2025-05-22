@@ -26,6 +26,9 @@ public enum ErrorCode {
 	INVALID_LOCATION(BAD_REQUEST, "잘못된 위치 정보입니다."),
 	INVALID_CATEGORY(BAD_REQUEST, "잘못된 카테고리입니다."),
 
+	/* ------------------ 400 BAD_REQUEST : 유저 관련 오류 ------------------ */
+	ALREADY_EXISTS_USER(BAD_REQUEST, "이미 가입된 사용자입니다."),
+
 	/* ------------------ 400 BAD_REQUEST : 모임 관련 오류 ------------------ */
 	NOT_EXISTS_GROUP(BAD_REQUEST, "존재하지 않는 모임입니다."),
 	ALREADY_EXISTS_GROUP(BAD_REQUEST, "이미 존재하는 이름의 모임입니다."),
@@ -38,14 +41,19 @@ public enum ErrorCode {
 	/* ------------------ 400 BAD_REQUEST : 게시글 관련 오류 ------------------ */
 	POST_NOT_FOUND(BAD_REQUEST, "게시글을 찾을 수 없습니다."),
 
-	/* ------------------ 400 BAD_REQUEST : 권한 관련 오류 ------------------ */
-	NOT_GROUP_MEMBER(FORBIDDEN, "모임 멤버만 접근 가능합니다."),
-
 	/* ------------------ 401 BAD_REQUEST : 권한 없음 ------------------ */
 	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다."),
 
 	/* ------------------ 409 CONFLICT : 요청 충돌 ------------------ */
 	TOO_MANY_REQUESTS(CONFLICT, "잠시 후 다시 시도해 주세요");
+  
+	/* ------------------ 400 BAD_REQUEST : 권한 관련 오류 ------------------ */
+	NOT_GROUP_MEMBER(FORBIDDEN, "모임 멤버만 접근 가능합니다."),
+
+	/* ------------------ 401 UNAUTHORIZED : Auth 관련 오류 ------------------ */
+	INVALID_REFRESH_TOKEN(UNAUTHORIZED, "유효하지 않은 refresh token입니다."),
+	REFRESH_TOKEN_MISMATCH(UNAUTHORIZED, "저장된 refresh token과 일치하지 않습니다."),
+	USER_NOT_FOUND(UNAUTHORIZED, "존재하지 않는 사용자입니다.");
 
 	private final HttpStatus httpStatus;
 	private final String detail;
