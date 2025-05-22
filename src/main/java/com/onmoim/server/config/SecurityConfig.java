@@ -7,9 +7,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.onmoim.server.security.JwtAuthenticationFilter;
+import com.onmoim.server.security.JwtProvider;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 public class SecurityConfig {
 
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
 	@Bean
 	@Profile("!test")
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -25,12 +31,13 @@ public class SecurityConfig {
 		http
 			.authorizeHttpRequests(authorizeRequests -> authorizeRequests
 			.requestMatchers("/test-google-login.html", "/test-kakao-login.html", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
-			.requestMatchers("/api/v1/auth/**", "api/v1/user/signup").permitAll()
+			.requestMatchers("/api/v1/auth/**", "/api/v1/user/signup").permitAll()
 			.requestMatchers("/api/v1/location", "api/v1/category").permitAll() // 가입 시 필요하므로 제외
-			.requestMatchers("/api-docs/**", "/swagger-ui/**", "swagger-resources/**").permitAll()
+			.requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
 			.anyRequest().authenticated()
 			)
 
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 			.csrf(csrf -> csrf.disable())
 			.httpBasic(httpBasic -> httpBasic.disable())
