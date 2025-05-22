@@ -1,7 +1,5 @@
 package com.onmoim.server.chat.config;
 
-import java.util.concurrent.ThreadPoolExecutor;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
