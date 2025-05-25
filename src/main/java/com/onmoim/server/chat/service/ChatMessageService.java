@@ -8,9 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.chat.dto.ChatMessageDto;
 import com.onmoim.server.chat.entity.ChatRoomMessage;
+import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.entity.DeliveryStatus;
 import com.onmoim.server.chat.entity.MessageType;
-import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.entity.SubscribeRegistry;
 import com.onmoim.server.chat.repository.ChatMessageRepository;
 import com.onmoim.server.common.exception.CustomException;
@@ -47,10 +47,30 @@ public class ChatMessageService {
 		// 시스템 메시지 브로드캐스트
 		// com.onmoim.server.chat.service.ChatMessageEventHandler 처리
 		String destination = SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
-		eventPublisher.publishEvent(new MessageSendEvent(destination, ChatMessageDto.from(systemMessage)));
+		eventPublisher.publishEvent(new MessageSendEvent(destination, ChatMessageDto.of(systemMessage, "SYSTEM")));
 
 		log.debug("시스템 메시지 전송 완료: 방ID: {}, 내용: {}", roomId, content);
 		return systemMessage.getId();
+	}
+
+	@Transactional
+	public void sendMessage(ChatMessageDto message) {
+		Long roomId = message.getRoomId();
+
+		ChatRoomMessage chatRoomMessage = ChatRoomMessage.create(
+			ChatRoomMessageId.create(roomId, roomChatMessageIdGenerator.getSequence(roomId)),
+			message.getSenderId(),
+			message.getContent(),
+			message.getTimestamp(),
+			message.getType(),
+			DeliveryStatus.PENDING
+		);
+
+		chatMessageRepository.save(chatRoomMessage);
+
+		String destination = SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
+		eventPublisher.publishEvent(new MessageSendEvent(destination, ChatMessageDto.of(chatRoomMessage, message.getSenderName())));
+
 	}
 
 	/**

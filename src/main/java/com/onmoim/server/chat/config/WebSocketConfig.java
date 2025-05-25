@@ -3,9 +3,11 @@ package com.onmoim.server.chat.config;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;
@@ -15,6 +17,7 @@ import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.socket.WebSocketHandler;
@@ -26,6 +29,7 @@ import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.onmoim.server.chat.exception.StompErrorEvent;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,11 +50,13 @@ import lombok.extern.slf4j.Slf4j;
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+	private final ApplicationEventPublisher eventPublisher;
 	private final ThreadPoolTaskExecutor stompInboundExecutor;
 	@Value("${websocket.cors.pattern.string:}")
 	private String corsPattern; //test에서는 cors=*, 프러덕션에서는 ='';
 
-	public WebSocketConfig(@Qualifier("stompInboundExecutor") ThreadPoolTaskExecutor inboundExecutor) {
+	public WebSocketConfig(ApplicationEventPublisher eventPublisher, @Qualifier("stompInboundExecutor") ThreadPoolTaskExecutor inboundExecutor) {
+		this.eventPublisher = eventPublisher;
 		this.stompInboundExecutor = inboundExecutor;
 	}
 
@@ -82,8 +88,30 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 			@Override
 			public Message<?> preSend(Message<?> message, MessageChannel channel) {
+				StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
+
 				log.debug(" clientInboundChannel - 수신된 메시지: {}", message);
-				return message;
+				try {
+					// 기존 로직
+					return message;
+				} catch (Exception ex) {
+					// 예외 발생 시 이벤트 발행
+					String userId = Optional.ofNullable(accessor.getUser())
+						.map(Principal::getName)
+						.orElse("Unknown");
+
+					eventPublisher.publishEvent(new StompErrorEvent(
+						this,
+						userId,
+						"UNDEFINED",
+						ex.getMessage()
+					));
+
+					log.error("STOMP 메시지 처리 중 오류 발생 - 사용자: {}, 대상: {}, 오류: {}",
+						userId, "UNDEFINED", ex.getMessage(), ex);
+
+					return message; // 또는 에러 메시지 반환
+				}
 			}
 		}).taskExecutor(stompInboundExecutor);
 
@@ -128,10 +156,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 			protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler,
 				Map<String, Object> attributes) {
 
-				String sessionId = java.util.UUID.randomUUID().toString(); // 고유한 ID 부여
-
-				log.info("Handshake 연결됨. sessionId = {}", sessionId);
-				return new StompPrincipal(sessionId); // 아래에서 구현
+				return new StompPrincipal("1"); // 아래에서 구현
 			}
 		};
 	}

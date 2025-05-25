@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 public enum SubscribeRegistry {
 	CHAT_ROOM_SUBSCRIBE_PREFIX("/topic/chat.room."),
-	ERROR_SUBSCRIBE_DESTINATION("/queue/error");
+	ERROR_SUBSCRIBE_DESTINATION("/queue");
 
 	private final String destination;
 }

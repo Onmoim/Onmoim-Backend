@@ -123,7 +123,6 @@ public class ChatWebSocketIntegrationTest {
 		//when 채팅방 메시지 전송
 		ChatMessageDto testMessage = ChatMessageDto.builder()
 			.roomId(roomResponse.getId())
-			.sessionId("sessionId")
 			.type(MessageType.SYSTEM)
 			.timestamp(LocalDateTime.now())
 			.senderName("MANAGER")
