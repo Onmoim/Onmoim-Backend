@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 import com.onmoim.server.chat.entity.ChatRoomMessage;
 import com.onmoim.server.chat.entity.MessageType;
-import com.onmoim.server.chat.entity.ChatRoomMessageId;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -22,7 +21,7 @@ import lombok.NoArgsConstructor;
 public class ChatMessageDto {
     
     /** 메시지 고유 ID */
-    private ChatRoomMessageId messageId;
+    private Long messageSequence;
     
     /** 채팅방 ID */
     private Long roomId;
@@ -39,20 +38,19 @@ public class ChatMessageDto {
     /** 발신자 이름 (UI 표시용) */
     private String senderName;
     
-    /** 세션 ID */
-    private String sessionId;
-    
     /** 발송 시간 */
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    public static ChatMessageDto from(ChatRoomMessage entity) {
+    public static ChatMessageDto of(ChatRoomMessage entity, String senderName) {
         return ChatMessageDto.builder()
-            .messageId(entity.getId())
+            .messageSequence(entity.getId().getMessageSequence())
+            .roomId(entity.getId().getRoomId())
             .type(entity.getType())
             .content(entity.getContent())
             .senderId(entity.getSenderId())
             .timestamp(entity.getTimestamp())
+            .senderName(senderName)
             .build();
     }
 }

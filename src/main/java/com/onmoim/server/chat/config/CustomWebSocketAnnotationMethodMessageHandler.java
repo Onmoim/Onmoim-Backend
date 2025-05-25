@@ -38,8 +38,7 @@ public class CustomWebSocketAnnotationMethodMessageHandler extends WebSocketAnno
 
 		StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
 
-		String sessionId = accessor.getSessionId();
-		String userId = accessor.getUser() != null ? accessor.getUser().getName() : sessionId;
+		String userId = accessor.getUser().getName();
 		log.debug("AnnotationMethodHandler HandleNoMatch ErrorEvent 발행 ");
 		// 이벤트 발행
 		eventPublisher.publishEvent(

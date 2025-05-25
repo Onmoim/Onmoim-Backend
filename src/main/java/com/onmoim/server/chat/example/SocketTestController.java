@@ -23,7 +23,7 @@ public class SocketTestController {
 	 * Test web site (https://jiangxy.github.io/websocket-debug-tool/)
 	 *
 	 * 1. [연결] ws://localhost:{port}/ws-chat
-	 * 2. [구독] /system/queue/error
+	 * 2. [구독] /system/queue
 	 * 3. [전송] /app/example.error
 	 * //BODY
 	 * {

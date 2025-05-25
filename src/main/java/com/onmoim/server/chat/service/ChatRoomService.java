@@ -50,8 +50,4 @@ public class ChatRoomService {
 		return ChatRoomResponse.fromChatRoom(room, room.getChatRoomMembers().size(),
 			SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + room.getId());
 	}
-
-	public boolean isMember(Long roomId, Long userId) {
-		return chatRoomMemberRepository.findByChatRoomIdAndUserId(roomId, userId).isPresent();
-	}
 }

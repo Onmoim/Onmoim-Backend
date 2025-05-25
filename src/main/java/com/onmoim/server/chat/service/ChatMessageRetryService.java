@@ -26,7 +26,7 @@ public class ChatMessageRetryService {
 		backoff = @Backoff(delay = 100, multiplier = 1.5, maxDelay = 1000, random = true)
 	) // 약 100ms -> 150ms -> 225ms
 	public void failedProcess(ChatMessageDto message, String destination) {
-		ChatRoomMessageId messageId = message.getMessageId();
+		ChatRoomMessageId messageId = ChatRoomMessageId.create(message.getRoomId(), message.getMessageSequence());
 		log.debug("메시지 재전송 시도: ID: {}, 방ID: {}", messageId, message.getRoomId());
 
 		// WebSocket을 통해 메시지 재전송
@@ -40,7 +40,7 @@ public class ChatMessageRetryService {
 
 	@Recover
 	public void recoverFailedMessage(Exception e, ChatMessageDto message, String destination) {
-		ChatRoomMessageId messageId = message.getMessageId();
+		ChatRoomMessageId messageId = ChatRoomMessageId.create(message.getRoomId(), message.getMessageSequence());
 
 		log.warn("메시지 재전송 최종 실패: ID: {}, 방ID: {}, 최대 시도 횟수 초과(3회), 오류: {}",
 			messageId, message.getRoomId(), e.getMessage());

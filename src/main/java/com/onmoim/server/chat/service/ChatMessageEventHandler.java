@@ -27,7 +27,7 @@ public class ChatMessageEventHandler {
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handleMessageSend(MessageSendEvent event) {
 		ChatMessageDto message = event.message();
-		ChatRoomMessageId messageId = message.getMessageId();
+		ChatRoomMessageId messageId = ChatRoomMessageId.create(message.getRoomId(),message.getMessageSequence());
 		String destination = event.destination();
 
 		try {
