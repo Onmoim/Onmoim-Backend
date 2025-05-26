@@ -11,23 +11,28 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.onmoim.server.TestSecurityConfig;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
-import com.onmoim.server.common.exception.GlobalExceptionHandler;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
-import com.onmoim.server.config.SecurityConfig;
+import com.onmoim.server.security.JwtAuthenticationFilter;
 
-@WebMvcTest(S3Controller.class)
-@ContextConfiguration(classes = {S3Controller.class, SecurityConfig.class, GlobalExceptionHandler.class})
-@ActiveProfiles("test")
+@WebMvcTest(
+	controllers = S3Controller.class,
+	excludeFilters = {
+		@ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = JwtAuthenticationFilter.class)
+	}
+)
+@Import(TestSecurityConfig.class)
 class S3ControllerTest {
 
 	@Autowired
