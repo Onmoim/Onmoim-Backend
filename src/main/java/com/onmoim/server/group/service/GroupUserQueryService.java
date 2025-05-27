@@ -30,7 +30,7 @@ public class GroupUserQueryService {
 		try {
 			groupUserRepository.save(groupUser);
 		} catch (DataIntegrityViolationException e) {
-			throw new CustomException(TOO_MANY_REQUESTS);
+			throw new CustomException(TOO_MANY_REQUEST);
 		}
 	}
 
@@ -52,13 +52,13 @@ public class GroupUserQueryService {
 	public GroupUser checkAndGetMember(Long groupId, Long userId) {
 		return findById(groupId, userId)
 			.filter(GroupUser::isMember)
-			.orElseThrow(() -> new CustomException(INVALID_USER));
+			.orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND_IN_GROUP));
 	}
 
 	public GroupUser checkCanLeave(Long groupId, Long userId) {
 		GroupUser groupUser = findById(groupId, userId)
 			.filter(GroupUser::isJoined)
-			.orElseThrow(() -> new CustomException(INVALID_USER));
+			.orElseThrow(() -> new CustomException(NOT_GROUP_MEMBER));
 
 		if (groupUser.isOwner()) {
 			throw new CustomException(GROUP_OWNER_TRANSFER_REQUIRED);

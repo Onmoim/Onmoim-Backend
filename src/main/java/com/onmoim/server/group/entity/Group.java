@@ -1,5 +1,7 @@
 package com.onmoim.server.group.entity;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
+
 import org.hibernate.annotations.Comment;
 
 import com.onmoim.server.category.entity.Category;
@@ -59,7 +61,7 @@ public class Group extends BaseEntity {
 
 	public void join(Long current) {
 		if (capacity < current + 1) {
-			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
+			throw new CustomException(GROUP_CAPACITY_EXCEEDED);
 		}
 	}
 }
