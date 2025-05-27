@@ -53,7 +53,9 @@ public enum ErrorCode {
 	/* ------------------ 401 UNAUTHORIZED : Auth 관련 오류 ------------------ */
 	INVALID_REFRESH_TOKEN(UNAUTHORIZED, "유효하지 않은 refresh token입니다."),
 	REFRESH_TOKEN_MISMATCH(UNAUTHORIZED, "저장된 refresh token과 일치하지 않습니다."),
-	USER_NOT_FOUND(UNAUTHORIZED, "존재하지 않는 사용자입니다.");
+	USER_NOT_FOUND(UNAUTHORIZED, "존재하지 않는 사용자입니다."),
+	UNAUTHORIZED_ACCESS(UNAUTHORIZED, "인증되지 않은 사용자입니다.");
+
 
 	private final HttpStatus httpStatus;
 	private final String detail;
