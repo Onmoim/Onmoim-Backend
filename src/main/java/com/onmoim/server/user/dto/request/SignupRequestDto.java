@@ -1,4 +1,4 @@
-package com.onmoim.server.user.dto;
+package com.onmoim.server.user.dto.request;
 
 import java.time.LocalDateTime;
 
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Schema(description = "유저 회원가입 요청 Request")
-public class SignupRequest {
+public class SignupRequestDto {
 
 	@NotNull(message = "소셜 고유 id는 필수입니다.")
 	@Schema(description = "소셜 고유 id(google: sub, kakao: id)")
@@ -39,8 +39,5 @@ public class SignupRequest {
 	@NotNull(message = "지역은 필수입니다.")
 	@Schema(description = "지역 id")
 	private Long addressId;
-
-	@Schema(description = "관심사(카테고리) id")
-	private Long categoryId;
 
 }

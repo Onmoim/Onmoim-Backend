@@ -51,9 +51,6 @@ public class User extends BaseEntity {
 	@Comment("지역 id")
 	private Long addressId;
 
-	@Comment("관심사(카테고리)")
-	private Long categoryId;
-
 	@Comment("프로필 사진 url")
 	private String profileImgUrl;
 
@@ -62,7 +59,7 @@ public class User extends BaseEntity {
 
 	@Builder
 	private User(Long roleId, String oauthId, String provider, String email, String name, String gender,
-		LocalDateTime birth, Long addressId, Long categoryId, String profileImgUrl, String introduction) {
+		LocalDateTime birth, Long addressId, String profileImgUrl, String introduction) {
 		this.roleId = roleId;
 		this.provider = provider;
 		this.email = email;
@@ -71,14 +68,12 @@ public class User extends BaseEntity {
 		this.gender = gender;
 		this.birth = birth;
 		this.addressId = addressId;
-		this.categoryId = categoryId;
 		this.profileImgUrl = profileImgUrl;
 		this.introduction = introduction;
 	}
 
-	public static User create(Long roleId, String oauthId, String provider, String email,
-		String name, String gender, LocalDateTime birth, Long addressId,
-		Long categoryId, String profileImgUrl, String introduction) {
+	public static User create(Long roleId, String oauthId, String provider, String email, String name,
+		String gender, LocalDateTime birth, Long addressId, String profileImgUrl, String introduction) {
 		return User.builder()
 			.roleId(roleId)
 			.oauthId(oauthId)
@@ -88,7 +83,6 @@ public class User extends BaseEntity {
 			.gender(gender)
 			.birth(birth)
 			.addressId(addressId)
-			.categoryId(categoryId)
 			.profileImgUrl(profileImgUrl)
 			.introduction(introduction)
 			.build();
