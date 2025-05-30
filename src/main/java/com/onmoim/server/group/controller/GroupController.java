@@ -8,13 +8,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.common.response.ResponseHandler;
-import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
+import com.onmoim.server.group.dto.request.GroupRequestDto;
 import com.onmoim.server.group.dto.request.TransferOwnerRequestDto;
 import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.service.GroupService;
@@ -37,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 public class GroupController {
 	private final GroupService groupService;
 
+	// x,y 좌표 로직
 	@Operation(
 		summary = "모임 생성",
 		description = "모임을 생성합니다. 모임 생성 성공 시 생성된 모임 ID가 반환됩니다."
@@ -60,13 +64,49 @@ public class GroupController {
 	})
 	@PostMapping("/v1/groups")
 	public ResponseEntity<ResponseHandler<Long>> createGroup(
-		@RequestBody @Valid CreateGroupRequestDto request
+		@RequestBody @Valid GroupRequestDto request
 	)
 	{
 		Long groupId = groupService.createGroup(request);
 		return ResponseEntity
 			.status(CREATED)
 			.body(ResponseHandler.response(groupId));
+	}
+
+	// x,y 좌표 로직
+	@Operation(
+		summary = "모임 수정",
+		description = "모임을 수정합니다."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "모임 수정 성공"),
+		@ApiResponse(
+			responseCode = "400",
+			description = "Request DTO 검증 실패 (입력값 형식 오류, 필수값 누락 등)"),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자 접근"),
+		@ApiResponse(
+			responseCode = "403",
+			description = "권한이 부족합니다. 모임장만 수정 가능"),
+		@ApiResponse(
+			responseCode = "404",
+			description = "존재하지 않는 모임"),
+	})
+	@PutMapping("/v1/groups/{groupId}")
+	public ResponseEntity<ResponseHandler<String>> updateGroup(
+		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
+		@PathVariable Long groupId,
+		@Parameter(description = "모임 수정 정보")
+		@Valid @RequestPart(value = "request") GroupRequestDto request,
+		@Parameter(description = "이미지 파일")
+		@RequestPart(value = "file", required = false) MultipartFile file
+	)
+	{
+		groupService.updateGroup(groupId, request, file);
+		return ResponseEntity.ok(ResponseHandler.response("수정 성공"));
 	}
 
 	@Operation(
@@ -143,7 +183,7 @@ public class GroupController {
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "200",
-			description = "모임 조회 성공",
+			description = "모임 회원 조회 성공",
 			content = @Content(
 				schema = @Schema(implementation = CursorPageResponseDto.class))),
 		@ApiResponse(
@@ -257,4 +297,6 @@ public class GroupController {
 		groupService.transferOwnership(groupId, request.getMemberId());
 		return ResponseEntity.ok(ResponseHandler.response("모임장 변경 성공"));
 	}
+
+	// todo: 모임 상세 조회 after 일정 생성, 조회
 }

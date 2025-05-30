@@ -4,10 +4,14 @@ import static com.onmoim.server.common.exception.ErrorCode.*;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.onmoim.server.category.service.CategoryQueryService;
 import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.group.dto.request.GroupRequestDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.repository.GroupRepository;
+import com.onmoim.server.location.service.LocationQueryService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -15,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GroupQueryService {
 	private final GroupRepository groupRepository;
+	private final CategoryQueryService categoryQueryService;
+	private final LocationQueryService locationQueryService;
 
 	public void saveGroup(Group group) {
 		try {
@@ -36,7 +42,13 @@ public class GroupQueryService {
 			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
 	}
 
+	// 모임을 삭제합니다.
 	public void deleteGroup(Group group) {
 		group.softDelete();
+	}
+
+	// todo: 모임을 수정합니다.
+	public void updateGroup(Group group, GroupRequestDto request, MultipartFile image) {
+
 	}
 }

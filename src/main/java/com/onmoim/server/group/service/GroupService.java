@@ -6,12 +6,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.service.CategoryQueryService;
 import com.onmoim.server.group.aop.NamedLock;
 import com.onmoim.server.group.aop.Retry;
-import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
+import com.onmoim.server.group.dto.request.GroupRequestDto;
 import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
@@ -38,8 +39,9 @@ public class GroupService {
 	private final CategoryQueryService categoryQueryService;
 	private final GroupUserRepository groupUserRepository;
 
+	// 모임 생성 todo: x, y 좌표
 	@Transactional
-	public Long createGroup(CreateGroupRequestDto request) {
+	public Long createGroup(GroupRequestDto request) {
 		User user = userQueryService.findById(getCurrentUserId());
 		Location location = locationQueryService.getById(request.getLocationId());
 		Category category = categoryQueryService.getById(request.getCategoryId());
@@ -133,6 +135,7 @@ public class GroupService {
 		groupUserQueryService.leave(groupUser);
 	}
 
+	// 모임장 위임
 	@Retry
 	@Transactional
 	public void transferOwnership(Long groupId, Long userId) {
@@ -148,6 +151,19 @@ public class GroupService {
 		GroupUser user = groupUserQueryService.checkAndGetMember(groupId, to.getId());
 		// 권한 위임
 		groupUserQueryService.transferOwnership(owner, user);
+	}
+
+	// 모임 수정
+	@Transactional
+	public void updateGroup(Long groupId, GroupRequestDto request, MultipartFile image) {
+		// 유저 조회
+		User user = userQueryService.findById(getCurrentUserId());
+		// 모임 조회
+		Group group = groupQueryService.getById(groupId);
+		// 현재 모임장
+		groupUserQueryService.checkAndGetMember(groupId, user.getId());
+		// 업데이트 모임
+		groupQueryService.updateGroup(group, request, image);
 	}
 
 	// 현재 사용자

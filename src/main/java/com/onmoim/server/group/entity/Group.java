@@ -6,11 +6,12 @@ import org.hibernate.annotations.Comment;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.common.BaseEntity;
+import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.location.entity.Location;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -58,6 +59,9 @@ public class Group extends BaseEntity {
 
 	@Comment("모임 대표 사진")
 	private String imgUrl;
+
+	@Embedded
+	GeoPoint geoPoint;
 
 	public void join(Long current) {
 		if (capacity < current + 1) {
