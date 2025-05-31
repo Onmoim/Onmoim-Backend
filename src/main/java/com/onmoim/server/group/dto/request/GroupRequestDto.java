@@ -13,11 +13,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+// 모임 생성 및 수정에 사용합니다.
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class CreateGroupRequestDto {
+public class GroupRequestDto {
 	@Schema(description = "카테고리 ID", example = "1")
 	@NotNull(message = "모임 카테고리 설정은 필수입니다.")
 	private Long categoryId;

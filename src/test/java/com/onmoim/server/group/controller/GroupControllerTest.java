@@ -23,7 +23,7 @@ import com.onmoim.server.TestSecurityConfig;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.response.Message;
-import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
+import com.onmoim.server.group.dto.request.GroupRequestDto;
 import com.onmoim.server.group.service.GroupService;
 import com.onmoim.server.security.JwtAuthenticationFilter;
 
@@ -49,7 +49,7 @@ class GroupControllerTest {
 	void createGroupSuccess() throws Exception {
 		// given
 		given(groupService.createGroup(any())).willReturn(1L);
-		var request = CreateGroupRequestDto.builder()
+		var request = GroupRequestDto.builder()
 			.name("name")
 			.description("description")
 			.capacity(10)
@@ -63,7 +63,7 @@ class GroupControllerTest {
 		mvc.perform(post("/api/v1/groups")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(json))
-			.andExpect(status().isOk())
+			.andExpect(status().is2xxSuccessful())
 			.andExpect(jsonPath("$.message").value(Message.SUCCESS.getDescription()))
 			.andExpect(jsonPath("$.data").value(1L))
 			.andDo(print());
@@ -77,7 +77,7 @@ class GroupControllerTest {
 	void createGroupFail1() throws Exception {
 		// given
 		given(groupService.createGroup(any())).willReturn(1L);
-		var request = CreateGroupRequestDto.builder()
+		var request = GroupRequestDto.builder()
 			.name("name")
 			.description("description")
 			.capacity(10)
@@ -86,7 +86,7 @@ class GroupControllerTest {
 			.build();
 		var json = mapper.writeValueAsString(request);
 
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(json))
@@ -100,7 +100,7 @@ class GroupControllerTest {
 	void createGroupFail2() throws Exception {
 		// given
 		given(groupService.createGroup(any())).willReturn(1L);
-		var request = CreateGroupRequestDto.builder()
+		var request = GroupRequestDto.builder()
 			.name("name")
 			.description("description")
 			.capacity(10)
@@ -108,7 +108,7 @@ class GroupControllerTest {
 			.build();
 		var json = mapper.writeValueAsString(request);
 
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(json))
@@ -128,7 +128,7 @@ class GroupControllerTest {
 	void createGroupFail3() throws Exception {
 		// given
 		given(groupService.createGroup(any())).willReturn(1L);
-		var request = CreateGroupRequestDto.builder()
+		var request = GroupRequestDto.builder()
 			.name("name")
 			.description("description")
 			.capacity(4)
@@ -136,7 +136,7 @@ class GroupControllerTest {
 			.build();
 		var json = mapper.writeValueAsString(request);
 
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(json))
@@ -153,9 +153,9 @@ class GroupControllerTest {
 		// given
 		doNothing().when(groupService).joinGroup(anyLong());
 
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups/{groupId}/join", 1L))
-			.andExpect(status().isOk())
+			.andExpect(status().is2xxSuccessful())
 			.andExpect(jsonPath("$.message").value(Message.SUCCESS.getDescription()))
 			.andExpect(jsonPath("$.data").value("모임 가입 성공"))
 			.andDo(print());
@@ -164,7 +164,7 @@ class GroupControllerTest {
 	@Test
 	@DisplayName("그룹 가입 실패: 권한 부족")
 	void joinGroupFailure1() throws Exception {
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups/{groupId}/join", 1L))
 			.andExpect(status().isForbidden())
 			.andDo(print());
@@ -178,7 +178,7 @@ class GroupControllerTest {
 		doThrow(new CustomException(ErrorCode.GROUP_ALREADY_JOINED))
 			.when(groupService).joinGroup(anyLong());
 
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups/{groupId}/join", 1L))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.message").value(ErrorCode.GROUP_ALREADY_JOINED.toString()))

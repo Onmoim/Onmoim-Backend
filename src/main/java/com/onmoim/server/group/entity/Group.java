@@ -1,14 +1,17 @@
 package com.onmoim.server.group.entity;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
+
 import org.hibernate.annotations.Comment;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.common.BaseEntity;
+import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.location.entity.Location;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -57,9 +60,31 @@ public class Group extends BaseEntity {
 	@Comment("모임 대표 사진")
 	private String imgUrl;
 
+	@Embedded
+	GeoPoint geoPoint;
+
 	public void join(Long current) {
 		if (capacity < current + 1) {
-			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
+			throw new CustomException(GROUP_CAPACITY_EXCEEDED);
 		}
+	}
+
+	public void update(Long currentMember, String name, String description, int capacity, Category category) {
+		if(currentMember > capacity){
+			throw new CustomException(CAPACITY_MUST_BE_GREATER_THAN_CURRENT);
+		}
+		this.name = name;
+		this.description = description;
+		this.capacity = capacity;
+		this.category = category;
+	}
+
+	public void updateImage(String imgUrl) {
+		this.imgUrl = imgUrl;
+	}
+
+	public void updateLocation(final Location location, final GeoPoint geoPoint) {
+		this.location = location;
+		this.geoPoint = geoPoint;
 	}
 }

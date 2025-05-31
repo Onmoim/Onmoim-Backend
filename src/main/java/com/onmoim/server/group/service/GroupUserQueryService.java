@@ -30,7 +30,7 @@ public class GroupUserQueryService {
 		try {
 			groupUserRepository.save(groupUser);
 		} catch (DataIntegrityViolationException e) {
-			throw new CustomException(TOO_MANY_REQUESTS);
+			throw new CustomException(TOO_MANY_REQUEST);
 		}
 	}
 
@@ -52,13 +52,13 @@ public class GroupUserQueryService {
 	public GroupUser checkAndGetMember(Long groupId, Long userId) {
 		return findById(groupId, userId)
 			.filter(GroupUser::isMember)
-			.orElseThrow(() -> new CustomException(INVALID_USER));
+			.orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND_IN_GROUP));
 	}
 
 	public GroupUser checkCanLeave(Long groupId, Long userId) {
 		GroupUser groupUser = findById(groupId, userId)
 			.filter(GroupUser::isJoined)
-			.orElseThrow(() -> new CustomException(INVALID_USER));
+			.orElseThrow(() -> new CustomException(NOT_GROUP_MEMBER));
 
 		if (groupUser.isOwner()) {
 			throw new CustomException(GROUP_OWNER_TRANSFER_REQUIRED);
@@ -92,6 +92,9 @@ public class GroupUserQueryService {
 			save(groupUser);
 		}
 	}
+	public Long countMembers(Long groupId) {
+		return groupUserRepository.countGroupMembers(groupId);
+	}
 
 	// fetch join 사용해서 모임 멤버 조회
 	public CursorPageResponseDto<GroupMembersResponseDto> findGroupUserAndMembers(Long groupId, Long cursorId, int size) {
@@ -101,7 +104,7 @@ public class GroupUserQueryService {
 		List<GroupMembersResponseDto> list = result.stream()
 			.map(GroupMembersResponseDto::new)
 			.toList();
-		Long totalCount = cursorId == null ? groupUserRepository.countGroupMembers(groupId) : null ;
+		Long totalCount = cursorId == null ? countMembers(groupId) : null ;
 		return CursorPageResponseDto.<GroupMembersResponseDto>builder()
 			.content(list)
 			.totalCount(totalCount)

@@ -35,6 +35,6 @@ public class RetryAspect {
 			}
 		}
 		log.warn("재시도 실패");
-		throw new CustomException(TOO_MANY_REQUESTS);
+		throw new CustomException(TOO_MANY_REQUEST);
 	}
 }

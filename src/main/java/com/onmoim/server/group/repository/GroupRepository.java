@@ -1,5 +1,7 @@
 package com.onmoim.server.group.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -11,4 +13,8 @@ public interface GroupRepository extends JpaRepository<Group, Long>, GroupReposi
 
 	@Query(value = "select release_lock(:key)", nativeQuery = true)
 	void releaseLock(String key);
+
+	// group, category, location fetch join
+	@Query("select g from Group g join fetch g.category join fetch g.location where g.id=:groupId")
+	Optional<Group> findGroupWithRelations(Long groupId);
 }
