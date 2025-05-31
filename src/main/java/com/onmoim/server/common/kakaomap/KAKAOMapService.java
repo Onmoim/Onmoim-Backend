@@ -1,6 +1,7 @@
 package com.onmoim.server.common.kakaomap;
 
 import java.net.URI;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -14,7 +15,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.onmoim.server.common.GeoPoint;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class KAKAOMapService {
@@ -25,19 +28,7 @@ public class KAKAOMapService {
 	@Value("${map.rest.uri}")
 	private String REST_URI;
 
-	/**
-	 * 로직 흐름: Location(.csv 기반) 조회 -> Location 정보 바탕으로 카카오 맵 조회 -> 정보 저장
-	 * 200 성공 응답
-	 * - 1개: success
-	 * - 2개: 중복 이름 -> 어떻게 처리? (csv 파일 문제)
-	 * - 0개: 존재하지 않는 장소 -> 어떻게 처리? (csv 파일 문제)
-	 * 401 실패 응답
-	 * - 서버 설정 문제: error log 남기기, 재시도 X
-	 * 500 실패 응답(실제로 연속적으로 호출하면 발생)
-	 * - 카카오 MAP API 응답 오류 -> 재시도
-	 * 나머지 Exception -> 재시도
-	 */
-	public GeoPoint getGeoPoint(final String address){
+	public List<GeoPoint> getGeoPoint(final String address){
 		ResponseEntity<KAKAOMapResponse> response = restTemplate.exchange(
 			createUri(address),
 			HttpMethod.GET,
@@ -45,7 +36,7 @@ public class KAKAOMapService {
 			KAKAOMapResponse.class);
 
 		KAKAOMapResponse kakaoMapResponse = response.getBody();
-		return kakaoMapResponse.getDocuments().get(0);
+		return kakaoMapResponse.getDocuments();
 	}
 
 	private URI createUri(final String address){

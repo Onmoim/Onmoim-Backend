@@ -92,6 +92,9 @@ public class GroupUserQueryService {
 			save(groupUser);
 		}
 	}
+	public Long countMembers(Long groupId) {
+		return groupUserRepository.countGroupMembers(groupId);
+	}
 
 	// fetch join 사용해서 모임 멤버 조회
 	public CursorPageResponseDto<GroupMembersResponseDto> findGroupUserAndMembers(Long groupId, Long cursorId, int size) {
@@ -101,7 +104,7 @@ public class GroupUserQueryService {
 		List<GroupMembersResponseDto> list = result.stream()
 			.map(GroupMembersResponseDto::new)
 			.toList();
-		Long totalCount = cursorId == null ? groupUserRepository.countGroupMembers(groupId) : null ;
+		Long totalCount = cursorId == null ? countMembers(groupId) : null ;
 		return CursorPageResponseDto.<GroupMembersResponseDto>builder()
 			.content(list)
 			.totalCount(totalCount)

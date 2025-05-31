@@ -1,7 +1,9 @@
 package com.onmoim.server.group.service;
 
 import java.util.List;
+import java.util.Objects;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -10,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.service.CategoryQueryService;
+import com.onmoim.server.common.kakaomap.GeoPointUpdateEvent;
 import com.onmoim.server.group.aop.NamedLock;
 import com.onmoim.server.group.aop.Retry;
 import com.onmoim.server.group.dto.request.GroupRequestDto;
@@ -38,8 +41,9 @@ public class GroupService {
 	private final LocationQueryService locationQueryService;
 	private final CategoryQueryService categoryQueryService;
 	private final GroupUserRepository groupUserRepository;
+	private final ApplicationEventPublisher eventPublisher;
 
-	// 모임 생성 todo: x, y 좌표
+	// 모임 생성
 	@Transactional
 	public Long createGroup(GroupRequestDto request) {
 		User user = userQueryService.findById(getCurrentUserId());
@@ -57,6 +61,11 @@ public class GroupService {
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
 		groupUserQueryService.save(groupUser);
+
+		String address = location.getFullAddress();
+
+		eventPublisher.publishEvent(
+			new GeoPointUpdateEvent(group.getId(), location.getId(), address));
 		return group.getId();
 	}
 
@@ -153,17 +162,37 @@ public class GroupService {
 		groupUserQueryService.transferOwnership(owner, user);
 	}
 
-	// 모임 수정
+	/**
+	 * 모임 수정
+	 * 모임 정원 변경의 경우 현재 모임원 수 관련된 동시성 이슈가 발생 예상
+	 * -> 네임드 락을 획득하고 시도하도록 하였습니다.
+	 * 정원 감소 시: 현재 모임원 수보다 작은 값으로 정원을 설정하려 할 때
+	 * 예외 발생(설정 불가)로 처리하여 데이터 정합성을 보장합니다.
+	 *
+	 * 발생 쿼리
+	 * - 유저 조회, 모임 조회(카테고리, 지역), 현재 모임장 조회, 현재 모임원 수 조회
+	 * - 업데이트 쿼리, x,y 업데이트 쿼리
+	 *
+	 */
+	@NamedLock
 	@Transactional
 	public void updateGroup(Long groupId, GroupRequestDto request, MultipartFile image) {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
 		// 모임 조회
-		Group group = groupQueryService.getById(groupId);
+		Group group = groupQueryService.getGroupWithRelations(groupId);
 		// 현재 모임장
 		groupUserQueryService.checkAndGetMember(groupId, user.getId());
-		// 업데이트 모임
+		// 업데이트(카테고리, 제목, 설명, 정원)
 		groupQueryService.updateGroup(group, request, image);
+		// 현재 모임 Location
+		Location location = group.getLocation();
+		// 현재 모임 Location, 요청 Location 다르면 업데이트 시도
+		if(!Objects.equals(location.getId(), request.getLocationId())){
+			Location requestLocation = locationQueryService.getById(request.getLocationId());
+			String fullAddress = location.getFullAddress();
+			eventPublisher.publishEvent(new GeoPointUpdateEvent(groupId, requestLocation.getId(), fullAddress));
+		}
 	}
 
 	// 현재 사용자

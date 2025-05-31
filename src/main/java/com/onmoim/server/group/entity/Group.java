@@ -68,4 +68,23 @@ public class Group extends BaseEntity {
 			throw new CustomException(GROUP_CAPACITY_EXCEEDED);
 		}
 	}
+
+	public void update(Long currentMember, String name, String description, int capacity, Category category) {
+		if(currentMember > capacity){
+			throw new CustomException(CAPACITY_MUST_BE_GREATER_THAN_CURRENT);
+		}
+		this.name = name;
+		this.description = description;
+		this.capacity = capacity;
+		this.category = category;
+	}
+
+	public void updateImage(String imgUrl) {
+		this.imgUrl = imgUrl;
+	}
+
+	public void updateLocation(final Location location, final GeoPoint geoPoint) {
+		this.location = location;
+		this.geoPoint = geoPoint;
+	}
 }

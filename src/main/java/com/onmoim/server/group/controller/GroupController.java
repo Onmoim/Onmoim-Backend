@@ -40,7 +40,6 @@ import lombok.RequiredArgsConstructor;
 public class GroupController {
 	private final GroupService groupService;
 
-	// x,y 좌표 로직
 	@Operation(
 		summary = "모임 생성",
 		description = "모임을 생성합니다. 모임 생성 성공 시 생성된 모임 ID가 반환됩니다."
@@ -94,6 +93,9 @@ public class GroupController {
 		@ApiResponse(
 			responseCode = "404",
 			description = "존재하지 않는 모임"),
+		@ApiResponse(
+			responseCode = "409",
+			description = "정원 제한 위반")
 	})
 	@PutMapping("/v1/groups/{groupId}")
 	public ResponseEntity<ResponseHandler<String>> updateGroup(
