@@ -4,20 +4,28 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.onmoim.server.category.entity.Category;
+import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.group.dto.request.GroupRequestDto;
 import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
@@ -25,13 +33,11 @@ import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupUserRepository;
+import com.onmoim.server.location.entity.Location;
+import com.onmoim.server.location.repository.LocationRepository;
 import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.repository.UserRepository;
-
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
 
 @SpringBootTest
 class GroupServiceTest {
@@ -44,46 +50,39 @@ class GroupServiceTest {
 	@Autowired
 	private GroupUserRepository groupUserRepository;
 	@Autowired
-	private EntityManagerFactory emf;
+	private LocationRepository locationRepository;
+	@Autowired
+	private CategoryRepository categoryRepository;
 
-	/**
-	 * 버전 추가로 발생한 테스트 코드 리팩토링
-	 * save GroupUser(group, user) -> group, user detached error
-	 * 버전이 없을 때는 괜찮았지만 버전이 생기면서 detached 엔티티를 포함하는 persist 동작은 불가능
-	 * 테스트에서 트랜잭션을 시작하면 아직 커밋되지 않은 상태이기 떄문에 없는 데이터로 조회
-	 * 그래서 명시적으로 트랜잭션 시작, 커밋으로 데이터 초기화 & 테스트
-	 */
 	@Test
 	@DisplayName("동시에 가입 요청 테스트")
+	@Transactional
 	void joinGroupConcurrencyTest() throws InterruptedException {
 		// given
-		EntityManager em = emf.createEntityManager();
-		EntityTransaction tx = em.getTransaction();
+		assertThat(TestTransaction.isActive()).isTrue();
+
 		List<User> userList = new ArrayList<>();
-		Long groupId = null;
-		try {
-			tx.begin();
-			Group group = Group.groupCreateBuilder()
-				.name("group")
-				.capacity(10)
+		Group group = Group.groupCreateBuilder()
+			.name("group")
+			.capacity(10)
+			.build();
+
+		groupRepository.save(group);
+		final Long groupId = group.getId();
+		User owner = User.builder().name("모임장").build();
+		userList.add(owner);
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+		userRepository.save(owner);
+		IntStream.range(0, 20).forEach(i -> {
+			User user = User.builder()
+				.name("test" + i)
 				.build();
-			User owner = User.builder().name("모임장").build();
-			em.persist(group);
-			em.persist(owner);
-			em.persist(GroupUser.create(group, owner, Status.OWNER));
-			groupId = group.getId();
-			for (int i = 0; i < 20; i++) {
-				User user = User.builder()
-					.name("test" + i)
-					.build();
-				userList.add(user);
-				em.persist(user);
-			}
-			tx.commit();
-		} finally {
-			em.close();
-		}
-		final Long groupFinalId = groupId;
+			userList.add(user);
+			userRepository.save(user);
+		});
+		TestTransaction.flagForCommit(); // 트랜잭션 커밋
+		TestTransaction.end();           // 트랜잭션 종료
+
 		// when
 		int taskCount = 20;
 		ExecutorService executorService = Executors.newFixedThreadPool(10);
@@ -100,7 +99,7 @@ class GroupServiceTest {
 					SecurityContextHolder.getContext().setAuthentication(authenticated);
 
 					// 동시성 테스트
-					groupService.joinGroup(groupFinalId);
+					groupService.joinGroup(groupId);
 				} finally {
 					// 쓰레드 인증 정보 삭제
 					SecurityContextHolder.clearContext();
@@ -309,4 +308,55 @@ class GroupServiceTest {
 		assertThat(result3.getCursorId()).isNull();
 		assertThat(content3).isEmpty();
 	}
+
+	@Test
+	@DisplayName("모임 생성 성공 테스트")
+	void createGroupSuccess() throws Exception {
+		// given
+		Location location = Location.create("1234", "서울특별시", "종로구", "청운동", null);
+		locationRepository.save(location);
+
+		Category category = Category.create("음악", null);
+		categoryRepository.save(category);
+
+		User user = User.builder().name("test").build();
+		userRepository.save(user);
+
+		String name = "테스트 모임";
+		String description = "모임 설명";
+		GroupRequestDto request = GroupRequestDto.builder()
+			.name(name)
+			.description(description)
+			.locationId(location.getId())
+			.categoryId(category.getId())
+			.capacity(100)
+			.build();
+
+		// when
+		var detail = new CustomUserDetails(user.getId(), "test", "test");
+		var authenticated = UsernamePasswordAuthenticationToken.authenticated(
+			detail, null, null);
+		SecurityContextHolder.getContext().setAuthentication(authenticated);
+		Long groupId = groupService.createGroup(request);
+
+		// then
+		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
+			Optional<Group> findGroup = groupRepository.findGroupWithRelations(groupId);
+			assertThat(findGroup.isPresent()).isTrue();
+			Group group = findGroup.get();
+			assertThat(group.getName()).isEqualTo(name);
+			assertThat(group.getDescription()).isEqualTo(description);
+			assertThat(group.getGeoPoint()).isNotNull();
+			assertThat(group.getGeoPoint().getX()).isGreaterThan(0.0);
+			assertThat(group.getGeoPoint().getY()).isGreaterThan(0.0);
+			System.out.println("geoPoint= " + group.getGeoPoint());
+		});
+
+		groupUserRepository.deleteAll(); // group, user 참조
+		userRepository.deleteAll();
+		groupRepository.deleteAll(); // location, category 참조
+		locationRepository.deleteAll();
+		categoryRepository.deleteAll();
+	}
+
 }

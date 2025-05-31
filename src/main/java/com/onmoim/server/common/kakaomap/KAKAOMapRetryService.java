@@ -8,6 +8,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import com.onmoim.server.common.GeoPoint;
+import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.group.service.GroupQueryService;
 
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class KAKAOMapRetryService {
 
 	@Retryable(
 		retryFor = Exception.class,
-		noRetryFor = StopRetryException.class,
+		noRetryFor = {StopRetryException.class, CustomException.class},
 		maxAttempts = 3,
 		backoff = @Backoff(delay = 100, multiplier = 1.5, maxDelay = 1000, random = true)
 	)
@@ -39,7 +40,7 @@ public class KAKAOMapRetryService {
 
 	@Recover
 	public void recover(Exception e, Long groupId, Long locationId, String address) {
-		log.warn("모임 (x,y)업데이트 최종 실패: 모임 ID:{}, 위치 ID:{}, 전송 주소:{}", groupId, locationId, address);
+		log.warn("모임 (x,y) 업데이트 최종 실패: 모임 ID:{}, 위치 ID:{}, 전송 주소:{}", groupId, locationId, address);
 	}
 
 	private static class StopRetryException extends RuntimeException {
