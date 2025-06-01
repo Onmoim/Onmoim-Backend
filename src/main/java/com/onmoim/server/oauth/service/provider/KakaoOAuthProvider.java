@@ -24,6 +24,11 @@ public class KakaoOAuthProvider implements OAuthProvider {
 	private final RestTemplate restTemplate = new RestTemplate();
 
 	@Override
+	public String getProviderName() {
+		return "kakao";
+	}
+
+	@Override
 	public OAuthUserDto getUserInfo(String accessToken) {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setBearerAuth(accessToken);

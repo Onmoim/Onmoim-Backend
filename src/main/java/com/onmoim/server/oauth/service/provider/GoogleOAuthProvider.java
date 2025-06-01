@@ -16,6 +16,11 @@ import static com.onmoim.server.oauth.constant.OAuthApiConstants.GOOGLE_USER_INF
 public class GoogleOAuthProvider implements OAuthProvider {
 
 	@Override
+	public String getProviderName() {
+		return "google";
+	}
+
+	@Override
 	public OAuthUserDto getUserInfo(String idToken) {
 		String url = GOOGLE_USER_INFO_URL + idToken;
 		Map<?, ?> body = new RestTemplate().getForObject(url, Map.class);
