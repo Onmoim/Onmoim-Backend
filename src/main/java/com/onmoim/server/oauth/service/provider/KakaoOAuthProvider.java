@@ -13,6 +13,8 @@ import com.onmoim.server.oauth.dto.OAuthUserDto;
 
 import lombok.extern.slf4j.Slf4j;
 
+import static com.onmoim.server.oauth.constant.OAuthApiConstants.KAKAO_USER_INFO_URL;
+
 @Component
 @Slf4j
 public class KakaoOAuthProvider implements OAuthProvider {
@@ -28,7 +30,7 @@ public class KakaoOAuthProvider implements OAuthProvider {
 		HttpEntity<Void> request = new HttpEntity<>(headers);
 
 		ResponseEntity<Map> response = restTemplate.exchange(
-			"https://kapi.kakao.com/v2/user/me",
+			KAKAO_USER_INFO_URL,
 			HttpMethod.GET,
 			request,
 			Map.class

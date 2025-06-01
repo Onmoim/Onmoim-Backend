@@ -9,13 +9,15 @@ import com.onmoim.server.oauth.dto.OAuthUserDto;
 
 import lombok.extern.slf4j.Slf4j;
 
+import static com.onmoim.server.oauth.constant.OAuthApiConstants.GOOGLE_USER_INFO_URL;
+
 @Component
 @Slf4j
 public class GoogleOAuthProvider implements OAuthProvider {
 
 	@Override
 	public OAuthUserDto getUserInfo(String idToken) {
-		String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
+		String url = GOOGLE_USER_INFO_URL + idToken;
 		Map<?, ?> body = new RestTemplate().getForObject(url, Map.class);
 
 		String sub = (String) body.get("sub");
