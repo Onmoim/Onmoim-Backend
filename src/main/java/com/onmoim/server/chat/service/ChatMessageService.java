@@ -82,7 +82,7 @@ public class ChatMessageService {
 			.orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_MESSAGE));
 
 		message.setDeliveryStatus(status);
-		chatMessageRepository.save(message);;
+		chatMessageRepository.save(message);
 		log.debug("메시지 상태 업데이트: ID: {}, 상태: {}", messageId, status);
 	}
 }
