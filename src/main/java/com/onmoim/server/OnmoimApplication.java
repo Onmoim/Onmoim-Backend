@@ -6,6 +6,7 @@ import org.springframework.retry.annotation.EnableRetry;
 
 @SpringBootApplication
 @EnableRetry
+@EnableAsync
 public class OnmoimApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(OnmoimApplication.class, args);

@@ -1,6 +1,7 @@
 package com.onmoim.server.chat.service;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -24,6 +25,7 @@ public class ChatMessageEventHandler {
 	private final ChatMessageService chatMessageService;
 	private final ChatMessageRetryService chatMessageRetryService;
 
+	@Async
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handleMessageSend(MessageSendEvent event) {
 		ChatMessageDto message = event.message();
