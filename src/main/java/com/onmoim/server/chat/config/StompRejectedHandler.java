@@ -16,7 +16,6 @@ public class StompRejectedHandler implements RejectedExecutionHandler {
 	public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
 		log.warn("스레드풀 작업 거부됨! 현재 poolSize={}, queueSize={}", executor.getPoolSize(), executor.getQueue().size());
 
-		// slack notify
 		// custom metric increment
 		// ...
 
