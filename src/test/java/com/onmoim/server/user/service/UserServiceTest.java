@@ -83,7 +83,7 @@ public class UserServiceTest {
 
 		CreateUserCategoryRequestDto request = new CreateUserCategoryRequestDto(
 			user.getId(),
-			List.of(1L, 2L)
+			List.of(category1.getId(), category2.getId())
 		);
 
 		// when
@@ -111,7 +111,7 @@ public class UserServiceTest {
 			.name("홍길동")
 			.gender("F")
 			.birth(LocalDateTime.now())
-			.addressId(1L)
+			.addressId(location.getId())
 			.build()
 		);
 
