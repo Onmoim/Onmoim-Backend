@@ -50,8 +50,8 @@ public class GroupQueryService {
 			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
 	}
 
-	public Group getGroupWithRelations(Long groupId) {
-		return groupRepository.findGroupWithRelations(groupId)
+	public Group getGroupWithDetails(Long groupId) {
+		return groupRepository.findGroupWithDetails(groupId)
 			.filter(group -> !group.isDeleted())
 			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
 	}

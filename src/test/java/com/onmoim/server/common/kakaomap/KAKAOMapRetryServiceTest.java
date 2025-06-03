@@ -29,7 +29,7 @@ class KAKAOMapRetryServiceTest {
 	void testRetry() {
 		// given
 		GeoPoint geoPoint = new GeoPoint(127.0, 37.5);
-		when(mapService.getGeoPoint(any())).thenReturn(List.of(geoPoint));
+		when(mapService.getGeoPoint(any())).thenReturn(geoPoint);
 
 		doNothing().when(groupQueryService).updateGeoPoint(any(), any(), any());
 
@@ -47,7 +47,7 @@ class KAKAOMapRetryServiceTest {
 		GeoPoint geoPoint = new GeoPoint(127.0, 37.5);
 		when(mapService.getGeoPoint(any()))
 			.thenThrow(new RuntimeException())
-			.thenReturn(List.of(geoPoint));
+			.thenReturn(geoPoint);
 
 		doNothing().doNothing()
 			.when(groupQueryService).updateGeoPoint(any(), any(), any());
@@ -68,7 +68,7 @@ class KAKAOMapRetryServiceTest {
 			.thenThrow(new RuntimeException())
 			.thenThrow(HttpClientErrorException.TooManyRequests.create(
 				HttpStatus.TOO_MANY_REQUESTS, null, null, null, null))
-			.thenReturn(List.of(geoPoint));
+			.thenReturn(geoPoint);
 
 		doNothing().doNothing().doNothing()
 			.when(groupQueryService).updateGeoPoint(any(), any(), any());

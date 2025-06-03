@@ -16,5 +16,5 @@ public interface GroupRepository extends JpaRepository<Group, Long>, GroupReposi
 
 	// group, category, location fetch join
 	@Query("select g from Group g join fetch g.category join fetch g.location where g.id=:groupId")
-	Optional<Group> findGroupWithRelations(Long groupId);
+	Optional<Group> findGroupWithDetails(Long groupId);
 }

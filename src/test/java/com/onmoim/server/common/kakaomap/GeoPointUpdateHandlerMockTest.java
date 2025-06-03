@@ -83,35 +83,6 @@ class GeoPointUpdateHandlerMockTest {
 	}
 
 	@Test
-	@DisplayName("재시도 X: 카카오 맵 API 응답 1개 초과")
-	void noRetry1(){
-		GeoPoint geoPoint1 = new GeoPoint(127.0, 37.5);
-		GeoPoint geoPoint2 = new GeoPoint(128.0, 38.0);
-		when(kakaoMapService.getGeoPoint(any())).thenReturn(List.of(geoPoint1, geoPoint2));
-
-		eventPublisher.publishEvent(geoPointUpdateEvent); // 이벤트 발행
-		TestTransaction.flagForCommit(); // 트랜잭션 커밋
-		TestTransaction.end();           // 트랜잭션 종료
-		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
-			verify(kakaoMapRetryService, times(0)).retryUpdate(any(), any(), any());
-		});
-	}
-
-	@Test
-	@DisplayName("재시도 X: 카카오 맵 API 응답 X")
-	void noRetry2() {
-		when(kakaoMapService.getGeoPoint(any())).thenReturn(List.of());
-
-		eventPublisher.publishEvent(geoPointUpdateEvent); // 이벤트 발행
-		TestTransaction.flagForCommit(); // 트랜잭션 커밋
-		TestTransaction.end();           // 트랜잭션 종료
-
-		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
-			verify(kakaoMapRetryService, times(0)).retryUpdate(any(), any(), any());
-		});
-	}
-
-	@Test
 	@DisplayName("재시도 X: 카카오 맵 API 호출 권한 문제로 실패")
 	void noRetry3(){
 		when(kakaoMapService.getGeoPoint(any()))
@@ -132,7 +103,7 @@ class GeoPointUpdateHandlerMockTest {
 	void noRetry4(){
 		// given
 		GeoPoint geoPoint = new GeoPoint(127.0, 37.5);
-		when(kakaoMapService.getGeoPoint(any())).thenReturn(List.of(geoPoint));
+		when(kakaoMapService.getGeoPoint(any())).thenReturn(geoPoint);
 		doThrow(new CustomException(ErrorCode.NOT_EXISTS_GROUP))
 			.when(groupQueryService).updateGeoPoint(any(), any(), any());
 

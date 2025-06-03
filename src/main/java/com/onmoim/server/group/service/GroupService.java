@@ -125,7 +125,7 @@ public class GroupService {
 		// 모임 조회
 		Group group = groupQueryService.getById(groupId);
 		// 모임장 권한 확인
-		groupUserQueryService.checkAndGetOwner(groupId, user.getId());
+		groupUserQueryService.checkOwner(groupId, user.getId());
 		// 모임 삭제
 		groupQueryService.deleteGroup(group);
 	}
@@ -179,10 +179,10 @@ public class GroupService {
 	public void updateGroup(Long groupId, GroupRequestDto request, MultipartFile image) {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
-		// 모임 조회
-		Group group = groupQueryService.getGroupWithRelations(groupId);
-		// 현재 모임장
-		groupUserQueryService.checkAndGetMember(groupId, user.getId());
+		// 모임 조회(카테고리, 로케이션)
+		Group group = groupQueryService.getGroupWithDetails(groupId);
+		// 모임장 권한 확인
+		groupUserQueryService.checkOwner(groupId, user.getId());
 		// 업데이트(카테고리, 제목, 설명, 정원)
 		groupQueryService.updateGroup(group, request, image);
 		// 현재 모임 Location
@@ -190,7 +190,7 @@ public class GroupService {
 		// 현재 모임 Location, 요청 Location 다르면 업데이트 시도
 		if(!Objects.equals(location.getId(), request.getLocationId())){
 			Location requestLocation = locationQueryService.getById(request.getLocationId());
-			String fullAddress = location.getFullAddress();
+			String fullAddress = requestLocation.getFullAddress();
 			eventPublisher.publishEvent(new GeoPointUpdateEvent(groupId, requestLocation.getId(), fullAddress));
 		}
 	}

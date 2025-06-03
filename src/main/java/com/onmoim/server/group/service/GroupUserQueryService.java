@@ -44,6 +44,14 @@ public class GroupUserQueryService {
 	}
 
 	public GroupUser checkAndGetOwner(Long groupId, Long userId) {
+		return validateOwner(groupId, userId);
+	}
+
+	public void checkOwner(Long groupId, Long userId) {
+		validateOwner(groupId, userId);
+	}
+
+	private GroupUser validateOwner(Long groupId, Long userId) {
 		return findById(groupId, userId)
 			.filter(GroupUser::isOwner)
 			.orElseThrow(() -> new CustomException(GROUP_FORBIDDEN));
@@ -92,6 +100,7 @@ public class GroupUserQueryService {
 			save(groupUser);
 		}
 	}
+	// 현재 모임 회원 수
 	public Long countMembers(Long groupId) {
 		return groupUserRepository.countGroupMembers(groupId);
 	}

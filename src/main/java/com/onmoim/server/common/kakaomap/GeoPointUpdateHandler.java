@@ -27,24 +27,18 @@ public class GeoPointUpdateHandler {
 	private final KAKAOMapRetryService kakaoMapRetryService;
     private final GroupQueryService groupQueryService;
 
-	@Async("KakaoApiExecutor")
+	@Async("MapApiExecutor")
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void handleGeoPointUpdate(GeoPointUpdateEvent event) {
 		var groupId = event.groupId();
 		var address = event.address();
 		var locationId = event.locationId();
 		try {
-			List<GeoPoint> result = kakaoMapService.getGeoPoint(address);
-			// 결과가 없거나 결과가 2개 이상이라면 Location 정보에 문제
-			if(result.size() != 1) {
-				log.error("카카오맵 API 결과 오류: 모임 ID:{}, 위치 ID:{}, 전송 주소:{}, 결과:{}", groupId, locationId, address, result);
-				return;
-			}
-			// x,y 업데이트: 외부 API -> 트랜잭션 시작(최소화)
-			groupQueryService.updateGeoPoint(groupId, locationId, result.get(0));
+			GeoPoint result = kakaoMapService.getGeoPoint(address);
+			groupQueryService.updateGeoPoint(groupId, locationId, result);
 		}
 		catch (HttpClientErrorException.Unauthorized | HttpClientErrorException.BadRequest e){
-			log.error("401 Unauthorized 서버 설정 문제:{}", e.getMessage());
+			log.error("4xx Unauthorized 서버 설정 문제:{}", e.getMessage());
 		}
 		catch (CustomException e){
 			log.error("모임 업데이트 오류: 모임 ID:{}, 에러 메시지:{}", groupId, e.getMessage());

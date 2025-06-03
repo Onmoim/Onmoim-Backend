@@ -19,10 +19,7 @@ class KAKAOMapServiceTest {
 	@Test
 	@DisplayName("간단한 카카오 맵 API 호출 테스트")
 	void basicApiCall(){
-		List<GeoPoint> list = kakaoMapService.getGeoPoint("서울특별시 강남구");
-		assertThat(list).isNotNull();
-		assertThat(list.size()).isEqualTo(1);
-		GeoPoint geoPoint = list.get(0);
+		GeoPoint geoPoint = kakaoMapService.getGeoPoint("서울특별시 강남구");
 		assertThat(geoPoint.getX()).isGreaterThan(0.0);
 		assertThat(geoPoint.getY()).isGreaterThan(0.0);
 	}

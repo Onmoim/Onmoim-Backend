@@ -341,7 +341,7 @@ class GroupServiceTest {
 
 		// then
 		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
-			Optional<Group> findGroup = groupRepository.findGroupWithRelations(groupId);
+			Optional<Group> findGroup = groupRepository.findGroupWithDetails(groupId);
 			assertThat(findGroup.isPresent()).isTrue();
 			Group group = findGroup.get();
 			assertThat(group.getName()).isEqualTo(name);
