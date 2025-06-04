@@ -30,7 +30,10 @@ public class RetryAspect {
 			try {
 				return joinPoint.proceed();
 			}
-			catch (OptimisticLockingFailureException e) {
+			catch (OptimisticLockingFailureException | CustomException e) {
+				if(e instanceof CustomException ce && ce.getErrorCode() != TOO_MANY_REQUEST){
+					throw e;
+				}
 				if (--retryCount > 0) Thread.sleep(RETRY_DELAY_MS);
 			}
 		}

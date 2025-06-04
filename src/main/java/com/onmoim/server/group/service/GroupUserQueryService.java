@@ -68,13 +68,19 @@ public class GroupUserQueryService {
 			.filter(GroupUser::isJoined)
 			.orElseThrow(() -> new CustomException(NOT_GROUP_MEMBER));
 
-		if (groupUser.isOwner()) {
+		// 현재 사용자 모임장 + 모임 회원 2명 이상
+		if (groupUser.isOwner() && countMembers(groupId) > 1) {
 			throw new CustomException(GROUP_OWNER_TRANSFER_REQUIRED);
 		}
 		return groupUser;
 	}
 
 	public void leave(GroupUser groupUser) {
+		// 현재 사용자 모임장 바로 모임 삭제
+		if (groupUser.isOwner()) {
+			groupUser.getGroup().softDelete();
+			return;
+		}
 		groupUser.updateStatus(Status.PENDING);
 	}
 

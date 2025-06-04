@@ -18,8 +18,9 @@ import org.springframework.web.multipart.MultipartFile;
 import com.onmoim.server.common.response.ResponseHandler;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
-import com.onmoim.server.group.dto.request.TransferOwnerRequestDto;
+import com.onmoim.server.group.dto.request.MemberIdRequestDto;
 import com.onmoim.server.group.dto.response.CursorPageResponseDto;
+import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.service.GroupService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -196,7 +197,7 @@ public class GroupController {
 			description = "존재하지 않는 모임")
 	})
 	@GetMapping("/v1/groups/{groupId}/members")
-	public ResponseEntity<ResponseHandler<?>> getGroupMembers(
+	public ResponseEntity<ResponseHandler<CursorPageResponseDto<GroupMembersResponseDto>>> getGroupMembers(
 		@Parameter(description = "모임 ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId,
 		@Parameter(description = "커서 ID (마지막 조회한 커서 ID)", in = ParameterIn.QUERY)
@@ -259,7 +260,7 @@ public class GroupController {
 			description = "모임장은 권한을 위임하지 않으면 탈퇴할 수 없습니다.")
 	})
 	@DeleteMapping("/v1/groups/{groupId}/member")
-	public ResponseEntity<ResponseHandler<?>> leaveGroup(
+	public ResponseEntity<ResponseHandler<String>> leaveGroup(
 		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId
 	)
@@ -292,15 +293,50 @@ public class GroupController {
 			responseCode = "429",
 			description = "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
 	})
-	@PatchMapping("v1/groups/{groupId}/owner")
+	@PatchMapping("/v1/groups/{groupId}/owner")
 	public ResponseEntity<ResponseHandler<String>> transferOwnership(
 		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId,
-		@Valid @RequestBody TransferOwnerRequestDto request
+		@Valid @RequestBody MemberIdRequestDto request
 	)
 	{
 		groupService.transferOwnership(groupId, request.memberId());
 		return ResponseEntity.ok(ResponseHandler.response("모임장 변경 성공"));
+	}
+
+	@Operation(
+		summary = "모임원 강퇴",
+		description = "현재 로그인한 사용자가 모임장이면 모임원을 강퇴합니다."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "모임원 강퇴 성공"),
+		@ApiResponse(
+			responseCode = "400",
+			description = "Request DTO 검증 실패 (입력값 형식 오류, 필수값 누락 등)"),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자 접근 또는 모임장 변경 대상자가 존재하지 않는 경우"),
+		@ApiResponse(
+			responseCode = "403",
+			description = "현재 사용자가 모임장이 아닌 경우"),
+		@ApiResponse(
+			responseCode = "404",
+			description = "존재하지 않는 모임 또는 모임 강퇴 대상자가 모임에 존재하지 않습니다"),
+		@ApiResponse(
+			responseCode = "429",
+			description = "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
+	})
+	@PostMapping("/v1/groups/{groupId}/ban")
+	public ResponseEntity<ResponseHandler<String>> banMember(
+		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
+		@PathVariable Long groupId,
+		@Valid @RequestBody MemberIdRequestDto request
+	)
+	{
+		groupService.banMember(groupId, request.memberId());
+		return ResponseEntity.ok(ResponseHandler.response("모임원 강퇴 성공"));
 	}
 
 	// todo: 모임 상세 조회 after 일정 생성, 조회

@@ -134,6 +134,7 @@ public class GroupService {
 
 	// 모임 탈퇴
 	@Retry
+	@NamedLock
 	@Transactional
 	public void leaveGroup(Long groupId) {
 		// 유저 조회
@@ -167,6 +168,28 @@ public class GroupService {
 		groupUserQueryService.transferOwnership(owner, user);
 	}
 
+	// 모임원 강퇴
+	@Retry
+	@Transactional
+	public void banMember(
+		Long groupId,
+		Long userId
+	) {
+		// 현재 모임장 조회
+		User from = userQueryService.findById(getCurrentUserId());
+		// 강퇴 대상 조회
+		userQueryService.findById(userId);
+		// 모임 조회
+		groupQueryService.existsById(groupId);
+		// 현재 모임장 확인
+		groupUserQueryService.checkOwner(groupId, from.getId());
+		// 강태 대상 확인
+		GroupUser user = groupUserQueryService.checkAndGetMember(groupId, userId);
+		// 강퇴
+		groupQueryService.banMember(user);
+	}
+
+	// 모임 수정
 	@NamedLock
 	@Transactional
 	public void updateGroup(
