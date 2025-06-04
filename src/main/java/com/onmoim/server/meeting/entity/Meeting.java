@@ -119,6 +119,26 @@ public class Meeting extends BaseEntity {
 		return LocalDateTime.now().isBefore(this.startAt.minusHours(24));
 	}
 
+	/**
+	 * 일정 정보 수정
+	 */
+	public void update(String title, LocalDateTime startAt, String placeName, 
+					   GeoPoint geoPoint, int capacity, int cost) {
+		this.title = title;
+		this.startAt = startAt;
+		this.placeName = placeName;
+		this.geoPoint = geoPoint;
+		this.capacity = capacity;
+		this.cost = cost;
+	}
+	
+	/**
+	 * 일정 상태 수정
+	 */
+	public void updateStatus(MeetingStatus status) {
+		this.status = status;
+	}
+
 	private void updateStatusIfFull() {
 		if (this.joinCount >= this.capacity) {
 			this.status = MeetingStatus.FULL;

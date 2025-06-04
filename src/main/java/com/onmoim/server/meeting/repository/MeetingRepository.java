@@ -1,7 +1,6 @@
 package com.onmoim.server.meeting.repository;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
@@ -12,14 +11,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.onmoim.server.meeting.entity.Meeting;
-import com.onmoim.server.meeting.entity.MeetingStatus;
 import com.onmoim.server.meeting.entity.MeetingType;
 
 import jakarta.persistence.LockModeType;
 
 public interface MeetingRepository extends JpaRepository<Meeting, Long> {
-
-	// ===== Slice 기반 커서 페이징 =====
 
 	/**
 	 * 그룹별 예정된 일정 목록 조회 (커서 기반)
@@ -52,15 +48,17 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
 	@Query("SELECT m FROM Meeting m WHERE m.id = :id AND m.deletedDate IS NULL")
 	Optional<Meeting> findByIdAndNotDeletedWithLock(@Param("id") Long id);
 
-	/**
-	 * 상태별 일정 조회
-	 */
-	@Query("SELECT m FROM Meeting m WHERE m.status = :status AND m.deletedDate IS NULL")
-	List<Meeting> findByStatusAndNotDeleted(@Param("status") MeetingStatus status);
+	// ===== 네임드 락 관련 =====
 
 	/**
-	 * 시작 시간이 지난 OPEN 상태 일정 조회 (상태 변경용)
+	 * MySQL 네임드 락 획득
 	 */
-	@Query("SELECT m FROM Meeting m WHERE m.status IN (:statuses) AND m.startAt < :now AND m.deletedDate IS NULL")
-	List<Meeting> findByStatusInAndStartAtBeforeAndNotDeleted(@Param("statuses") List<MeetingStatus> statuses, @Param("now") LocalDateTime now);
+	@Query(value = "SELECT GET_LOCK(:lockKey, :timeoutSeconds)", nativeQuery = true)
+	Integer getLock(@Param("lockKey") String lockKey, @Param("timeoutSeconds") int timeoutSeconds);
+
+	/**
+	 * MySQL 네임드 락 해제
+	 */
+	@Query(value = "SELECT RELEASE_LOCK(:lockKey)", nativeQuery = true)
+	Integer releaseLock(@Param("lockKey") String lockKey);
 }

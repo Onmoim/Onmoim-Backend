@@ -38,6 +38,16 @@ public enum ErrorCode {
 	GROUP_FORBIDDEN(BAD_REQUEST, "권한이 부족합니다."),
 	GROUP_OWNER_TRANSFER_REQUIRED(BAD_REQUEST, "모임장은 모임장을 넘기고 탈퇴할 수 있습니다."),
 
+	/* ------------------ 400 BAD_REQUEST : 일정 관련 오류 ------------------ */
+	MEETING_NOT_FOUND(BAD_REQUEST, "존재하지 않는 일정입니다."),
+	MEETING_UPDATE_FORBIDDEN(FORBIDDEN, "일정 수정 권한이 없습니다."),
+	MEETING_UPDATE_TIME_EXCEEDED(BAD_REQUEST, "일정 시작 24시간 전까지만 수정 가능합니다."),
+	MEETING_CAPACITY_EXCEEDED(CONFLICT, "일정 정원이 가득 찼습니다."),
+	MEETING_ALREADY_JOINED(BAD_REQUEST, "이미 참석 신청한 일정입니다."),
+	MEETING_NOT_JOINED(BAD_REQUEST, "참석하지 않은 일정입니다."),
+	MEETING_ALREADY_CLOSED(BAD_REQUEST, "이미 종료된 일정입니다."),
+	MEETING_CAPACITY_CANNOT_REDUCE(BAD_REQUEST, "현재 참석 인원보다 적게 설정할 수 없습니다."),
+
 	/* ------------------ 400 BAD_REQUEST : 게시글 관련 오류 ------------------ */
 	POST_NOT_FOUND(BAD_REQUEST, "게시글을 찾을 수 없습니다."),
 
@@ -46,6 +56,9 @@ public enum ErrorCode {
 
 	/* ------------------ 409 CONFLICT : 요청 충돌 ------------------ */
 	TOO_MANY_REQUESTS(CONFLICT, "잠시 후 다시 시도해 주세요"),
+
+	/* ------------------ 429 TOO_MANY_REQUESTS : 과도한 요청 ------------------ */
+	MEETING_LOCK_TIMEOUT(HttpStatus.TOO_MANY_REQUESTS, "다른 사용자가 처리 중입니다. 잠시 후 다시 시도해 주세요"),
 
 	/* ------------------ 400 BAD_REQUEST : 권한 관련 오류 ------------------ */
 	NOT_GROUP_MEMBER(FORBIDDEN, "모임 멤버만 접근 가능합니다."),

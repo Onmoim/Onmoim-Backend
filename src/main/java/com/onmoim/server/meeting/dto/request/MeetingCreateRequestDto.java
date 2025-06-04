@@ -44,6 +44,6 @@ public class MeetingCreateRequestDto {
 	private int capacity;
 
 	@Min(value = 0, message = "참가 비용은 0 이상이어야 합니다.")
-	@Schema(description = "참가 비용", example = "15000")
+	@Schema(description = "참가 비용 (0원 = 무료)", example = "15000")
 	private int cost;
 }

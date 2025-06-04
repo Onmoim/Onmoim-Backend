@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import com.onmoim.server.common.dto.CursorPageResponse;
 import com.onmoim.server.common.response.ResponseHandler;
 import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
+import com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto;
 import com.onmoim.server.meeting.dto.response.MeetingResponseDto;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingType;
@@ -170,6 +171,20 @@ public class MeetingController {
 		@PathVariable @Parameter(description = "일정 ID") Long meetingId
 	) {
 		meetingService.leaveMeeting(meetingId);
+		return ResponseEntity.ok(ResponseHandler.response(null));
+	}
+
+	/**
+	 * 일정 수정
+	 */
+	@PutMapping("/groups/{groupId}/meetings/{meetingId}")
+	@Operation(summary = "일정 수정", description = "일정 정보를 수정합니다. 정기모임은 모임장만, 번개모임은 작성자만 수정 가능하며, 시작 24시간 전까지만 수정할 수 있습니다.")
+	public ResponseEntity<ResponseHandler<Void>> updateMeeting(
+		@PathVariable @Parameter(description = "모임 ID") Long groupId,
+		@PathVariable @Parameter(description = "일정 ID") Long meetingId,
+		@Valid @RequestBody MeetingUpdateRequestDto request
+	) {
+		meetingService.updateMeeting(meetingId, request);
 		return ResponseEntity.ok(ResponseHandler.response(null));
 	}
 

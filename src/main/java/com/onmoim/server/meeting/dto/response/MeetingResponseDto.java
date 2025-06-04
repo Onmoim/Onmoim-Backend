@@ -28,10 +28,10 @@ public class MeetingResponseDto {
 	@Schema(description = "일정 제목", example = "정기 모임")
 	private String title;
 
-	@Schema(description = "일정 시작 시간", example = "2024-12-25T19:00:00")
+	@Schema(description = "일정 시작 시간", example = "2025-12-25T19:00:00")
 	private LocalDateTime startAt;
 
-	@Schema(description = "장소명", example = "스타벅스 강남점")
+	@Schema(description = "장소명", example = "스타벅스 여의도브라이튼점")
 	private String placeName;
 
 	@Schema(description = "장소 좌표")
@@ -43,7 +43,7 @@ public class MeetingResponseDto {
 	@Schema(description = "현재 참석 인원", example = "7")
 	private int joinCount;
 
-	@Schema(description = "참가 비용", example = "15000")
+	@Schema(description = "참가 비용 (0원 = 무료)", example = "15000")
 	private int cost;
 
 	@Schema(description = "일정 상태", example = "OPEN")
@@ -52,7 +52,7 @@ public class MeetingResponseDto {
 	@Schema(description = "작성자 ID", example = "1")
 	private Long creatorId;
 
-	@Schema(description = "생성 시간", example = "2024-12-20T10:00:00")
+	@Schema(description = "생성 시간", example = "2025-12-20T10:00:00")
 	private LocalDateTime createdDate;
 
 	public static MeetingResponseDto from(Meeting meeting) {
