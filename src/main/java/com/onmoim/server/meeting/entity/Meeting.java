@@ -1,15 +1,16 @@
 package com.onmoim.server.meeting.entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.Comment;
 
 import com.onmoim.server.common.BaseEntity;
+import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -56,13 +57,9 @@ public class Meeting extends BaseEntity {
 	@Column(name = "place_name", nullable = false)
 	private String placeName;
 
-	@Comment("위도")
-	@Column(precision = 9, scale = 6, nullable = false)
-	private BigDecimal lat;
-
-	@Comment("경도")
-	@Column(precision = 9, scale = 6, nullable = false)
-	private BigDecimal lng;
+	@Comment("장소 좌표")
+	@Embedded
+	private GeoPoint geoPoint;
 
 	@Comment("최대 참석 인원")
 	@Column(nullable = false)
@@ -85,6 +82,9 @@ public class Meeting extends BaseEntity {
 	@Column(name = "creator_id", nullable = false)
 	private Long creatorId;
 
+	/**
+	 * 일정 참석 처리
+	 */
 	public void join() {
 		if (this.joinCount >= this.capacity) {
 			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
@@ -93,6 +93,9 @@ public class Meeting extends BaseEntity {
 		updateStatusIfFull();
 	}
 
+	/**
+	 * 일정 참석 취소 처리
+	 */
 	public void leave() {
 		if (this.joinCount > 0) {
 			this.joinCount--;
@@ -102,26 +105,16 @@ public class Meeting extends BaseEntity {
 		}
 	}
 
-	public void close() {
-		this.status = MeetingStatus.CLOSED;
-	}
-
-	public boolean isOpen() {
-		return this.status == MeetingStatus.OPEN;
-	}
-
-	public boolean isFull() {
-		return this.status == MeetingStatus.FULL;
-	}
-
-	public boolean isClosed() {
-		return this.status == MeetingStatus.CLOSED;
-	}
-
+	/**
+	 * 일정이 시작되었는지 확인
+	 */
 	public boolean isStarted() {
 		return LocalDateTime.now().isAfter(this.startAt);
 	}
 
+	/**
+	 * 일정 수정 가능 여부 확인 (24시간 전까지)
+	 */
 	public boolean canEdit() {
 		return LocalDateTime.now().isBefore(this.startAt.minusHours(24));
 	}

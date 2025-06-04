@@ -22,16 +22,19 @@ import jakarta.persistence.LockModeType;
 public interface MeetingRepository extends JpaRepository<Meeting, Long> {
 
 	/**
-	 * 그룹별 일정 목록 조회 (타입별 필터링)
+	 * 그룹별 일정 목록 조회
 	 */
 	@Query("SELECT m FROM Meeting m WHERE m.groupId = :groupId AND m.deletedDate IS NULL ORDER BY m.startAt ASC")
 	Page<Meeting> findByGroupIdAndNotDeleted(@Param("groupId") Long groupId, Pageable pageable);
 
+	/**
+	 * 그룹별 일정 목록 조회 (타입별 필터링)
+	 */
 	@Query("SELECT m FROM Meeting m WHERE m.groupId = :groupId AND m.type = :type AND m.deletedDate IS NULL ORDER BY m.startAt ASC")
 	Page<Meeting> findByGroupIdAndTypeAndNotDeleted(@Param("groupId") Long groupId, @Param("type") MeetingType type, Pageable pageable);
 
 	/**
-	 * 일정 단건 조회 (삭제되지 않은 것만, 읽기 전용)
+	 * 일정 단건 조회 (삭제되지 않은 것만)
 	 */
 	@Query("SELECT m FROM Meeting m WHERE m.id = :id AND m.deletedDate IS NULL")
 	Optional<Meeting> findByIdAndNotDeleted(@Param("id") Long id);

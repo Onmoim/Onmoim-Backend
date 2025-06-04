@@ -1,8 +1,5 @@
 package com.onmoim.server.meeting.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -11,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.meeting.entity.Meeting;
-import com.onmoim.server.meeting.entity.MeetingStatus;
 import com.onmoim.server.meeting.entity.MeetingType;
 import com.onmoim.server.meeting.repository.MeetingRepository;
 
@@ -60,41 +56,10 @@ public class MeetingQueryService {
 	}
 
 	/**
-	 * 생성자별 일정 목록 조회
-	 */
-	public Page<Meeting> findByCreatorId(Long creatorId, Pageable pageable) {
-		return meetingRepository.findByCreatorIdAndNotDeleted(creatorId, pageable);
-	}
-
-	/**
-	 * 상태별 일정 조회
-	 */
-	public List<Meeting> findByStatus(MeetingStatus status) {
-		return meetingRepository.findByStatusAndNotDeleted(status);
-	}
-
-	/**
-	 * 시작 시간이 지난 일정 조회 (상태 변경용)
-	 */
-	public List<Meeting> findExpiredMeetings() {
-		List<MeetingStatus> statuses = List.of(MeetingStatus.OPEN, MeetingStatus.FULL);
-		return meetingRepository.findByStatusInAndStartAtBeforeAndNotDeleted(statuses, LocalDateTime.now());
-	}
-
-	/**
 	 * 일정 저장
 	 */
 	@Transactional
 	public Meeting save(Meeting meeting) {
 		return meetingRepository.save(meeting);
-	}
-
-	/**
-	 * 일정 삭제 (Soft Delete)
-	 */
-	@Transactional
-	public void delete(Meeting meeting) {
-		meeting.softDelete();
-		meetingRepository.save(meeting);
 	}
 } 
