@@ -12,6 +12,7 @@ import com.onmoim.server.common.dto.CursorPageResponse;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.util.CursorPaginationHelper;
+import com.onmoim.server.meeting.dto.response.MeetingResponseDto;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingType;
 import com.onmoim.server.meeting.repository.MeetingRepository;
@@ -44,33 +45,35 @@ public class MeetingQueryService {
 	}
 
 	/**
-	 * 그룹별 예정된 일정 목록 조회 (커서 기반)
-	 */
-	public CursorPageResponse<Meeting> getMeetingsByGroupId(Long groupId, Long cursorId, int size) {
-		Pageable pageable = PageRequest.of(0, size);
-		LocalDateTime now = LocalDateTime.now();
-		Slice<Meeting> slice = meetingRepository.findUpcomingMeetingsByGroupIdAfterCursor(groupId, now, cursorId, pageable);
-		return CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
-	}
-
-	/**
 	 * 그룹별 예정된 일정 목록 조회 (타입 필터링, 커서 기반)
 	 */
-	public CursorPageResponse<Meeting> getMeetingsByGroupIdAndType(Long groupId, MeetingType type, Long cursorId, int size) {
+	public CursorPageResponse<MeetingResponseDto> getMeetingsByGroupIdAndType(Long groupId, MeetingType type, Long cursorId, int size) {
 		Pageable pageable = PageRequest.of(0, size);
 		LocalDateTime now = LocalDateTime.now();
 		Slice<Meeting> slice = meetingRepository.findUpcomingMeetingsByGroupIdAndTypeAfterCursor(groupId, now, type, cursorId, pageable);
-		return CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
+
+		CursorPageResponse<Meeting> meetingPage = CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
+		return CursorPageResponse.<MeetingResponseDto>builder()
+			.content(meetingPage.getContent().stream().map(MeetingResponseDto::from).toList())
+			.hasNext(meetingPage.isHasNext())
+			.nextCursorId(meetingPage.getNextCursorId())
+			.build();
 	}
 
 	/**
 	 * 사용자가 속한 모든 모임의 예정된 일정 조회 (커서 기반)
 	 */
-	public CursorPageResponse<Meeting> getUpcomingMeetingsByUserId(Long userId, Long cursorId, int size) {
+	public CursorPageResponse<MeetingResponseDto> getUpcomingMeetingsByUserId(Long userId, Long cursorId, int size) {
 		Pageable pageable = PageRequest.of(0, size);
 		LocalDateTime now = LocalDateTime.now();
 		Slice<Meeting> slice = meetingRepository.findUpcomingMeetingsByUserIdAfterCursor(userId, now, cursorId, pageable);
-		return CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
+
+		CursorPageResponse<Meeting> meetingPage = CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
+		return CursorPageResponse.<MeetingResponseDto>builder()
+			.content(meetingPage.getContent().stream().map(MeetingResponseDto::from).toList())
+			.hasNext(meetingPage.isHasNext())
+			.nextCursorId(meetingPage.getNextCursorId())
+			.build();
 	}
 
 	/**

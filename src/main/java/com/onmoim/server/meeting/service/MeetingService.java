@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
-import com.onmoim.server.meeting.dto.request.MeetingCreateRequest;
+import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingStatus;
 import com.onmoim.server.meeting.entity.MeetingType;
@@ -35,13 +35,13 @@ public class MeetingService {
 	 * 일정 생성
 	 */
 	@Transactional
-	public Long createMeeting(Long groupId, MeetingCreateRequest request) {
+	public Long createMeeting(Long groupId, MeetingCreateRequestDto request) {
 		Long userId = getCurrentUserId();
 		User user = userQueryService.findById(userId);
-		
+
 		// 권한 검증 (정기모임=모임장, 번개모임=모임원)
 		validateCreatePermission(groupId, userId, request.getType());
-		
+
 		// 일정 생성
 		Meeting meeting = Meeting.meetingCreateBuilder()
 			.groupId(groupId)
@@ -54,16 +54,16 @@ public class MeetingService {
 			.cost(request.getCost())
 			.creatorId(userId)
 			.build();
-		
+
 		Meeting savedMeeting = meetingRepository.save(meeting);
-		
+
 		// 생성자는 자동으로 참석 처리
 		UserMeeting userMeeting = UserMeeting.create(savedMeeting, user);
 		userMeetingRepository.save(userMeeting);
 		savedMeeting.join();
-		
+
 		log.info("사용자 {}가 모임 {}에 일정 {}을 생성했습니다.", userId, groupId, savedMeeting.getId());
-		
+
 		return savedMeeting.getId();
 	}
 
@@ -74,26 +74,26 @@ public class MeetingService {
 	public void joinMeeting(Long meetingId) {
 		Long userId = getCurrentUserId();
 		User user = userQueryService.findById(userId);
-		
+
 		// 락을 적용한 일정 조회
 		Meeting meeting = meetingQueryService.getByIdWithLock(meetingId);
-		
+
 		// 권한 검증
 		meetingPermissionService.validateJoinPermission(meeting.getGroupId(), userId);
-		
+
 		// 중복 참석 확인
 		validateNotAlreadyJoined(meetingId, userId);
-		
+
 		// 일정 상태 확인
 		validateMeetingJoinable(meeting);
-		
+
 		// 정원 확인 및 참석 처리
 		meeting.join();
-		
+
 		// 참석 정보 저장
 		UserMeeting userMeeting = UserMeeting.create(meeting, user);
 		userMeetingRepository.save(userMeeting);
-		
+
 		log.info("사용자 {}가 일정 {}에 참석 신청했습니다.", userId, meetingId);
 	}
 
@@ -103,20 +103,20 @@ public class MeetingService {
 	@Transactional
 	public void leaveMeeting(Long meetingId) {
 		Long userId = getCurrentUserId();
-		
+
 		// 락을 적용한 일정 조회
 		Meeting meeting = meetingQueryService.getByIdWithLock(meetingId);
-		
+
 		// 참석 정보 확인
 		UserMeeting userMeeting = getUserMeeting(meetingId, userId);
-		
+
 		// 일정 상태 확인
 		validateMeetingLeavable(meeting);
-		
+
 		// 참석 취소 처리
 		meeting.leave();
 		userMeetingRepository.delete(userMeeting);
-		
+
 		log.info("사용자 {}가 일정 {}에서 참석 취소했습니다.", userId, meetingId);
 	}
 
@@ -184,4 +184,4 @@ public class MeetingService {
 			.getPrincipal();
 		return principal.getUserId();
 	}
-} 
+}

@@ -14,7 +14,7 @@ import lombok.Getter;
 @Getter
 @Builder
 @Schema(description = "일정 조회 응답")
-public class MeetingResponse {
+public class MeetingResponseDto {
 
 	@Schema(description = "일정 ID", example = "1")
 	private Long id;
@@ -55,8 +55,8 @@ public class MeetingResponse {
 	@Schema(description = "생성 시간", example = "2024-12-20T10:00:00")
 	private LocalDateTime createdDate;
 
-	public static MeetingResponse from(Meeting meeting) {
-		return MeetingResponse.builder()
+	public static MeetingResponseDto from(Meeting meeting) {
+		return MeetingResponseDto.builder()
 			.id(meeting.getId())
 			.groupId(meeting.getGroupId())
 			.type(meeting.getType())
@@ -72,4 +72,4 @@ public class MeetingResponse {
 			.createdDate(meeting.getCreatedDate())
 			.build();
 	}
-} 
+}

@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Schema(description = "일정 생성 요청")
-public class MeetingCreateRequest {
+public class MeetingCreateRequestDto {
 
 	@NotNull(message = "일정 유형은 필수입니다.")
 	@Schema(description = "일정 유형", example = "REGULAR")
@@ -27,7 +27,7 @@ public class MeetingCreateRequest {
 	private String title;
 
 	@NotNull(message = "일정 시작 시간은 필수입니다.")
-	@Schema(description = "일정 시작 시간", example = "2024-12-25T19:00:00")
+	@Schema(description = "일정 시작 시간", example = "2025-12-25T19:00:00")
 	private LocalDateTime startAt;
 
 	@NotBlank(message = "장소명은 필수입니다.")
@@ -46,4 +46,4 @@ public class MeetingCreateRequest {
 	@Min(value = 0, message = "참가 비용은 0 이상이어야 합니다.")
 	@Schema(description = "참가 비용", example = "15000")
 	private int cost;
-} 
+}
