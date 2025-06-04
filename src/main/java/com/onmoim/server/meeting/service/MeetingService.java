@@ -6,9 +6,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.meeting.dto.request.MeetingCreateRequest;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingStatus;
+import com.onmoim.server.meeting.entity.MeetingType;
 import com.onmoim.server.meeting.entity.UserMeeting;
+import com.onmoim.server.meeting.repository.MeetingRepository;
 import com.onmoim.server.meeting.repository.UserMeetingRepository;
 import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.user.entity.User;
@@ -22,10 +25,47 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class MeetingService {
 
+	private final MeetingRepository meetingRepository;
 	private final MeetingQueryService meetingQueryService;
 	private final UserQueryService userQueryService;
 	private final MeetingPermissionService meetingPermissionService;
 	private final UserMeetingRepository userMeetingRepository;
+
+	/**
+	 * 일정 생성
+	 */
+	@Transactional
+	public Long createMeeting(Long groupId, MeetingCreateRequest request) {
+		Long userId = getCurrentUserId();
+		User user = userQueryService.findById(userId);
+		
+		// 권한 검증 (정기모임=모임장, 번개모임=모임원)
+		validateCreatePermission(groupId, userId, request.getType());
+		
+		// 일정 생성
+		Meeting meeting = Meeting.meetingCreateBuilder()
+			.groupId(groupId)
+			.type(request.getType())
+			.title(request.getTitle())
+			.startAt(request.getStartAt())
+			.placeName(request.getPlaceName())
+			.geoPoint(request.getGeoPoint())
+			.capacity(request.getCapacity())
+			.cost(request.getCost())
+			.creatorId(userId)
+			.build();
+		
+		Meeting savedMeeting = meetingRepository.save(meeting);
+		
+		// 생성자는 자동으로 참석 처리
+		UserMeeting userMeeting = UserMeeting.create(savedMeeting, user);
+		userMeetingRepository.save(userMeeting);
+		savedMeeting.join();
+		
+		log.info("사용자 {}가 모임 {}에 일정 {}을 생성했습니다.", userId, groupId, savedMeeting.getId());
+		
+		return savedMeeting.getId();
+	}
 
 	/**
 	 * 일정 참석 신청
@@ -78,6 +118,19 @@ public class MeetingService {
 		userMeetingRepository.delete(userMeeting);
 		
 		log.info("사용자 {}가 일정 {}에서 참석 취소했습니다.", userId, meetingId);
+	}
+
+	/**
+	 * 일정 생성 권한 검증
+	 */
+	private void validateCreatePermission(Long groupId, Long userId, MeetingType type) {
+		if (type == MeetingType.REGULAR) {
+			// 정기모임은 모임장만 생성 가능
+			meetingPermissionService.validateOwnerPermission(groupId, userId);
+		} else {
+			// 번개모임은 모임원이면 생성 가능
+			meetingPermissionService.validateJoinPermission(groupId, userId);
+		}
 	}
 
 	/**

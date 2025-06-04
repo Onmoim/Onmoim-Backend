@@ -31,6 +31,16 @@ public class MeetingPermissionService {
 	}
 
 	/**
+	 * 모임장 권한 확인
+	 */
+	public void validateOwnerPermission(Long groupId, Long userId) {
+		GroupUser groupUser = getGroupUser(groupId, userId);
+		if (!groupUser.isOwner()) {
+			throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
+		}
+	}
+
+	/**
 	 * 그룹 사용자 정보 조회
 	 */
 	private GroupUser getGroupUser(Long groupId, Long userId) {
