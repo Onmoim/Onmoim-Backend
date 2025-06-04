@@ -31,7 +31,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder(builderClassName = "GroupCreateBuilder", builderMethodName = "groupCreateBuilder")
+@Builder
 public class Group extends BaseEntity {
 	@Id
 	@Column(name = "group_id")
@@ -69,22 +69,19 @@ public class Group extends BaseEntity {
 		}
 	}
 
-	public void update(Long currentMember, String name, String description, int capacity, Category category) {
+	public void update(String description, int capacity, Long currentMember) {
 		if(currentMember > capacity){
 			throw new CustomException(CAPACITY_MUST_BE_GREATER_THAN_CURRENT);
 		}
-		this.name = name;
 		this.description = description;
 		this.capacity = capacity;
-		this.category = category;
 	}
 
 	public void updateImage(String imgUrl) {
 		this.imgUrl = imgUrl;
 	}
 
-	public void updateLocation(final Location location, final GeoPoint geoPoint) {
-		this.location = location;
+	public void updateLocation(final GeoPoint geoPoint) {
 		this.geoPoint = geoPoint;
 	}
 }

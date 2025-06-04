@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,7 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.common.response.ResponseHandler;
-import com.onmoim.server.group.dto.request.GroupRequestDto;
+import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
+import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.dto.request.TransferOwnerRequestDto;
 import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.service.GroupService;
@@ -63,16 +63,19 @@ public class GroupController {
 	})
 	@PostMapping("/v1/groups")
 	public ResponseEntity<ResponseHandler<Long>> createGroup(
-		@RequestBody @Valid GroupRequestDto request
+		@RequestBody @Valid GroupCreateRequestDto request
 	)
 	{
-		Long groupId = groupService.createGroup(request);
-		return ResponseEntity
-			.status(CREATED)
-			.body(ResponseHandler.response(groupId));
+		Long groupId = groupService.createGroup(
+			request.categoryId(),
+			request.locationId(),
+			request.name(),
+			request.description(),
+			request.capacity()
+		);
+		return ResponseEntity.status(CREATED).body(ResponseHandler.response(groupId));
 	}
 
-	// x,y 좌표 로직
 	@Operation(
 		summary = "모임 수정",
 		description = "모임을 수정합니다."
@@ -97,17 +100,17 @@ public class GroupController {
 			responseCode = "409",
 			description = "정원 제한 위반")
 	})
-	@PutMapping("/v1/groups/{groupId}")
+	@PatchMapping("/v1/groups/{groupId}")
 	public ResponseEntity<ResponseHandler<String>> updateGroup(
 		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId,
 		@Parameter(description = "모임 수정 정보")
-		@Valid @RequestPart(value = "request") GroupRequestDto request,
+		@Valid @RequestPart(value = "request") GroupUpdateRequestDto request,
 		@Parameter(description = "이미지 파일")
 		@RequestPart(value = "file", required = false) MultipartFile file
 	)
 	{
-		groupService.updateGroup(groupId, request, file);
+		groupService.updateGroup(groupId, request.description(), request.capacity(), file);
 		return ResponseEntity.ok(ResponseHandler.response("수정 성공"));
 	}
 
@@ -296,7 +299,7 @@ public class GroupController {
 		@Valid @RequestBody TransferOwnerRequestDto request
 	)
 	{
-		groupService.transferOwnership(groupId, request.getMemberId());
+		groupService.transferOwnership(groupId, request.memberId());
 		return ResponseEntity.ok(ResponseHandler.response("모임장 변경 성공"));
 	}
 

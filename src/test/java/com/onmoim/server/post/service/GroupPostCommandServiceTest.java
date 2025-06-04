@@ -69,7 +69,7 @@ class GroupPostCommandServiceTest {
         // User 객체 ID 설정
         setId(testUser, 1L);
 
-        testGroup = Group.groupCreateBuilder()
+        testGroup = Group.builder()
                 .name("testGroup")
                 .capacity(10)
                 .build();

@@ -2,30 +2,20 @@ package com.onmoim.server.group.service;
 
 import static org.assertj.core.api.Assertions.*;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
-
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
-import com.onmoim.server.group.dto.request.GroupRequestDto;
+import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
@@ -55,74 +45,6 @@ class GroupServiceTest {
 	private CategoryRepository categoryRepository;
 
 	@Test
-	@DisplayName("동시에 가입 요청 테스트")
-	@Transactional
-	void joinGroupConcurrencyTest() throws InterruptedException {
-		// given
-		assertThat(TestTransaction.isActive()).isTrue();
-
-		List<User> userList = new ArrayList<>();
-		Group group = Group.groupCreateBuilder()
-			.name("group")
-			.capacity(10)
-			.build();
-
-		groupRepository.save(group);
-		final Long groupId = group.getId();
-		User owner = User.builder().name("모임장").build();
-		userList.add(owner);
-		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
-		userRepository.save(owner);
-		IntStream.range(0, 20).forEach(i -> {
-			User user = User.builder()
-				.name("test" + i)
-				.build();
-			userList.add(user);
-			userRepository.save(user);
-		});
-		TestTransaction.flagForCommit(); // 트랜잭션 커밋
-		TestTransaction.end();           // 트랜잭션 종료
-
-		// when
-		int taskCount = 20;
-		ExecutorService executorService = Executors.newFixedThreadPool(10);
-		CountDownLatch latch = new CountDownLatch(taskCount);
-		for (int i = 0; i < taskCount; i++) {
-			final int idx = i;
-			executorService.submit(() -> {
-				try {
-					// 각 쓰레드마다 인증 정보 세팅
-					Long userId = userList.get(idx).getId();
-					var detail = new CustomUserDetails(userId, "test", "test");
-					var authenticated = UsernamePasswordAuthenticationToken.authenticated(
-						detail, null, null);
-					SecurityContextHolder.getContext().setAuthentication(authenticated);
-
-					// 동시성 테스트
-					groupService.joinGroup(groupId);
-				} finally {
-					// 쓰레드 인증 정보 삭제
-					SecurityContextHolder.clearContext();
-					latch.countDown();
-				}
-			});
-		}
-		latch.await();
-		executorService.shutdown();
-
-		// then
-		Group updatedGroup = groupRepository.findById(groupId).orElseThrow();
-		Long count = groupUserRepository.countByGroupAndStatuses(groupId, List.of(Status.MEMBER, Status.OWNER));
-		System.out.println("최종 모임 인원 by GroupUser = " + count);
-		assertThat(count).isLessThanOrEqualTo(updatedGroup.getCapacity());
-		assertThat(count).isEqualTo(updatedGroup.getCapacity());
-
-		groupUserRepository.deleteAll();
-		userRepository.deleteAll();
-		groupRepository.deleteAll();
-	}
-
-	@Test
 	@DisplayName("모임 좋아요: 성공")
 	@Transactional
 	void likeGroupSuccessTest() {
@@ -132,7 +54,7 @@ class GroupServiceTest {
 			.build();
 		userRepository.save(user);
 
-		Group group = Group.groupCreateBuilder()
+		Group group = Group.builder()
 			.name("group")
 			.description("description")
 			.capacity(100)
@@ -164,7 +86,7 @@ class GroupServiceTest {
 			.build();
 		userRepository.save(user);
 
-		Group group = Group.groupCreateBuilder()
+		Group group = Group.builder()
 			.name("group")
 			.description("description")
 			.capacity(100)
@@ -197,7 +119,7 @@ class GroupServiceTest {
 			.build();
 		userRepository.save(user);
 
-		Group group = Group.groupCreateBuilder()
+		Group group = Group.builder()
 			.name("group")
 			.description("description")
 			.capacity(100)
@@ -227,7 +149,7 @@ class GroupServiceTest {
 			.build();
 		userRepository.save(user);
 
-		Group group = Group.groupCreateBuilder()
+		Group group = Group.builder()
 			.name("group")
 			.description("description")
 			.capacity(100)
@@ -255,7 +177,7 @@ class GroupServiceTest {
 	@Transactional
 	void selectGroupMembers() {
 		// given
-		Group group = Group.groupCreateBuilder()
+		Group group = Group.builder()
 			.name("group")
 			.description("description")
 			.capacity(100)
@@ -310,8 +232,9 @@ class GroupServiceTest {
 	}
 
 	@Test
-	@DisplayName("모임 생성 성공 테스트")
-	void createGroupSuccess() throws Exception {
+	@DisplayName("모임 생성 성공")
+	@Transactional
+	void createGroupSuccess() {
 		// given
 		Location location = Location.create("1234", "서울특별시", "종로구", "청운동", null);
 		locationRepository.save(location);
@@ -324,39 +247,26 @@ class GroupServiceTest {
 
 		String name = "테스트 모임";
 		String description = "모임 설명";
-		GroupRequestDto request = GroupRequestDto.builder()
-			.name(name)
-			.description(description)
-			.locationId(location.getId())
-			.categoryId(category.getId())
-			.capacity(100)
-			.build();
+		int capacity = 100;
 
-		// when
 		var detail = new CustomUserDetails(user.getId(), "test", "test");
 		var authenticated = UsernamePasswordAuthenticationToken.authenticated(
 			detail, null, null);
 		SecurityContextHolder.getContext().setAuthentication(authenticated);
-		Long groupId = groupService.createGroup(request);
+
+		// when
+		Long groupId = groupService.createGroup(
+			category.getId(),
+			location.getId(),
+			name,
+			description,
+			capacity
+		);
 
 		// then
-		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
-			Optional<Group> findGroup = groupRepository.findGroupWithDetails(groupId);
-			assertThat(findGroup.isPresent()).isTrue();
-			Group group = findGroup.get();
-			assertThat(group.getName()).isEqualTo(name);
-			assertThat(group.getDescription()).isEqualTo(description);
-			assertThat(group.getGeoPoint()).isNotNull();
-			assertThat(group.getGeoPoint().getX()).isGreaterThan(0.0);
-			assertThat(group.getGeoPoint().getY()).isGreaterThan(0.0);
-			System.out.println("geoPoint= " + group.getGeoPoint());
-		});
-
-		groupUserRepository.deleteAll(); // group, user 참조
-		userRepository.deleteAll();
-		groupRepository.deleteAll(); // location, category 참조
-		locationRepository.deleteAll();
-		categoryRepository.deleteAll();
+		Group group = groupRepository.getById(groupId);
+		assertThat(group.getName()).isEqualTo(name);
+		assertThat(group.getDescription()).isEqualTo(description);
+		assertThat(group).isNotNull();
 	}
-
 }

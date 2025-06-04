@@ -14,7 +14,7 @@ import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.S3FileStorageService;
-import com.onmoim.server.group.dto.request.GroupRequestDto;
+import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.location.entity.Location;
@@ -28,23 +28,42 @@ public class GroupQueryService {
 	private final GroupRepository groupRepository;
 	private final GroupUserQueryService groupUserQueryService;
 	private final S3FileStorageService s3FileStorageService;
-	private final CategoryQueryService categoryQueryService;
 	private final LocationQueryService locationQueryService;
 
-	public void saveGroup(Group group) {
+	public Group saveGroup(
+		Category category,
+		Location location,
+		String name,
+		String description,
+		int capacity
+	) {
+		Group group = Group.builder()
+			.category(category)
+			.location(location)
+			.name(name)
+			.description(description)
+			.capacity(capacity)
+			.build();
 		try {
-			groupRepository.save(group);
+			return groupRepository.save(group);
 		} catch (DataIntegrityViolationException e) {
 			throw new CustomException(ALREADY_EXISTS_GROUP);
 		}
 	}
-
 	/**
 	 * group 존재 X -> CustomException
 	 * group 존재 O, deletedDate 존재 O -> CustomException
 	 * group 존재 O, deletedDate 존재 X -> group 반환
 	 */
 	public Group getById(Long groupId) {
+		return findActiveGroup(groupId);
+	}
+
+	public void existsById(Long groupId) {
+		findActiveGroup(groupId);
+	}
+
+	private Group findActiveGroup(Long groupId) {
 		return groupRepository.findById(groupId)
 			.filter(group -> !group.isDeleted())
 			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
@@ -61,28 +80,32 @@ public class GroupQueryService {
 		group.softDelete();
 	}
 
-	// 모임 업데이트
-	public void updateGroup(Group group, GroupRequestDto request, MultipartFile image) {
+	// 모임 수정
+	public void updateGroup(
+		Group group,
+		String description,
+		int capacity,
+		MultipartFile image
+	) {
 		// 현재 모임원 숫자
 		Long currentMember = groupUserQueryService.countMembers(group.getId());
 
-		// 요청 카테고리
-		Category category = categoryQueryService.getById(request.getCategoryId());
-		// 모임 이름, 모임 설명, 모임 정원, 카테고리 변경
-		group.update(currentMember, request.getName(),
-			request.getDescription(), request.getCapacity(), category);
+		// 모임 설명, 모임 정원 변경
+		group.update(description, capacity, currentMember);
 
 		// 모임 이미지 변경
-		if(!image.isEmpty()) {
+		if(image != null && !image.isEmpty()) {
 			FileUploadResponseDto uploadResponse = s3FileStorageService.uploadFile(image, "group");
 			group.updateImage(uploadResponse.getFileUrl());
 		}
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public void updateGeoPoint(Long groupId, Long locationId, GeoPoint geoPoint) {
+	public void updateGeoPoint(
+		Long groupId,
+		GeoPoint geoPoint
+	) {
 		Group group = getById(groupId);
-		Location location = locationQueryService.getById(locationId);
-		group.updateLocation(location, geoPoint);
+		group.updateLocation(geoPoint);
 	}
 }

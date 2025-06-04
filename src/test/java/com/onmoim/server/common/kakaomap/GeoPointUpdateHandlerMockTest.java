@@ -48,7 +48,7 @@ class GeoPointUpdateHandlerMockTest {
 	@BeforeEach
 	void setUp() {
 		geoPointUpdateEvent =
-			new GeoPointUpdateEvent(1L, 1L, "서울시 강남구");
+			new GeoPointUpdateEvent(1L, "서울시 강남구");
 	}
 
 	@Test
@@ -94,7 +94,7 @@ class GeoPointUpdateHandlerMockTest {
 		TestTransaction.end();           // 트랜잭션 종료
 
 		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
-			verify(kakaoMapRetryService, times(0)).retryUpdate(any(), any(), any());
+			verify(kakaoMapRetryService, times(0)).retryUpdate(any(), any());
 		});
 	}
 
@@ -105,7 +105,7 @@ class GeoPointUpdateHandlerMockTest {
 		GeoPoint geoPoint = new GeoPoint(127.0, 37.5);
 		when(kakaoMapService.getGeoPoint(any())).thenReturn(geoPoint);
 		doThrow(new CustomException(ErrorCode.NOT_EXISTS_GROUP))
-			.when(groupQueryService).updateGeoPoint(any(), any(), any());
+			.when(groupQueryService).updateGeoPoint(any(), any());
 
 		// when
 		eventPublisher.publishEvent(geoPointUpdateEvent); // 이벤트 발행
@@ -114,7 +114,7 @@ class GeoPointUpdateHandlerMockTest {
 
 		// then
 		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
-			verify(kakaoMapRetryService, times(0)).retryUpdate(any(), any(), any());
+			verify(kakaoMapRetryService, times(0)).retryUpdate(any(), any());
 		});
 	}
 
@@ -126,7 +126,7 @@ class GeoPointUpdateHandlerMockTest {
 			.thenThrow(HttpClientErrorException.TooManyRequests.create(
 				HttpStatus.TOO_MANY_REQUESTS, null, null, null, null));
 
-		doNothing().when(kakaoMapRetryService).retryUpdate(any(), any(), any());
+		doNothing().when(kakaoMapRetryService).retryUpdate(any(), any());
 
 		// when
 		eventPublisher.publishEvent(geoPointUpdateEvent); // 이벤트 발행
@@ -135,7 +135,7 @@ class GeoPointUpdateHandlerMockTest {
 
 		// then
 		Awaitility.await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> {
-			verify(kakaoMapRetryService, times(1)).retryUpdate(any(), any(), any());
+			verify(kakaoMapRetryService, times(1)).retryUpdate(any(), any());
 		});
 	}
 
@@ -147,7 +147,7 @@ class GeoPointUpdateHandlerMockTest {
 			.thenThrow(HttpClientErrorException.TooManyRequests.create(
 				HttpStatus.TOO_MANY_REQUESTS, null, null, null, null));
 
-		doNothing().when(kakaoMapRetryService).retryUpdate(any(), any(), any());
+		doNothing().when(kakaoMapRetryService).retryUpdate(any(), any());
 
 		// when
 		eventPublisher.publishEvent(geoPointUpdateEvent); // 이벤트 발행
@@ -156,7 +156,7 @@ class GeoPointUpdateHandlerMockTest {
 
 		// then
 		Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() -> {
-			verify(kakaoMapRetryService, times(1)).retryUpdate(any(), any(), any());
+			verify(kakaoMapRetryService, times(1)).retryUpdate(any(), any());
 		});
 	}
 

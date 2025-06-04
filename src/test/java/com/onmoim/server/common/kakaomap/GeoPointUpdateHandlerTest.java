@@ -32,8 +32,6 @@ class GeoPointUpdateHandlerTest {
 	private ApplicationEventPublisher eventPublisher;
 	@Autowired
 	private GroupRepository groupRepository;
-	@Autowired
-	private LocationRepository locationRepository;
 
 	@Test
 	@DisplayName("트랜잭션 활성화 테스트")
@@ -45,20 +43,14 @@ class GeoPointUpdateHandlerTest {
 	@DisplayName("GeoPointUpdateHandler 이벤트 성공 처리 테스트")
 	void testSuccessHandle() {
 		// given
-		Group group = Group.groupCreateBuilder()
-			.name("테스트 그룹")
-			.description("테스트 그룹 설명").build();
+		Group group = Group.builder().name("테스트 그룹").description("테스트 그룹 설명").build();
 		groupRepository.save(group);
 
-		Location location = Location.create("1234", "서울특별시", "종로구", "청운동", null);
-		locationRepository.save(location);
-
 		Long groupId = group.getId();
-		Long locationId = location.getId();
-		String fullAddress = location.getFullAddress();
+		String fullAddress = "서울특별시 종로구 청운동";
 
 		// when
-		eventPublisher.publishEvent(new GeoPointUpdateEvent(groupId, locationId, fullAddress));
+		eventPublisher.publishEvent(new GeoPointUpdateEvent(groupId, fullAddress));
 		TestTransaction.flagForCommit(); // 테스트 트랜잭션 커밋
 		TestTransaction.end();
 
@@ -74,5 +66,7 @@ class GeoPointUpdateHandlerTest {
 				assertThat(findGroup.getGeoPoint()).isNotNull();
 				System.out.println("geoPoint = " + findGroup.getGeoPoint());
 			});
+
+		groupRepository.deleteById(groupId);
 	}
 }

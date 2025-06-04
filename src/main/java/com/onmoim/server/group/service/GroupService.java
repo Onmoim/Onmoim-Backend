@@ -15,7 +15,7 @@ import com.onmoim.server.category.service.CategoryQueryService;
 import com.onmoim.server.common.kakaomap.GeoPointUpdateEvent;
 import com.onmoim.server.group.aop.NamedLock;
 import com.onmoim.server.group.aop.Retry;
-import com.onmoim.server.group.dto.request.GroupRequestDto;
+import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
@@ -45,27 +45,25 @@ public class GroupService {
 
 	// 모임 생성
 	@Transactional
-	public Long createGroup(GroupRequestDto request) {
+	public Long createGroup(
+			Long categoryId,
+			Long locationId,
+			String name,
+			String description,
+			int capacity
+	) {
 		User user = userQueryService.findById(getCurrentUserId());
-		Location location = locationQueryService.getById(request.getLocationId());
-		Category category = categoryQueryService.getById(request.getCategoryId());
+		Category category = categoryQueryService.getById(categoryId);
+		Location location = locationQueryService.getById(locationId);
 
-		Group group = Group.groupCreateBuilder()
-			.name(request.getName())
-			.description(request.getDescription())
-			.capacity(request.getCapacity())
-			.location(location)
-			.category(category)
-			.build();
-		groupQueryService.saveGroup(group);
+		Group group = groupQueryService.saveGroup(category, location, name, description, capacity);
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
 		groupUserQueryService.save(groupUser);
 
 		String address = location.getFullAddress();
 
-		eventPublisher.publishEvent(
-			new GeoPointUpdateEvent(group.getId(), location.getId(), address));
+		eventPublisher.publishEvent(new GeoPointUpdateEvent(group.getId(), address));
 		return group.getId();
 	}
 
@@ -112,8 +110,12 @@ public class GroupService {
 
 	// 모임 회원 조회
 	@Transactional(readOnly = true)
-	public CursorPageResponseDto<GroupMembersResponseDto> getGroupMembers(Long groupId, Long cursorId, int size) {
-		groupQueryService.getById(groupId);
+	public CursorPageResponseDto<GroupMembersResponseDto> getGroupMembers(
+		Long groupId,
+		Long cursorId,
+		int size
+	) {
+		groupQueryService.existsById(groupId);
 		return groupUserQueryService.findGroupUserAndMembers(groupId, cursorId, size);
 	}
 
@@ -137,7 +139,7 @@ public class GroupService {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
 		// 모임 조회
-		groupQueryService.getById(groupId);
+		groupQueryService.existsById(groupId);
 		// 탈퇴 가능 여부 확인
 		GroupUser groupUser = groupUserQueryService.checkCanLeave(groupId, user.getId());
 		// 모임 탈퇴
@@ -147,13 +149,16 @@ public class GroupService {
 	// 모임장 위임
 	@Retry
 	@Transactional
-	public void transferOwnership(Long groupId, Long userId) {
+	public void transferOwnership(
+		Long groupId,
+		Long userId
+	) {
 		// 현재 모임장 조회
 		User from = userQueryService.findById(getCurrentUserId());
 		// 권한 위임 대상 회원 조회
 		User to = userQueryService.findById(userId);
 		// 모임 조회
-		groupQueryService.getById(groupId);
+		groupQueryService.existsById(groupId);
 		// 현재 모임장 확인
 		GroupUser owner = groupUserQueryService.checkAndGetOwner(groupId, from.getId());
 		// 권한 위임 대상 확인
@@ -162,37 +167,22 @@ public class GroupService {
 		groupUserQueryService.transferOwnership(owner, user);
 	}
 
-	/**
-	 * 모임 수정
-	 * 모임 정원 변경의 경우 현재 모임원 수 관련된 동시성 이슈가 발생 예상
-	 * -> 네임드 락을 획득하고 시도하도록 하였습니다.
-	 * 정원 감소 시: 현재 모임원 수보다 작은 값으로 정원을 설정하려 할 때
-	 * 예외 발생(설정 불가)로 처리하여 데이터 정합성을 보장합니다.
-	 *
-	 * 발생 쿼리
-	 * - 유저 조회, 모임 조회(카테고리, 지역), 현재 모임장 조회, 현재 모임원 수 조회
-	 * - 업데이트 쿼리, x,y 업데이트 쿼리
-	 *
-	 */
 	@NamedLock
 	@Transactional
-	public void updateGroup(Long groupId, GroupRequestDto request, MultipartFile image) {
+	public void updateGroup(
+		Long groupId,
+		String description,
+		int capacity,
+		MultipartFile image
+	) {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
-		// 모임 조회(카테고리, 로케이션)
-		Group group = groupQueryService.getGroupWithDetails(groupId);
+		// 모임 조회
+		Group group = groupQueryService.getById(groupId);
 		// 모임장 권한 확인
 		groupUserQueryService.checkOwner(groupId, user.getId());
-		// 업데이트(카테고리, 제목, 설명, 정원)
-		groupQueryService.updateGroup(group, request, image);
-		// 현재 모임 Location
-		Location location = group.getLocation();
-		// 현재 모임 Location, 요청 Location 다르면 업데이트 시도
-		if(!Objects.equals(location.getId(), request.getLocationId())){
-			Location requestLocation = locationQueryService.getById(request.getLocationId());
-			String fullAddress = requestLocation.getFullAddress();
-			eventPublisher.publishEvent(new GeoPointUpdateEvent(groupId, requestLocation.getId(), fullAddress));
-		}
+		// 업데이트
+		groupQueryService.updateGroup(group, description, capacity, image);
 	}
 
 	// 현재 사용자

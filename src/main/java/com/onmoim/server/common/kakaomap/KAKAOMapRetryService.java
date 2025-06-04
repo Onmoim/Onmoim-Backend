@@ -26,14 +26,21 @@ public class KAKAOMapRetryService {
 		maxAttempts = 3,
 		backoff = @Backoff(delay = 100, multiplier = 1.5, maxDelay = 1000, random = true)
 	)
-	public void retryUpdate(Long groupId, Long locationId, String address) {
+	public void retryUpdate(
+		Long groupId,
+		String address
+	) {
 		GeoPoint result = kakaoMapService.getGeoPoint(address);
-		groupQueryService.updateGeoPoint(groupId, locationId, result);
+		groupQueryService.updateGeoPoint(groupId, result);
 	}
 
 	@Recover
-	public void recover(Exception e, Long groupId, Long locationId, String address) {
-		log.warn("모임 (x,y) 업데이트 최종 실패: 모임 ID:{}, 위치 ID:{}, 전송 주소:{}", groupId, locationId, address);
+	public void recover(
+		Exception e,
+		Long groupId,
+		String address
+	) {
+		log.warn("모임 (x,y) 업데이트 최종 실패: 모임 ID:{}, 전송 주소:{}", groupId, address);
 	}
 
 }

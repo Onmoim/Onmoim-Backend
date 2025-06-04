@@ -32,10 +32,9 @@ public class GeoPointUpdateHandler {
 	public void handleGeoPointUpdate(GeoPointUpdateEvent event) {
 		var groupId = event.groupId();
 		var address = event.address();
-		var locationId = event.locationId();
 		try {
 			GeoPoint result = kakaoMapService.getGeoPoint(address);
-			groupQueryService.updateGeoPoint(groupId, locationId, result);
+			groupQueryService.updateGeoPoint(groupId, result);
 		}
 		catch (HttpClientErrorException.Unauthorized | HttpClientErrorException.BadRequest e){
 			log.error("4xx Unauthorized 서버 설정 문제:{}", e.getMessage());
@@ -44,7 +43,7 @@ public class GeoPointUpdateHandler {
 			log.error("모임 업데이트 오류: 모임 ID:{}, 에러 메시지:{}", groupId, e.getMessage());
 		}
 		catch (Exception e) {
-			kakaoMapRetryService.retryUpdate(groupId, locationId, address);
+			kakaoMapRetryService.retryUpdate(groupId, address);
 		}
 	}
 }

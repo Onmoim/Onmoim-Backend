@@ -31,13 +31,13 @@ class KAKAOMapRetryServiceTest {
 		GeoPoint geoPoint = new GeoPoint(127.0, 37.5);
 		when(mapService.getGeoPoint(any())).thenReturn(geoPoint);
 
-		doNothing().when(groupQueryService).updateGeoPoint(any(), any(), any());
+		doNothing().when(groupQueryService).updateGeoPoint(any(), any());
 
 		// when
-		retryService.retryUpdate(1L, 1L, "");
+		retryService.retryUpdate(1L, "");
 
 		// then
-		verify(retryService, times(1)).retryUpdate(any(), any(), any());
+		verify(retryService, times(1)).retryUpdate(any(), any());
 	}
 
 	@Test
@@ -50,13 +50,13 @@ class KAKAOMapRetryServiceTest {
 			.thenReturn(geoPoint);
 
 		doNothing().doNothing()
-			.when(groupQueryService).updateGeoPoint(any(), any(), any());
+			.when(groupQueryService).updateGeoPoint(any(), any());
 
 		// when
-		retryService.retryUpdate(1L, 1L, "");
+		retryService.retryUpdate(1L,  "");
 
 		// then
-		verify(retryService, times(2)).retryUpdate(any(), any(), any());
+		verify(retryService, times(2)).retryUpdate(any(), any());
 	}
 
 	@Test
@@ -71,13 +71,13 @@ class KAKAOMapRetryServiceTest {
 			.thenReturn(geoPoint);
 
 		doNothing().doNothing().doNothing()
-			.when(groupQueryService).updateGeoPoint(any(), any(), any());
+			.when(groupQueryService).updateGeoPoint(any(), any());
 
 		// when
-		retryService.retryUpdate(1L, 1L, "");
+		retryService.retryUpdate(1L,  "");
 
 		// then
-		verify(retryService, times(3)).retryUpdate(any(), any(), any());
+		verify(retryService, times(3)).retryUpdate(any(), any());
 	}
 
 	@Test
@@ -91,13 +91,13 @@ class KAKAOMapRetryServiceTest {
 				HttpStatus.TOO_MANY_REQUESTS, null, null, null, null));
 
 		doNothing().doNothing().doNothing()
-			.when(groupQueryService).updateGeoPoint(any(), any(), any());
+			.when(groupQueryService).updateGeoPoint(any(), any());
 
 		// when
-		retryService.retryUpdate(1L, 1L, "");
+		retryService.retryUpdate(1L,  "");
 
 		// then
-		verify(retryService, times(3)).retryUpdate(any(), any(), any());
-		verify(retryService, times(1)).recover(any(), any(), any(), any());
+		verify(retryService, times(3)).retryUpdate(any(), any());
+		verify(retryService, times(1)).recover(any(), any(), any());
 	}
 }

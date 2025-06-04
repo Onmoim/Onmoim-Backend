@@ -14,7 +14,7 @@ public interface GroupRepository extends JpaRepository<Group, Long>, GroupReposi
 	@Query(value = "select release_lock(:key)", nativeQuery = true)
 	void releaseLock(String key);
 
-	// group, category, location fetch join
-	@Query("select g from Group g join fetch g.category join fetch g.location where g.id=:groupId")
+	// group, category, location left fetch join
+	@Query("select g from Group g left join fetch g.category left join fetch g.location where g.id=:groupId")
 	Optional<Group> findGroupWithDetails(Long groupId);
 }
