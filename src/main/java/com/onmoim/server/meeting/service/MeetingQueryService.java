@@ -1,12 +1,17 @@
 package com.onmoim.server.meeting.service;
 
-import org.springframework.data.domain.Page;
+import java.time.LocalDateTime;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.onmoim.server.common.dto.CursorPageResponse;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.common.util.CursorPaginationHelper;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingType;
 import com.onmoim.server.meeting.repository.MeetingRepository;
@@ -19,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MeetingQueryService {
-	
+
 	private final MeetingRepository meetingRepository;
 
 	/**
@@ -39,20 +44,31 @@ public class MeetingQueryService {
 	}
 
 	/**
-	 * 그룹별 일정 목록 조회
+	 * 그룹별 일정 목록 조회 (커서 기반)
 	 */
-	public Page<Meeting> findByGroupId(Long groupId, Pageable pageable) {
-		return meetingRepository.findByGroupIdAndNotDeleted(groupId, pageable);
+	public CursorPageResponse<Meeting> getMeetingsByGroupId(Long groupId, Long cursorId, int size) {
+		Pageable pageable = PageRequest.of(0, size);
+		Slice<Meeting> slice = meetingRepository.findMeetingsByGroupIdAfterCursor(groupId, cursorId, pageable);
+		return CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
 	}
 
 	/**
-	 * 그룹별 일정 목록 조회 (타입 필터링)
+	 * 그룹별 일정 목록 조회 (타입 필터링, 커서 기반)
 	 */
-	public Page<Meeting> findByGroupIdAndType(Long groupId, MeetingType type, Pageable pageable) {
-		if (type == null) {
-			return findByGroupId(groupId, pageable);
-		}
-		return meetingRepository.findByGroupIdAndTypeAndNotDeleted(groupId, type, pageable);
+	public CursorPageResponse<Meeting> getMeetingsByGroupIdAndType(Long groupId, MeetingType type, Long cursorId, int size) {
+		Pageable pageable = PageRequest.of(0, size);
+		Slice<Meeting> slice = meetingRepository.findMeetingsByGroupIdAndTypeAfterCursor(groupId, type, cursorId, pageable);
+		return CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
+	}
+
+	/**
+	 * 사용자가 속한 모든 모임의 예정된 일정 조회 (커서 기반)
+	 */
+	public CursorPageResponse<Meeting> getUpcomingMeetingsByUserId(Long userId, Long cursorId, int size) {
+		Pageable pageable = PageRequest.of(0, size);
+		LocalDateTime now = LocalDateTime.now();
+		Slice<Meeting> slice = meetingRepository.findUpcomingMeetingsByUserIdAfterCursor(userId, now, cursorId, pageable);
+		return CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
 	}
 
 	/**
@@ -62,4 +78,4 @@ public class MeetingQueryService {
 	public Meeting save(Meeting meeting) {
 		return meetingRepository.save(meeting);
 	}
-} 
+}
