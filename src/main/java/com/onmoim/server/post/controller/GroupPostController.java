@@ -30,10 +30,11 @@ import lombok.RequiredArgsConstructor;
 
 import com.onmoim.server.post.dto.request.CursorPageRequestDto;
 import com.onmoim.server.post.dto.request.GroupPostRequestDto;
-import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
+import com.onmoim.server.post.dto.response.PostListPageResponseDto;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.service.GroupPostService;
+import com.onmoim.server.post.service.GroupPostQueryService;
 
 /**
  * 모임 게시글 관련 API 컨트롤러
@@ -47,6 +48,7 @@ import com.onmoim.server.post.service.GroupPostService;
 public class GroupPostController {
 
     private final GroupPostService groupPostService;
+    private final GroupPostQueryService groupPostQueryService;
 
     @Operation(
             summary = "모임 게시글 작성",
@@ -125,30 +127,30 @@ public class GroupPostController {
                     responseCode = "200",
                     description = "게시글 목록 조회 성공",
                     content = @Content(
-                            schema = @Schema(implementation = CursorPageResponseDto.class)
+                            schema = @Schema(implementation = PostListPageResponseDto.class)
                     )
             ),
             @ApiResponse(responseCode = "400", description = "모임을 찾을 수 없음")
     })
     @GetMapping("/v1/groups/{groupId}/posts")
-    public ResponseEntity<CursorPageResponseDto<GroupPostResponseDto>> getPosts(
+    public ResponseEntity<PostListPageResponseDto> getPosts(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,
             @Parameter(description = "게시글 타입")
             @RequestParam(required = false) GroupPostType type,
-            @Parameter(description = "커서 ID (마지막으로 조회한 게시글 ID)")
-            @RequestParam(required = false) Long cursorId,
+            @Parameter(description = "페이지 토큰 (다음 페이지 조회 시 필요)")
+            @RequestParam(required = false) String pageToken,
             @Parameter(description = "페이지 크기")
             @RequestParam(defaultValue = "10") int size
     ) {
         CursorPageRequestDto cursorRequest =
                 CursorPageRequestDto.builder()
-                        .cursorId(cursorId)
+                        .pageToken(pageToken)
                         .size(size)
                         .build();
 
-        CursorPageResponseDto<GroupPostResponseDto> response =
-                groupPostService.getPosts(
+        PostListPageResponseDto response =
+                groupPostQueryService.getPosts(
                         groupId,
                         type,
                         cursorRequest
