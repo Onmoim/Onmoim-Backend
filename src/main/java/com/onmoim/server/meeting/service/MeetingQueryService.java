@@ -44,20 +44,22 @@ public class MeetingQueryService {
 	}
 
 	/**
-	 * 그룹별 일정 목록 조회 (커서 기반)
+	 * 그룹별 예정된 일정 목록 조회 (커서 기반)
 	 */
 	public CursorPageResponse<Meeting> getMeetingsByGroupId(Long groupId, Long cursorId, int size) {
 		Pageable pageable = PageRequest.of(0, size);
-		Slice<Meeting> slice = meetingRepository.findMeetingsByGroupIdAfterCursor(groupId, cursorId, pageable);
+		LocalDateTime now = LocalDateTime.now();
+		Slice<Meeting> slice = meetingRepository.findUpcomingMeetingsByGroupIdAfterCursor(groupId, now, cursorId, pageable);
 		return CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
 	}
 
 	/**
-	 * 그룹별 일정 목록 조회 (타입 필터링, 커서 기반)
+	 * 그룹별 예정된 일정 목록 조회 (타입 필터링, 커서 기반)
 	 */
 	public CursorPageResponse<Meeting> getMeetingsByGroupIdAndType(Long groupId, MeetingType type, Long cursorId, int size) {
 		Pageable pageable = PageRequest.of(0, size);
-		Slice<Meeting> slice = meetingRepository.findMeetingsByGroupIdAndTypeAfterCursor(groupId, type, cursorId, pageable);
+		LocalDateTime now = LocalDateTime.now();
+		Slice<Meeting> slice = meetingRepository.findUpcomingMeetingsByGroupIdAndTypeAfterCursor(groupId, now, type, cursorId, pageable);
 		return CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
 	}
 
