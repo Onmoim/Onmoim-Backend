@@ -1,4 +1,4 @@
-package com.onmoim.server.group.service;
+package com.onmoim.server.group.implement;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -36,19 +36,22 @@ class GroupQueryServiceTest {
 	}
 
 	@Test
-	@DisplayName("그룹 저장 성공")
+	@DisplayName("모임 저장 성공")
+	@Transactional
 	void groupSaveSuccess() {
 		// given
-		Group group = Group.groupCreateBuilder()
-			.capacity(10)
-			.category(category)
-			.location(location)
-			.description("설명")
-			.name("모임이름")
-			.build();
+		var name = "모임이름";
+		var description = "설명";
+		var capacity = 100;
 
 		// when
-		groupQueryService.saveGroup(group);
+		Group group = groupQueryService.saveGroup(
+			category,
+			location,
+			name,
+			description,
+			capacity
+		);
 
 		// then
 		Group findGroup = groupQueryService.getById(group.getId());
@@ -59,28 +62,31 @@ class GroupQueryServiceTest {
 
 	@Test
 	@DisplayName("그룹 저장 실패 이미 존재하는 모임 이름")
+	@Transactional
 	void groupSaveFailure() {
 		// given
-		Group group1 = Group.groupCreateBuilder()
-			.capacity(10)
-			.category(category)
-			.location(location)
-			.description("설명1")
-			.name("모임이름1")
-			.build();
-		groupQueryService.saveGroup(group1);
+		var name = "모임이름";
+		var description = "설명";
+		var capacity = 100;
 
-		Group group2 = Group.groupCreateBuilder()
-			.capacity(10)
-			.category(category)
-			.location(location)
-			.description("설명2")
-			.name("모임이름1")
-			.build();
+		groupQueryService.saveGroup(
+			category,
+			location,
+			name,
+			description,
+			capacity
+		);
 
 		// expected
-		assertThatThrownBy(() -> groupQueryService.saveGroup(group2))
-			.isInstanceOf(CustomException.class)
-			.hasMessage(ErrorCode.ALREADY_EXISTS_GROUP.getDetail());
+		assertThatThrownBy(() ->
+			groupQueryService.saveGroup(
+			category,
+			location,
+			name,
+			description,
+			capacity
+		))
+		.isInstanceOf(CustomException.class)
+		.hasMessage(ErrorCode.ALREADY_EXISTS_GROUP.getDetail());
 	}
 }

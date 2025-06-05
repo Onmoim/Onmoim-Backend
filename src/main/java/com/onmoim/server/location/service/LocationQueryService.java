@@ -1,5 +1,7 @@
 package com.onmoim.server.location.service;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,7 +22,7 @@ public class LocationQueryService {
 
 	public Location getById(Long id) {
 		return locationRepository.findById(id)
-			.orElseThrow(() -> new CustomException(ErrorCode.INVALID_LOCATION));
+			.orElseThrow(() -> new CustomException(INVALID_LOCATION));
 	}
 
 	public List<LocationResponseDto> findByDong(String dong) {

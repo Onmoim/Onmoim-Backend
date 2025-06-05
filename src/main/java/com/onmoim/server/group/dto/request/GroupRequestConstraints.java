@@ -3,7 +3,6 @@ package com.onmoim.server.group.dto.request;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-
 // 모임(Group) 관련 요청의 제약 조건을 정의한 상수 클래스입니다.
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class GroupRequestConstraints {

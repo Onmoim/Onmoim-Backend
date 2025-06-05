@@ -1,5 +1,9 @@
 package com.onmoim.server.location.entity;
 
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.hibernate.annotations.Comment;
 
 import com.onmoim.server.common.BaseEntity;
@@ -53,5 +57,13 @@ public class Location extends BaseEntity {
 		location.dong = dong;
 		location.village = village;
 		return location;
+	}
+
+	// 주소
+	public String getFullAddress() {
+		return Stream.of(city, district, dong, village)
+			.filter(Objects::nonNull)
+			.filter(s -> !s.isBlank())
+			.collect(Collectors.joining(" "));
 	}
 }

@@ -1,5 +1,7 @@
 package com.onmoim.server.user.service;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
+
 import org.springframework.stereotype.Service;
 
 import com.onmoim.server.common.exception.CustomException;
@@ -16,6 +18,6 @@ public class UserQueryService {
 
 	public User findById(Long userId) {
 		return userRepository.findById(userId)
-			.orElseThrow(() -> new CustomException(ErrorCode.INVALID_USER));
+			.orElseThrow(() -> new CustomException(DENIED_UNAUTHORIZED_USER));
 	}
 }
