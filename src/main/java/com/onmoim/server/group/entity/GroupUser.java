@@ -18,9 +18,11 @@ import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Getter
+@ToString(of = {"group", "user"})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GroupUser extends BaseEntity {
 	@EmbeddedId

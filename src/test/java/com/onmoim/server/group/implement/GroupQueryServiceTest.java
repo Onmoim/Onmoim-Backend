@@ -1,4 +1,4 @@
-package com.onmoim.server.group.service;
+package com.onmoim.server.group.implement;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -7,7 +7,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.category.entity.Category;
@@ -15,7 +14,6 @@ import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.entity.Group;
-import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.repository.LocationRepository;
 

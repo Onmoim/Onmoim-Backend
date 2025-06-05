@@ -1,7 +1,6 @@
 package com.onmoim.server.group.service;
 
 import java.util.List;
-import java.util.Objects;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,13 +14,11 @@ import com.onmoim.server.category.service.CategoryQueryService;
 import com.onmoim.server.common.kakaomap.GeoPointUpdateEvent;
 import com.onmoim.server.group.aop.NamedLock;
 import com.onmoim.server.group.aop.Retry;
-import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
-import com.onmoim.server.group.dto.response.CursorPageResponseDto;
-import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
-import com.onmoim.server.group.repository.GroupUserRepository;
+import com.onmoim.server.group.implement.GroupQueryService;
+import com.onmoim.server.group.implement.GroupUserQueryService;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.service.LocationQueryService;
 import com.onmoim.server.security.CustomUserDetails;
@@ -40,7 +37,6 @@ public class GroupService {
 	private final UserQueryService userQueryService;
 	private final LocationQueryService locationQueryService;
 	private final CategoryQueryService categoryQueryService;
-	private final GroupUserRepository groupUserRepository;
 	private final ApplicationEventPublisher eventPublisher;
 
 	// 모임 생성
@@ -87,7 +83,7 @@ public class GroupService {
 		// OWNER, MEMBER, BAN 검사
 		groupUser.joinValidate();
 		// 현재 모임원 숫자 조회
-		Long current = groupUserRepository.countByGroupAndStatuses(groupId, List.of(Status.MEMBER, Status.OWNER));
+		Long current = groupUserQueryService.countMembers(groupId);
 		// 정원 초과 검사
 		group.join(current);
 		// 모임 검사
@@ -110,13 +106,19 @@ public class GroupService {
 
 	// 모임 회원 조회
 	@Transactional(readOnly = true)
-	public CursorPageResponseDto<GroupMembersResponseDto> getGroupMembers(
+	public List<GroupUser> getGroupMembers(
 		Long groupId,
 		Long cursorId,
 		int size
 	) {
 		groupQueryService.existsById(groupId);
 		return groupUserQueryService.findGroupUserAndMembers(groupId, cursorId, size);
+	}
+
+	// 모임 회원 수 조회
+	public Long groupMemberCount(Long groupId) {
+		groupQueryService.existsById(groupId);
+		return groupUserQueryService.countMembers(groupId);
 	}
 
 	// 모임 삭제

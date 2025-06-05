@@ -4,7 +4,6 @@ package com.onmoim.server.common.kakaomap;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.awaitility.Awaitility;
@@ -24,7 +23,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
-import com.onmoim.server.group.service.GroupQueryService;
+import com.onmoim.server.group.implement.GroupQueryService;
 
 /**
  * 이벤트 처리 - 핸들러 테스트:{카카오 API, 재시도 시도 확인}

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.group.service.GroupQueryService;
+import com.onmoim.server.group.implement.GroupQueryService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

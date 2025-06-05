@@ -2,6 +2,8 @@ package com.onmoim.server.group.controller;
 
 import static org.springframework.http.HttpStatus.*;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,13 +23,12 @@ import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.dto.request.MemberIdRequestDto;
 import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
+import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.service.GroupService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -189,9 +190,7 @@ public class GroupController {
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "200",
-			description = "모임 회원 조회 성공",
-			content = @Content(
-				schema = @Schema(implementation = CursorPageResponseDto.class))),
+			description = "모임 회원 조회 성공"),
 		@ApiResponse(
 			responseCode = "404",
 			description = "존재하지 않는 모임")
@@ -206,8 +205,12 @@ public class GroupController {
 		@RequestParam(required = false, defaultValue = "10") int size
 	)
 	{
-		var response = groupService.getGroupMembers(groupId, cursorId, size);
-		return ResponseEntity.ok(ResponseHandler.response(response));
+		List<GroupUser> groupMembers = groupService.getGroupMembers(groupId, cursorId, size);
+		Long totalCount = groupService.groupMemberCount(groupId);
+		return ResponseEntity.ok(ResponseHandler.response(CursorPageResponseDto.of(
+			groupMembers,
+			size,
+			totalCount)));
 	}
 
 	@Operation(

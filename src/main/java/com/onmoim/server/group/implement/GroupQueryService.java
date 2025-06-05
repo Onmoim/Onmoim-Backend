@@ -1,4 +1,4 @@
-package com.onmoim.server.group.service;
+package com.onmoim.server.group.implement;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
 
@@ -9,18 +9,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.category.entity.Category;
-import com.onmoim.server.category.service.CategoryQueryService;
 import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.S3FileStorageService;
-import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.location.entity.Location;
-import com.onmoim.server.location.service.LocationQueryService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,7 +27,6 @@ public class GroupQueryService {
 	private final GroupRepository groupRepository;
 	private final GroupUserQueryService groupUserQueryService;
 	private final S3FileStorageService s3FileStorageService;
-	private final LocationQueryService locationQueryService;
 
 	public Group saveGroup(
 		Category category,
@@ -71,6 +67,7 @@ public class GroupQueryService {
 			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
 	}
 
+	// 모임 상세 조회에서 사용
 	public Group getGroupWithDetails(Long groupId) {
 		return groupRepository.findGroupWithDetails(groupId)
 			.filter(group -> !group.isDeleted())

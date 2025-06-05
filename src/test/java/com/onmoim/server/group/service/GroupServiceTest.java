@@ -15,9 +15,6 @@ import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
-import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
-import com.onmoim.server.group.dto.response.CursorPageResponseDto;
-import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -44,6 +41,20 @@ class GroupServiceTest {
 	@Autowired
 	private CategoryRepository categoryRepository;
 
+	private void setSecurityContext(Long userId) {
+		var detail = new CustomUserDetails(
+			userId,
+			null,
+			null
+		);
+		var authenticated = UsernamePasswordAuthenticationToken.authenticated(
+				detail,
+				null,
+				null
+		);
+		SecurityContextHolder.getContext().setAuthentication(authenticated);
+	}
+
 	@Test
 	@DisplayName("모임 좋아요: 성공")
 	@Transactional
@@ -61,10 +72,7 @@ class GroupServiceTest {
 			.build();
 		groupRepository.save(group);
 
-		var detail = new CustomUserDetails(user.getId(), "test", "test");
-		var authenticated = UsernamePasswordAuthenticationToken.authenticated(
-			detail, null, null);
-		SecurityContextHolder.getContext().setAuthentication(authenticated);
+		setSecurityContext(user.getId());
 
 		// when
 		groupService.likeGroup(group.getId());
@@ -94,10 +102,7 @@ class GroupServiceTest {
 		groupRepository.save(group);
 		groupUserRepository.save(GroupUser.create(group, user, Status.PENDING));
 
-		var detail = new CustomUserDetails(user.getId(), "test", "test");
-		var authenticated = UsernamePasswordAuthenticationToken.authenticated(
-			detail, null, null);
-		SecurityContextHolder.getContext().setAuthentication(authenticated);
+		setSecurityContext(user.getId());
 
 		// when
 		groupService.likeGroup(group.getId());
@@ -127,10 +132,7 @@ class GroupServiceTest {
 		groupRepository.save(group);
 		groupUserRepository.save(GroupUser.create(group, user, Status.MEMBER));
 
-		var detail = new CustomUserDetails(user.getId(), "test", "test");
-		var authenticated = UsernamePasswordAuthenticationToken.authenticated(
-			detail, null, null);
-		SecurityContextHolder.getContext().setAuthentication(authenticated);
+		setSecurityContext(user.getId());
 
 		assertThatThrownBy(() -> groupService.likeGroup(group.getId()))
 			.isInstanceOf(CustomException.class)
@@ -157,10 +159,7 @@ class GroupServiceTest {
 		groupRepository.save(group);
 		groupUserRepository.save(GroupUser.create(group, user, Status.BOOKMARK));
 
-		var detail = new CustomUserDetails(user.getId(), "test", "test");
-		var authenticated = UsernamePasswordAuthenticationToken.authenticated(
-			detail, null, null);
-		SecurityContextHolder.getContext().setAuthentication(authenticated);
+		setSecurityContext(user.getId());
 
 		// when
 		groupService.likeGroup(group.getId());
@@ -184,14 +183,10 @@ class GroupServiceTest {
 			.build();
 		groupRepository.save(group);
 
-		// 유저: 40  모임장: 1 모임원: 19
-		for (int i = 0; i < 40; i++) {
-			User user = User.builder()
-				.name("test" + i)
-				.profileImgUrl("img_url" + i)
-				.build();
+		// 모임원: 34명  모임장: 1
+		for (int i = 0; i < 35; i++) {
+			User user = User.builder().build();
 			userRepository.save(user);
-			if (i >= 20) continue;
 			if (i == 0) {
 				groupUserRepository.save(GroupUser.create(group, user, Status.OWNER));
 				continue;
@@ -200,35 +195,60 @@ class GroupServiceTest {
 		}
 
 		// expected
+		var size = 10;
+		var groupId = group.getId();
 
-		// 1 ~ 10
-		CursorPageResponseDto<GroupMembersResponseDto> result1 =
-			groupService.getGroupMembers(group.getId(), null, 10);
+		Long totalCount = groupService.groupMemberCount(groupId);
+		assertThat(totalCount).isEqualTo(35);
 
-		List<GroupMembersResponseDto> content1 = result1.getContent();
-		assertThat(result1.getTotalCount()).isEqualTo(20);
-		assertThat(result1.isHasNext()).isTrue();
-		assertThat(content1.size()).isEqualTo(10);
-		System.out.println(content1);
-		Long cursorId1 = result1.getCursorId();
+		// 1 ~ 11
+		List<GroupUser> groupMembers1 = groupService.getGroupMembers(
+			groupId,
+			null,
+			size);
+
+		assertThat(groupMembers1.size()).isEqualTo(size + 1);
+		groupMembers1.removeLast();
+
+		Long cursorId1 = groupMembers1.getLast().getId().getUserId();
+		System.out.println("cursorId1 = " + cursorId1);
+		System.out.println(groupMembers1);
 
 		// 11 ~ 20
-		CursorPageResponseDto<GroupMembersResponseDto> result2 =
-			groupService.getGroupMembers(group.getId(), cursorId1, 10);
+		List<GroupUser> groupMembers2 = groupService.getGroupMembers(
+			groupId,
+			cursorId1,
+			size);
 
-		List<GroupMembersResponseDto> content2 = result2.getContent();
-		assertThat(result2.isHasNext()).isFalse();
-		assertThat(result2.getCursorId()).isNotNull();
-		assertThat(content2.size()).isEqualTo(10);
-		System.out.println(content2);
+		assertThat(groupMembers2.size()).isEqualTo(size + 1);
+		groupMembers2.removeLast();
 
-		CursorPageResponseDto<GroupMembersResponseDto> result3 =
-			groupService.getGroupMembers(group.getId(), 50L, 10);
+		Long cursorId2 = groupMembers2.getLast().getId().getUserId();
+		System.out.println("cursorId2 = " + cursorId2);
+		System.out.println(groupMembers2);
 
-		List<GroupMembersResponseDto> content3 = result3.getContent();
-		assertThat(result3.isHasNext()).isFalse();
-		assertThat(result3.getCursorId()).isNull();
-		assertThat(content3).isEmpty();
+		// 21 ~ 30
+		List<GroupUser> groupMembers3 = groupService.getGroupMembers(
+			groupId,
+			cursorId2,
+			size);
+
+		assertThat(groupMembers3.size()).isEqualTo(size + 1);
+		groupMembers3.removeLast();
+
+		Long cursorId3 = groupMembers3.getLast().getId().getUserId();
+		System.out.println("cursorId3 = " + cursorId3);
+		System.out.println(groupMembers3);
+
+		// 31 ~ 35
+		List<GroupUser> groupMembers4 = groupService.getGroupMembers(
+			groupId,
+			cursorId3,
+			size
+		);
+
+		System.out.println(groupMembers4);
+		assertThat(groupMembers4.size()).isEqualTo(5);
 	}
 
 	@Test
@@ -249,10 +269,7 @@ class GroupServiceTest {
 		String description = "모임 설명";
 		int capacity = 100;
 
-		var detail = new CustomUserDetails(user.getId(), "test", "test");
-		var authenticated = UsernamePasswordAuthenticationToken.authenticated(
-			detail, null, null);
-		SecurityContextHolder.getContext().setAuthentication(authenticated);
+		setSecurityContext(user.getId());
 
 		// when
 		Long groupId = groupService.createGroup(
@@ -268,5 +285,8 @@ class GroupServiceTest {
 		assertThat(group.getName()).isEqualTo(name);
 		assertThat(group.getDescription()).isEqualTo(description);
 		assertThat(group).isNotNull();
+		GroupUser groupUser = groupUserRepository.findGroupUser(groupId, user.getId()).get();
+		assertThat(groupUser).isNotNull();
+		assertThat(groupUser.getStatus()).isEqualTo(Status.OWNER);
 	}
 }

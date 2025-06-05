@@ -1,4 +1,4 @@
-package com.onmoim.server.group.service;
+package com.onmoim.server.group.implement;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
 
@@ -9,8 +9,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.group.dto.response.CursorPageResponseDto;
-import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -106,30 +104,14 @@ public class GroupUserQueryService {
 			save(groupUser);
 		}
 	}
+
 	// 현재 모임 회원 수
 	public Long countMembers(Long groupId) {
 		return groupUserRepository.countGroupMembers(groupId);
 	}
 
 	// fetch join 사용해서 모임 멤버 조회
-	public CursorPageResponseDto<GroupMembersResponseDto> findGroupUserAndMembers(Long groupId, Long cursorId, int size) {
-		List<GroupUser> result = groupUserRepository.findGroupUsers(groupId, cursorId, size);
-		boolean hasNext = result.size() > size;
-		extractPageContent(result, hasNext);
-		List<GroupMembersResponseDto> list = result.stream()
-			.map(GroupMembersResponseDto::new)
-			.toList();
-		Long totalCount = cursorId == null ? countMembers(groupId) : null ;
-		return CursorPageResponseDto.<GroupMembersResponseDto>builder()
-			.content(list)
-			.totalCount(totalCount)
-			.hasNext(hasNext)
-			.cursorId(list.isEmpty() ? null : list.getLast().getUserId())
-			.build();
-	}
-	private void extractPageContent(List<GroupUser> result, boolean hasNext) {
-		if (hasNext){
-			result.removeLast();
-		}
+	public List<GroupUser> findGroupUserAndMembers(Long groupId, Long cursorId, int size) {
+		return groupUserRepository.findGroupUsers(groupId, cursorId, size);
 	}
 }
