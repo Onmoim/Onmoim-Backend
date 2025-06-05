@@ -50,12 +50,12 @@ public class GroupService {
 
 	// 모임 생성
 	@Transactional
-	public Long createGroup(
-			Long categoryId,
-			Long locationId,
-			String name,
-			String description,
-			int capacity
+	public ChatRoomResponse createGroup(
+		Long categoryId,
+		Long locationId,
+		String name,
+		String description,
+		int capacity
 	) {
 		User user = userQueryService.findById(getCurrentUserId());
 		Category category = categoryQueryService.getById(categoryId);
@@ -63,8 +63,8 @@ public class GroupService {
 
 		Group group = groupQueryService.saveGroup(category, location, name, description, capacity);
 
-		ChatRoomResponse room = chatRoomService.createRoom(name, description, user.getId());
-		chatMessageService.sendSystemMessage(room.getId(), "채팅방이 생성되었습니다.");
+		ChatRoomResponse room = chatRoomService.createRoom(group.getId(), name, description, user.getId());
+		chatMessageService.sendSystemMessage(room.getGroupId(), "채팅방이 생성되었습니다.");
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
 		groupUserQueryService.save(groupUser);
@@ -72,7 +72,7 @@ public class GroupService {
 		String address = location.getFullAddress();
 
 		eventPublisher.publishEvent(new GeoPointUpdateEvent(group.getId(), address));
-		return group.getId();
+		return room;
 	}
 
 	/**

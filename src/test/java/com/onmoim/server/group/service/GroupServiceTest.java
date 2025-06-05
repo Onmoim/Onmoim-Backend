@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
+import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.entity.Group;
@@ -252,13 +253,14 @@ class GroupServiceTest {
 		setSecurityContext(user.getId());
 
 		// when
-		Long groupId = groupService.createGroup(
+		ChatRoomResponse response = groupService.createGroup(
 			category.getId(),
 			location.getId(),
 			name,
 			description,
 			capacity
 		);
+		Long groupId = response.getGroupId();
 
 		// then
 		Group group = groupRepository.getById(groupId);

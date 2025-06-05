@@ -22,7 +22,8 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-
+import com.onmoim.server.chat.dto.ChatRoomResponse;
+import com.onmoim.server.chat.entity.SubscribeRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.onmoim.server.TestSecurityConfig;
 import com.onmoim.server.common.exception.CustomException;
@@ -63,7 +64,15 @@ class GroupControllerTest {
 			anyLong(),
 			anyString(),
 			anyString(),
-			anyInt())).willReturn(1L);
+			anyInt())).willReturn(
+			new ChatRoomResponse(
+				1L,
+				"name",
+				"description",
+				1L,
+				1,
+				SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination())
+			);
 
 		var request = GroupCreateRequestDto.builder()
 			.name("name")
@@ -81,17 +90,17 @@ class GroupControllerTest {
 				.content(json))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.message").value(Message.SUCCESS.getDescription()))
-			.andExpect(jsonPath("$.data").value(1L))
+			.andExpect(jsonPath("$.data.groupId").value(1L))
 			.andDo(print());
 
 		// then
 		verify(groupService, times(1))
 			.createGroup(
-			anyLong(),
-			anyLong(),
-			anyString(),
-			anyString(),
-			anyInt());
+				anyLong(),
+				anyLong(),
+				anyString(),
+				anyString(),
+				anyInt());
 	}
 
 	@Test
@@ -126,7 +135,15 @@ class GroupControllerTest {
 			anyLong(),
 			anyString(),
 			anyString(),
-			anyInt())).willReturn(1L);
+			anyInt())).willReturn(
+			new ChatRoomResponse(
+				1L,
+				"name",
+				"description",
+				1L,
+				1,
+				SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination())
+			);
 
 		var request = GroupCreateRequestDto.builder()
 			.name("name")
@@ -160,7 +177,15 @@ class GroupControllerTest {
 			anyLong(),
 			anyString(),
 			anyString(),
-			anyInt())).willReturn(1L);
+			anyInt())).willReturn(
+			new ChatRoomResponse(
+				1L,
+				"name",
+				"description",
+				1L,
+				1,
+				SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination())
+		);
 
 		var request = GroupCreateRequestDto.builder()
 			.name("name")
@@ -214,10 +239,10 @@ class GroupControllerTest {
 		);
 		// expected
 		mvc.perform(multipart(
-			HttpMethod.PATCH,
- "/api/v1/groups/{groupId}", groupId)
-			.file(file)
-			.file(jsonPart)
+				HttpMethod.PATCH,
+				"/api/v1/groups/{groupId}", groupId)
+				.file(file)
+				.file(jsonPart)
 			)
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.message").value(Message.SUCCESS.getDescription()))
