@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.common.response.ResponseHandler;
 import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
 import com.onmoim.server.group.dto.request.TransferOwnerRequestDto;
@@ -47,10 +48,10 @@ public class GroupController {
 			responseCode = "400",
 			description = "이미 존재하는 모임 이름, 잘못된 정원 설정(최소:5, 최대:300), 요청 누락")})
 	@PostMapping("/v1/groups")
-	public ResponseEntity<ResponseHandler<Long>> createGroup(
+	public ResponseEntity<ResponseHandler<ChatRoomResponse>> createGroup(
 		@RequestBody @Valid CreateGroupRequestDto request) {
-		Long groupId = groupService.createGroup(request);
-		return ResponseEntity.ok(ResponseHandler.response(groupId));
+		ChatRoomResponse response = groupService.createGroup(request);
+		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
 	@Operation(

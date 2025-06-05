@@ -20,6 +20,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.onmoim.server.TestSecurityConfig;
+import com.onmoim.server.chat.dto.ChatRoomResponse;
+import com.onmoim.server.chat.entity.SubscribeRegistry;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.response.Message;
@@ -48,7 +50,16 @@ class GroupControllerTest {
 	@WithMockUser(roles = "USER")
 	void createGroupSuccess() throws Exception {
 		// given
-		given(groupService.createGroup(any())).willReturn(1L);
+		ChatRoomResponse chatRoomResponse = new ChatRoomResponse(
+			1L,
+			"name",
+			"description",
+			1L,
+			1,
+			SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination());
+		given(groupService.createGroup(any())).willReturn(
+			chatRoomResponse
+		);
 		var request = CreateGroupRequestDto.builder()
 			.name("name")
 			.description("description")
@@ -65,7 +76,12 @@ class GroupControllerTest {
 				.content(json))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.message").value(Message.SUCCESS.getDescription()))
-			.andExpect(jsonPath("$.data").value(1L))
+			.andExpect(jsonPath("$.data.groupId").value(chatRoomResponse.getGroupId()))
+			.andExpect(jsonPath("$.data.name").value(chatRoomResponse.getName()))
+			.andExpect(jsonPath("$.data.description").value(chatRoomResponse.getDescription()))
+			.andExpect(jsonPath("$.data.creatorId").value(chatRoomResponse.getCreatorId()))
+			.andExpect(jsonPath("$.data.memberCount").value(chatRoomResponse.getMemberCount()))
+			.andExpect(jsonPath("$.data.subscribeDestination").value(chatRoomResponse.getSubscribeDestination()))
 			.andDo(print());
 
 		// then
@@ -76,7 +92,16 @@ class GroupControllerTest {
 	@DisplayName("그룹 생성 실패 권한 부족")
 	void createGroupFail1() throws Exception {
 		// given
-		given(groupService.createGroup(any())).willReturn(1L);
+		given(groupService.createGroup(any())).willReturn(
+			new ChatRoomResponse(
+				1L,
+				"name",
+				"description",
+				1L,
+				1,
+				SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination())
+		);
+
 		var request = CreateGroupRequestDto.builder()
 			.name("name")
 			.description("description")
@@ -99,7 +124,16 @@ class GroupControllerTest {
 	@WithMockUser(roles = "USER")
 	void createGroupFail2() throws Exception {
 		// given
-		given(groupService.createGroup(any())).willReturn(1L);
+		given(groupService.createGroup(any())).willReturn(
+			new ChatRoomResponse(
+				1L,
+				"name",
+				"description",
+				1L,
+				1,
+				SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination())
+		);
+
 		var request = CreateGroupRequestDto.builder()
 			.name("name")
 			.description("description")
@@ -127,7 +161,16 @@ class GroupControllerTest {
 	@WithMockUser(roles = "USER")
 	void createGroupFail3() throws Exception {
 		// given
-		given(groupService.createGroup(any())).willReturn(1L);
+		given(groupService.createGroup(any())).willReturn(
+			new ChatRoomResponse(
+				1L,
+				"name",
+				"description",
+				1L,
+				1,
+				SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination())
+		);
+
 		var request = CreateGroupRequestDto.builder()
 			.name("name")
 			.description("description")

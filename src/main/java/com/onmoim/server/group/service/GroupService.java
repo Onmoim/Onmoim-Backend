@@ -44,7 +44,7 @@ public class GroupService {
 	private final ChatMessageService chatMessageService;
 
 	@Transactional
-	public Long createGroup(CreateGroupRequestDto request) {
+	public ChatRoomResponse createGroup(CreateGroupRequestDto request) {
 		User user = userQueryService.findById(getCurrentUserId());
 		Location location = locationQueryService.getById(request.getLocationId());
 		Category category = categoryQueryService.getById(request.getCategoryId());
@@ -58,12 +58,12 @@ public class GroupService {
 			.build();
 		groupQueryService.saveGroup(group);
 
-		ChatRoomResponse room = chatRoomService.createRoom(request.getName(), request.getDescription(), user.getId());
-		chatMessageService.sendSystemMessage(room.getId(), "채팅방이 생성되었습니다.");
+		ChatRoomResponse room = chatRoomService.createRoom(group.getId(), request.getName(), request.getDescription(), user.getId());
+		chatMessageService.sendSystemMessage(room.getGroupId(), "채팅방이 생성되었습니다.");
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
 		groupUserQueryService.save(groupUser);
-		return group.getId();
+		return room;
 	}
 
 	/**
