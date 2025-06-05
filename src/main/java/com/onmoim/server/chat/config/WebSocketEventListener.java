@@ -12,6 +12,7 @@ import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
 import com.onmoim.server.chat.dto.ChatMessageDto;
+import com.onmoim.server.chat.dto.ChatUserDto;
 import com.onmoim.server.chat.entity.MessageType;
 import com.onmoim.server.chat.entity.SubscribeRegistry;
 import com.onmoim.server.chat.exception.StompErrorEvent;
@@ -67,7 +68,7 @@ public class WebSocketEventListener {
 		log.debug("Websocket StompErrorEvent 수신");
 
 		ChatMessageDto errorMessage = ChatMessageDto.builder()
-			.senderName("SYSTEM")
+			.chatUserDto(ChatUserDto.createSystem())
 			.type(MessageType.ERROR)
 			.content(event.getErrorMessage())
 			.timestamp(LocalDateTime.now())
@@ -79,7 +80,7 @@ public class WebSocketEventListener {
 
 	private void send(MessageType messageType, String content, String userId) {
 		ChatMessageDto errorMessage = ChatMessageDto.builder()
-			.senderName("SYSTEM")
+			.chatUserDto(ChatUserDto.createSystem())
 			.type(messageType)
 			.content(content)
 			.timestamp(LocalDateTime.now())

@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChatRoomResponse {
     
-    private Long id;
+    private Long groupId;
     private String name;
     private String description;
     private Long creatorId;
@@ -25,7 +25,7 @@ public class ChatRoomResponse {
 
     public static ChatRoomResponse fromChatRoom(ChatRoom chatRoom, int memberCount, String subscribeDestination) {
         return ChatRoomResponse.builder()
-            .id(chatRoom.getId())
+            .groupId(chatRoom.getId())
             .name(chatRoom.getName())
             .description(chatRoom.getDescription())
             .creatorId(chatRoom.getCreatorId())
