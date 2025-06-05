@@ -66,6 +66,11 @@ dependencies {
 
     // retry
     implementation 'org.springframework.retry:spring-retry'
+
+    // mapstruct
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+
 }
 
 tasks.named('test') {

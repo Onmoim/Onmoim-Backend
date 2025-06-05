@@ -12,6 +12,9 @@ import org.springframework.web.multipart.MultipartFile;
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.service.CategoryQueryService;
 import com.onmoim.server.common.kakaomap.GeoPointUpdateEvent;
+import com.onmoim.server.chat.dto.ChatRoomResponse;
+import com.onmoim.server.chat.service.ChatMessageService;
+import com.onmoim.server.chat.service.ChatRoomService;
 import com.onmoim.server.group.aop.NamedLock;
 import com.onmoim.server.group.aop.Retry;
 import com.onmoim.server.group.entity.Group;
@@ -37,7 +40,12 @@ public class GroupService {
 	private final UserQueryService userQueryService;
 	private final LocationQueryService locationQueryService;
 	private final CategoryQueryService categoryQueryService;
+
 	private final ApplicationEventPublisher eventPublisher;
+
+	private final GroupUserRepository groupUserRepository;
+	private final ChatRoomService chatRoomService;
+	private final ChatMessageService chatMessageService;
 
 	// 모임 생성
 	@Transactional
@@ -53,6 +61,9 @@ public class GroupService {
 		Location location = locationQueryService.getById(locationId);
 
 		Group group = groupQueryService.saveGroup(category, location, name, description, capacity);
+
+		ChatRoomResponse room = chatRoomService.createRoom(request.getName(), request.getDescription(), user.getId());
+		chatMessageService.sendSystemMessage(room.getId(), "채팅방이 생성되었습니다.");
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
 		groupUserQueryService.save(groupUser);

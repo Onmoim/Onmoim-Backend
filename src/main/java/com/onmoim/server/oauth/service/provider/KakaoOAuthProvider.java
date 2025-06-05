@@ -9,15 +9,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.oauth.dto.OAuthUserDto;
 
 import lombok.extern.slf4j.Slf4j;
+
+import static com.onmoim.server.oauth.constant.OAuthApiConstants.KAKAO_USER_INFO_URL;
 
 @Component
 @Slf4j
 public class KakaoOAuthProvider implements OAuthProvider {
 
 	private final RestTemplate restTemplate = new RestTemplate();
+
+	@Override
+	public String getProviderName() {
+		return "kakao";
+	}
 
 	@Override
 	public OAuthUserDto getUserInfo(String accessToken) {
@@ -28,7 +37,7 @@ public class KakaoOAuthProvider implements OAuthProvider {
 		HttpEntity<Void> request = new HttpEntity<>(headers);
 
 		ResponseEntity<Map> response = restTemplate.exchange(
-			"https://kapi.kakao.com/v2/user/me",
+			KAKAO_USER_INFO_URL,
 			HttpMethod.GET,
 			request,
 			Map.class
@@ -36,7 +45,7 @@ public class KakaoOAuthProvider implements OAuthProvider {
 
 		Map<String, Object> body = response.getBody();
 		if (body == null || body.get("id") == null) {
-			throw new IllegalArgumentException("카카오 사용자 정보를 가져오지 못했습니다.");
+			throw new CustomException(ErrorCode.INVALID_KAKAO_RESPONSE);
 		}
 		log.info("body = {}", body);
 

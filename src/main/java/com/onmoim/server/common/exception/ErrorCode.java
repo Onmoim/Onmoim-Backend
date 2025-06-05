@@ -23,8 +23,12 @@ public enum ErrorCode {
 	FILE_SIZE_EXCEEDED(BAD_REQUEST, "파일 크기가 허용된 최대 크기를 초과했습니다."),
 	IMAGE_COUNT_EXCEEDED(BAD_REQUEST, "이미지는 최대 5개까지만 업로드 가능합니다."),
 	INVALID_USER(BAD_REQUEST, "잘못된 사용자입니다."),
-	INVALID_LOCATION(NOT_FOUND, "잘못된 위치 정보입니다."),
-	INVALID_CATEGORY(NOT_FOUND, "잘못된 카테고리입니다."),
+
+	INVALID_LOCATION(BAD_REQUEST, "잘못된 위치 정보입니다."),
+	INVALID_CATEGORY(BAD_REQUEST, "잘못된 카테고리입니다."),
+	INVALID_KAKAO_RESPONSE(BAD_REQUEST, "카카오 사용자 정보 응답이 올바르지 않습니다."),
+	NOT_FOUND_MESSAGE(BAD_REQUEST, "잘못된 MessageID 입니다."),
+	IS_NOT_CHAT_ROOM_MEMBER(BAD_REQUEST, "채팅방 멤버가 아닌 사용자입니다."),
 
 	/* ------------------ 400 BAD_REQUEST : 유저 관련 오류 ------------------ */
 	ALREADY_EXISTS_USER(BAD_REQUEST, "이미 가입된 사용자입니다."),
@@ -56,7 +60,9 @@ public enum ErrorCode {
 	/* ------------------ 401 UNAUTHORIZED : Auth 관련 오류 ------------------ */
 	INVALID_REFRESH_TOKEN(UNAUTHORIZED, "유효하지 않은 refresh token입니다."),
 	REFRESH_TOKEN_MISMATCH(UNAUTHORIZED, "저장된 refresh token과 일치하지 않습니다."),
-	USER_NOT_FOUND(UNAUTHORIZED, "존재하지 않는 사용자입니다.");
+	USER_NOT_FOUND(UNAUTHORIZED, "존재하지 않는 사용자입니다."),
+	UNAUTHORIZED_ACCESS(UNAUTHORIZED, "인증되지 않은 사용자입니다.");
+
 
 	private final HttpStatus httpStatus;
 	private final String detail;
