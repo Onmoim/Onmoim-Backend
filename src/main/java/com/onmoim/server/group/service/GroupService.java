@@ -43,7 +43,6 @@ public class GroupService {
 
 	private final ApplicationEventPublisher eventPublisher;
 
-	private final GroupUserRepository groupUserRepository;
 	private final ChatRoomService chatRoomService;
 	private final ChatMessageService chatMessageService;
 
@@ -62,7 +61,7 @@ public class GroupService {
 
 		Group group = groupQueryService.saveGroup(category, location, name, description, capacity);
 
-		ChatRoomResponse room = chatRoomService.createRoom(request.getName(), request.getDescription(), user.getId());
+		ChatRoomResponse room = chatRoomService.createRoom(name, description, user.getId());
 		chatMessageService.sendSystemMessage(room.getId(), "채팅방이 생성되었습니다.");
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
