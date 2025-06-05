@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.chat.dto.ChatMessageDto;
+import com.onmoim.server.chat.dto.ChatUserDto;
 import com.onmoim.server.chat.entity.ChatRoomMessage;
 import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.entity.DeliveryStatus;
@@ -47,7 +48,12 @@ public class ChatMessageService {
 		// 시스템 메시지 브로드캐스트
 		// com.onmoim.server.chat.service.ChatMessageEventHandler 처리
 		String destination = SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
-		eventPublisher.publishEvent(new MessageSendEvent(destination, ChatMessageDto.of(systemMessage, "SYSTEM")));
+		eventPublisher.publishEvent(
+			new MessageSendEvent(
+				destination,
+				ChatMessageDto.of(systemMessage, ChatUserDto.createSystem())
+			)
+		);
 
 		log.debug("시스템 메시지 전송 완료: 방ID: {}, 내용: {}", roomId, content);
 		return systemMessage.getId();
@@ -69,7 +75,7 @@ public class ChatMessageService {
 		chatMessageRepository.save(chatRoomMessage);
 
 		String destination = SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
-		eventPublisher.publishEvent(new MessageSendEvent(destination, ChatMessageDto.of(chatRoomMessage, message.getSenderName())));
+		eventPublisher.publishEvent(new MessageSendEvent(destination, ChatMessageDto.of(chatRoomMessage, message.getChatUserDto())));
 
 	}
 

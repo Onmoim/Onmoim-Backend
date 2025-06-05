@@ -27,9 +27,10 @@ public class ChatRoomService {
 	 * 채팅방 생성
 	 */
 	@Transactional
-	public ChatRoomResponse createRoom(String name, String description, Long creatorId) {
+	public ChatRoomResponse createRoom(Long groupId, String name, String description, Long creatorId) {
 		// 채팅방 엔티티 생성
 		ChatRoom room = ChatRoom.builder()
+			.id(groupId)
 			.name(name)
 			.description(description)
 			.creatorId(creatorId)
@@ -45,9 +46,9 @@ public class ChatRoomService {
 		chatRoomRepository.save(room);
 
 		log.debug("채팅방이 생성되었습니다. roomId: {}, name: {}, creatorId: {}",
-			room.getId(), name, creatorId);
+			groupId, name, creatorId);
 
 		return ChatRoomResponse.fromChatRoom(room, room.getChatRoomMembers().size(),
-			SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + room.getId());
+			SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + groupId);
 	}
 }

@@ -1,5 +1,7 @@
 package com.onmoim.server.chat.entity;
 
+import java.util.Objects;
+
 import com.onmoim.server.common.BaseEntity;
 
 import jakarta.persistence.Column;
@@ -23,7 +25,6 @@ import lombok.Setter;
 @Entity
 @Table(name = "chat_room_members")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -39,7 +40,21 @@ public class ChatRoomMember extends BaseEntity {
     
     @Column(name = "user_id", nullable = false)
     private Long userId;
-    
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass())
+            return false;
+        ChatRoomMember that = (ChatRoomMember)o;
+        return Objects.equals(id, that.id) && Objects.equals(chatRoom, that.chatRoom)
+            && Objects.equals(userId, that.userId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, chatRoom, userId);
+    }
+
     // 연관관계 편의 메소드를 위한 setter
     public void setChatRoom(ChatRoom chatRoom) {
         this.chatRoom = chatRoom;
