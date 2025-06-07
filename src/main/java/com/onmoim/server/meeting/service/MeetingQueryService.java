@@ -28,8 +28,6 @@ public class MeetingQueryService {
 
 	private final MeetingRepository meetingRepository;
 
-	//TODO: 일정 이미지 등록, 삭제는 모임장만! (번개와 정기모임 둘 다)
-
 	/**
 	 * 일정 ID로 조회
 	 */

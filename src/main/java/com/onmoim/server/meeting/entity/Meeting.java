@@ -8,6 +8,7 @@ import com.onmoim.server.common.BaseEntity;
 import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.group.entity.GroupUser;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -37,24 +38,22 @@ public class Meeting extends BaseEntity {
 	private Long id;
 
 	@Comment("모임 ID (논리 FK)")
-	@Column(name = "group_id", nullable = false)
+	@Column(name = "group_id")
 	private Long groupId;
 
 	@Comment("일정 유형")
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
 	private MeetingType type;
 
 	@Comment("일정 제목")
-	@Column(nullable = false)
 	private String title;
 
 	@Comment("일정 시작 시간")
-	@Column(name = "start_at", nullable = false)
+	@Column(name = "start_at")
 	private LocalDateTime startAt;
 
 	@Comment("장소명")
-	@Column(name = "place_name", nullable = false)
+	@Column(name = "place_name")
 	private String placeName;
 
 	@Comment("장소 좌표")
@@ -62,36 +61,101 @@ public class Meeting extends BaseEntity {
 	private GeoPoint geoPoint;
 
 	@Comment("최대 참석 인원")
-	@Column(nullable = false)
 	private int capacity;
 
 	@Comment("현재 참석 인원")
-	@Column(name = "join_count", nullable = false)
+	@Column(name = "join_count")
 	private int joinCount = 0;
 
 	@Comment("참가 비용")
-	@Column(nullable = false)
 	private int cost;
 
 	@Comment("일정 상태")
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
 	private MeetingStatus status = MeetingStatus.OPEN;
 
 	@Comment("작성자 ID (논리 FK)")
-	@Column(name = "creator_id", nullable = false)
+	@Column(name = "creator_id")
 	private Long creatorId;
 
 	@Comment("일정 대표 이미지")
 	private String imgUrl;
 
+	// ===== 비즈니스 로직 (도메인 규칙) =====
+
+	/**
+	 * 일정 생성 권한 확인
+	 */
+	public boolean canBeCreatedBy(GroupUser groupUser) {
+		return switch (this.type) {
+			case REGULAR -> groupUser.isOwner();     // 정기모임: 모임장만
+			case FLASH -> groupUser.isJoined();      // 번개모임: 모임원
+		};
+	}
+
+	/**
+	 * 일정 관리 권한 확인 (수정/삭제)
+	 */
+	public boolean canBeManagedBy(GroupUser groupUser) {
+		// 모든 타입에서 모임장만 관리 가능
+		return groupUser.isOwner();
+	}
+
+	/**
+	 * 이미지 업로드 권한 확인
+	 */
+	public boolean canUpdateImageBy(GroupUser groupUser) {
+		return switch (this.type) {
+			case REGULAR -> groupUser.isOwner();     // 정기모임: 모임장만
+			case FLASH -> groupUser.isOwner() ||
+						  groupUser.getUser().getId().equals(this.creatorId); // 번개모임: 모임장 또는 주최자
+		};
+	}
+
+	/**
+	 * 이미지 삭제 권한 확인
+	 */
+	public boolean canDeleteImageBy(GroupUser groupUser) {
+		// 모든 타입에서 모임장만 삭제 가능
+		return groupUser.isOwner();
+	}
+
+	/**
+	 * 일정 참석 가능 여부 확인
+	 */
+	public boolean canJoin() {
+		return this.status == MeetingStatus.OPEN &&
+			   this.joinCount < this.capacity &&
+			   !isStarted();
+	}
+
+	/**
+	 * 일정 참석 취소 가능 여부 확인
+	 */
+	public boolean canLeave() {
+		return !isStarted();
+	}
+
+	/**
+	 * 일정 수정 가능 여부 확인 (24시간 전까지)
+	 */
+	public boolean canBeUpdated() {
+		return LocalDateTime.now().isBefore(this.startAt.minusHours(24));
+	}
+
+	// ===== 상태 변경 메서드 =====
+
 	/**
 	 * 일정 참석 처리
 	 */
 	public void join() {
+		if (!canJoin()) {
+			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
+		}
 		if (this.joinCount >= this.capacity) {
 			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
 		}
+
 		this.joinCount++;
 		updateStatusIfFull();
 	}
@@ -100,6 +164,10 @@ public class Meeting extends BaseEntity {
 	 * 일정 참석 취소 처리
 	 */
 	public void leave() {
+		if (!canLeave()) {
+			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
+		}
+
 		if (this.joinCount > 0) {
 			this.joinCount--;
 			if (this.status == MeetingStatus.FULL && this.joinCount < this.capacity) {
@@ -116,32 +184,41 @@ public class Meeting extends BaseEntity {
 	}
 
 	/**
-	 * 일정 수정 가능 여부 확인 (24시간 전까지)
+	 * 자동 삭제 대상인지 확인
 	 */
-	public boolean canEdit() {
-		return LocalDateTime.now().isBefore(this.startAt.minusHours(24));
+	public boolean shouldBeAutoDeleted() {
+		return this.joinCount <= 1;
 	}
 
 	/**
 	 * 일정 정보 수정
 	 */
-	public void update(String title, LocalDateTime startAt, String placeName, 
+	public void updateMeetingInfo(String title, LocalDateTime startAt, String placeName,
 					   GeoPoint geoPoint, int capacity, int cost) {
+		if (!canBeUpdated()) {
+			throw new CustomException(ErrorCode.MEETING_UPDATE_TIME_EXCEEDED);
+		}
+		if (capacity < this.joinCount) {
+			throw new CustomException(ErrorCode.MEETING_CAPACITY_CANNOT_REDUCE);
+		}
+
 		this.title = title;
 		this.startAt = startAt;
 		this.placeName = placeName;
 		this.geoPoint = geoPoint;
 		this.capacity = capacity;
 		this.cost = cost;
+
+		updateStatusBasedOnCapacity();
 	}
-	
+
 	/**
 	 * 일정 이미지 업데이트
 	 */
 	public void updateImage(String imgUrl) {
 		this.imgUrl = imgUrl;
 	}
-	
+
 	/**
 	 * 일정 상태 수정
 	 */
@@ -154,4 +231,12 @@ public class Meeting extends BaseEntity {
 			this.status = MeetingStatus.FULL;
 		}
 	}
-} 
+
+	private void updateStatusBasedOnCapacity() {
+		if (this.joinCount >= this.capacity) {
+			this.status = MeetingStatus.FULL;
+		} else if (this.status == MeetingStatus.FULL) {
+			this.status = MeetingStatus.OPEN;
+		}
+	}
+}

@@ -34,7 +34,7 @@ public class UserMeeting {
 	@JoinColumn(name = "user_id")
 	private User user;
 
-	@Column(name = "joined_at", nullable = false)
+	@Column(name = "joined_at")
 	private LocalDateTime joinedAt;
 
 	public static UserMeeting create(Meeting meeting, User user) {

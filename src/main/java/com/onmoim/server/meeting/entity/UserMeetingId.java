@@ -5,15 +5,18 @@ import java.util.Objects;
 
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 @Embeddable
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 public class UserMeetingId implements Serializable {
 	private Long meetingId;
 	private Long userId;
+
+	public UserMeetingId(Long meetingId, Long userId) {
+		this.meetingId = meetingId;
+		this.userId = userId;
+	}
 
 	@Override
 	public boolean equals(Object o) {
@@ -27,4 +30,4 @@ public class UserMeetingId implements Serializable {
 	public int hashCode() {
 		return Objects.hash(meetingId, userId);
 	}
-} 
+}

@@ -9,11 +9,11 @@ import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
+import com.onmoim.server.group.entity.GroupUser;
+import com.onmoim.server.group.service.GroupUserQueryService;
 import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
 import com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto;
 import com.onmoim.server.meeting.entity.Meeting;
-import com.onmoim.server.meeting.entity.MeetingStatus;
-import com.onmoim.server.meeting.entity.MeetingType;
 import com.onmoim.server.meeting.entity.UserMeeting;
 import com.onmoim.server.meeting.repository.MeetingRepository;
 import com.onmoim.server.meeting.repository.UserMeetingRepository;
@@ -24,15 +24,12 @@ import com.onmoim.server.user.service.UserQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDateTime;
 
 /**
  * 일정 관리 서비스
  *
  * 락 전략: 모든 일정 타입에 Named Lock 사용
  * - 빠른 타임아웃 (3초)으로 사용자 경험 개선
- * - Group과 동일한 락 전략으로 일관성 확보
- * - 서버 리소스 효율적 사용
  */
 @Slf4j
 @Service
@@ -42,7 +39,7 @@ public class MeetingService {
 	private final MeetingRepository meetingRepository;
 	private final MeetingQueryService meetingQueryService;
 	private final UserQueryService userQueryService;
-	private final MeetingPermissionService meetingPermissionService;
+	private final GroupUserQueryService groupUserQueryService;
 	private final UserMeetingRepository userMeetingRepository;
 	private final FileStorageService fileStorageService;
 
@@ -53,11 +50,8 @@ public class MeetingService {
 	public Long createMeeting(Long groupId, MeetingCreateRequestDto request) {
 		Long userId = getCurrentUserId();
 		User user = userQueryService.findById(userId);
+		GroupUser groupUser = getGroupUser(groupId, userId);
 
-		// 권한 검증 (정기모임=모임장, 번개모임=모임원)
-		validateCreatePermission(groupId, userId, request.getType());
-
-		// 일정 생성
 		Meeting meeting = Meeting.meetingCreateBuilder()
 			.groupId(groupId)
 			.type(request.getType())
@@ -69,6 +63,10 @@ public class MeetingService {
 			.cost(request.getCost())
 			.creatorId(userId)
 			.build();
+
+		if (!meeting.canBeCreatedBy(groupUser)) {
+			throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
+		}
 
 		Meeting savedMeeting = meetingRepository.save(meeting);
 
@@ -83,9 +81,8 @@ public class MeetingService {
 	}
 
 	/**
-	 * 일정 참석 신청 (Named Lock 통일)
+	 * 일정 참석 신청 (Named Lock)
 	 * - 모든 일정 타입에 동일한 3초 타임아웃 적용
-	 * - 빠른 실패로 사용자 경험 개선
 	 */
 	@Transactional
 	public void joinMeeting(Long meetingId) {
@@ -103,7 +100,15 @@ public class MeetingService {
 		String lockKey = "meeting_" + meetingId;
 
 		// 조기 검증 (락 획득 전 빠른 실패)
-		validateEarlyChecks(meetingId, userId);
+		Meeting quickCheck = meetingQueryService.getById(meetingId);
+		if (!quickCheck.canJoin()) {
+			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
+		}
+
+		// 중복 참석 조기 차단
+		if (userMeetingRepository.existsByMeetingIdAndUserId(meetingId, userId)) {
+			throw new CustomException(ErrorCode.MEETING_ALREADY_JOINED);
+		}
 
 		try {
 			// Named Lock 획득 (3초 타임아웃)
@@ -116,8 +121,12 @@ public class MeetingService {
 			// 일정 조회 (락 보호 하에)
 			Meeting meeting = meetingQueryService.getById(meetingId);
 
-			// 최종 검증 및 참석 처리
-			processJoinMeeting(meeting, user, userId, meetingId);
+			meeting.join();
+			UserMeeting userMeeting = UserMeeting.create(meeting, user);
+			userMeetingRepository.save(userMeeting);
+
+			log.info("사용자 {}가 일정 {}에 참석 신청했습니다. (Named Lock, 참석: {}/{})",
+				userId, meetingId, meeting.getJoinCount(), meeting.getCapacity());
 
 		} finally {
 			// Named Lock 안전 해제
@@ -125,47 +134,8 @@ public class MeetingService {
 				meetingRepository.releaseLock(lockKey);
 			} catch (Exception e) {
 				log.error("Named Lock 해제 실패: {} - {}", lockKey, e.getMessage());
-				// 락 해제 실패는 타임아웃으로 자동 해제되므로 시스템 장애로 이어지지 않음
 			}
 		}
-	}
-
-	/**
-	 * 조기 검증 (락 획득 전 빠른 실패)
-	 */
-	private void validateEarlyChecks(Long meetingId, Long userId) {
-		Meeting quickCheck = meetingQueryService.getById(meetingId);
-
-		// 명백한 실패 케이스 조기 차단
-		if (quickCheck.getStatus() == MeetingStatus.CLOSED || quickCheck.isStarted()) {
-			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
-		}
-
-		// 중복 참석 조기 차단
-		if (userMeetingRepository.existsByMeetingIdAndUserId(meetingId, userId)) {
-			throw new CustomException(ErrorCode.MEETING_ALREADY_JOINED);
-		}
-	}
-
-	/**
-	 * 공통 참석 처리 로직
-	 */
-	private void processJoinMeeting(Meeting meeting, User user, Long userId, Long meetingId) {
-		// 일정 상태 검증
-		validateMeetingForJoin(meeting);
-
-		// 정원 검증
-		if (meeting.getJoinCount() >= meeting.getCapacity()) {
-			throw new CustomException(ErrorCode.MEETING_CAPACITY_EXCEEDED);
-		}
-
-		// 참석 처리
-		meeting.join();
-		UserMeeting userMeeting = UserMeeting.create(meeting, user);
-		userMeetingRepository.save(userMeeting);
-
-		log.info("사용자 {}가 일정 {}에 참석 신청했습니다. (Named Lock, 참석: {}/{})",
-			userId, meetingId, meeting.getJoinCount(), meeting.getCapacity());
 	}
 
 	/**
@@ -187,19 +157,15 @@ public class MeetingService {
 			// 일정 조회
 			Meeting meeting = meetingQueryService.getById(meetingId);
 
-			// 일정 상태 검증
-			validateMeetingForLeave(meeting);
-
 			// 참석 여부 검증
 			UserMeeting userMeeting = userMeetingRepository.findByMeetingIdAndUserId(meetingId, userId)
 				.orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_JOINED));
 
-			// 참석 취소 처리
 			meeting.leave();
 			userMeetingRepository.delete(userMeeting);
 
-			// 자동 삭제 로직: 남은 참석자가 1명 이하면 일정 삭제
-			if (meeting.getJoinCount() <= 1) {
+			// 자동 삭제 로직: 도메인 규칙으로 확인
+			if (meeting.shouldBeAutoDeleted()) {
 				deleteMeetingWithCleanup(meeting);
 				log.info("일정 {} 자동 삭제 완료 (참석자 {}명 이하)", meetingId, meeting.getJoinCount());
 			} else {
@@ -230,20 +196,17 @@ public class MeetingService {
 				throw new CustomException(ErrorCode.MEETING_LOCK_TIMEOUT);
 			}
 
-			// 일정 조회
+			// 일정 조회 및 권한 검증
 			Meeting meeting = meetingQueryService.getById(meetingId);
+			Long userId = getCurrentUserId();
+			GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
 
-			// 권한 검증 (모든 일정 타입에서 모임장만 수정 가능)
-			validateOwnerPermission(meeting);
+			if (!meeting.canBeManagedBy(groupUser)) {
+				throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
+			}
 
-			// 시간 제약 검증 (24시간 전)
-			validateUpdateTime(meeting);
-
-			// 정원 변경 검증
-			validateCapacityChange(meeting, request.getCapacity());
-
-			// 일정 정보 업데이트
-			meeting.update(
+			// 도메인 로직으로 일정 정보 업데이트
+			meeting.updateMeetingInfo(
 				request.getTitle(),
 				request.getStartAt(),
 				request.getPlaceName(),
@@ -251,9 +214,6 @@ public class MeetingService {
 				request.getCapacity().intValue(),
 				request.getCost()
 			);
-
-			// 상태 재계산
-			updateMeetingStatus(meeting);
 
 		} finally {
 			try {
@@ -266,7 +226,6 @@ public class MeetingService {
 
 	/**
 	 * 일정 삭제 (Named Lock 사용)
-	 * - 모든 일정 타입에서 모임장만 삭제 가능
 	 */
 	@Transactional
 	public void deleteMeeting(Long meetingId) {
@@ -279,11 +238,15 @@ public class MeetingService {
 				throw new CustomException(ErrorCode.MEETING_LOCK_TIMEOUT);
 			}
 
-			// 일정 조회
+			// 일정 조회 및 권한 검증
 			Meeting meeting = meetingQueryService.getById(meetingId);
+			Long userId = getCurrentUserId();
+			GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
 
-			// 권한 검증 (모든 일정 타입에서 모임장만 삭제 가능)
-			validateOwnerPermission(meeting);
+			// 도메인 규칙 검증
+			if (!meeting.canBeManagedBy(groupUser)) {
+				throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
+			}
 
 			// 일정 삭제 처리
 			deleteMeetingWithCleanup(meeting);
@@ -322,16 +285,17 @@ public class MeetingService {
 
 	/**
 	 * 일정 이미지 업로드
-	 * - 정기모임: 모임장만 가능
-	 * - 번개모임: 모임장 또는 주최자 가능
 	 */
 	@Transactional
 	public FileUploadResponseDto uploadMeetingImage(Long meetingId, MultipartFile file) {
 		Long userId = getCurrentUserId();
 		Meeting meeting = meetingQueryService.getById(meetingId);
+		GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
 
-		// 권한 검증 (이미지 업로드는 생성 권한과 동일)
-		validateImageUploadPermission(meeting, userId);
+		// 도메인 규칙 검증
+		if (!meeting.canUpdateImageBy(groupUser)) {
+			throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
+		}
 
 		// 기존 이미지가 있다면 삭제
 		if (meeting.getImgUrl() != null) {
@@ -355,15 +319,17 @@ public class MeetingService {
 
 	/**
 	 * 일정 이미지 삭제
-	 * - 모든 일정 타입에서 모임장만 가능 (관리 권한)
 	 */
 	@Transactional
 	public void deleteMeetingImage(Long meetingId) {
 		Long userId = getCurrentUserId();
 		Meeting meeting = meetingQueryService.getById(meetingId);
+		GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
 
-		// 권한 검증 (이미지 삭제는 모임장만 가능)
-		validateOwnerPermission(meeting);
+		// 도메인 규칙 검증
+		if (!meeting.canDeleteImageBy(groupUser)) {
+			throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
+		}
 
 		if (meeting.getImgUrl() == null) {
 			throw new CustomException(ErrorCode.INVALID_USER);
@@ -384,88 +350,11 @@ public class MeetingService {
 	}
 
 	/**
-	 * 모임장 권한 검증 (수정/삭제/이미지 삭제 공통)
+	 * 그룹 사용자 정보 조회
 	 */
-	private void validateOwnerPermission(Meeting meeting) {
-		Long currentUserId = getCurrentUserId();
-		meetingPermissionService.validateOwnerPermission(meeting.getGroupId(), currentUserId);
-	}
-
-	/**
-	 * 이미지 업로드 권한 검증 (생성 권한과 동일)
-	 * - 정기모임: 모임장만 가능
-	 * - 번개모임: 모임장 또는 주최자 가능
-	 */
-	private void validateImageUploadPermission(Meeting meeting, Long userId) {
-		if (meeting.getType() == MeetingType.REGULAR) {
-			// 정기모임: 모임장만
-			meetingPermissionService.validateOwnerPermission(meeting.getGroupId(), userId);
-		} else {
-			// 번개모임: 모임장 또는 주최자
-			try {
-				// 먼저 모임장 권한 확인
-				meetingPermissionService.validateOwnerPermission(meeting.getGroupId(), userId);
-			} catch (CustomException e) {
-				// 모임장이 아니면 주최자(작성자) 권한 확인
-				if (!meeting.getCreatorId().equals(userId)) {
-					throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
-				}
-				// 주최자인 경우 통과
-			}
-		}
-	}
-
-	// ===== 검증 메서드들 =====
-
-	private void validateCreatePermission(Long groupId, Long userId, MeetingType type) {
-		if (type == MeetingType.REGULAR) {
-			meetingPermissionService.validateOwnerPermission(groupId, userId);
-		} else {
-			meetingPermissionService.validateJoinPermission(groupId, userId);
-		}
-	}
-
-	private void validateUpdateTime(Meeting meeting) {
-		LocalDateTime now = LocalDateTime.now();
-		LocalDateTime cutoffTime = meeting.getStartAt().minusHours(24);
-
-		if (now.isAfter(cutoffTime)) {
-			throw new CustomException(ErrorCode.MEETING_UPDATE_TIME_EXCEEDED);
-		}
-	}
-
-	private void validateCapacityChange(Meeting meeting, int newCapacity) {
-		if (newCapacity < meeting.getJoinCount()) {
-			throw new CustomException(ErrorCode.MEETING_CAPACITY_CANNOT_REDUCE);
-		}
-	}
-
-	private void updateMeetingStatus(Meeting meeting) {
-		if (meeting.getJoinCount() >= meeting.getCapacity()) {
-			meeting.updateStatus(MeetingStatus.FULL);
-		} else if (meeting.getStatus() == MeetingStatus.FULL) {
-			meeting.updateStatus(MeetingStatus.OPEN);
-		}
-	}
-
-	private void validateMeetingForJoin(Meeting meeting) {
-		if (meeting.getStatus() == MeetingStatus.CLOSED) {
-			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
-		}
-
-		if (meeting.isStarted()) {
-			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
-		}
-	}
-
-	private void validateMeetingForLeave(Meeting meeting) {
-		if (meeting.getStatus() == MeetingStatus.CLOSED) {
-			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
-		}
-
-		if (meeting.isStarted()) {
-			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
-		}
+	private GroupUser getGroupUser(Long groupId, Long userId) {
+		return groupUserQueryService.findById(groupId, userId)
+			.orElseThrow(() -> new CustomException(ErrorCode.NOT_GROUP_MEMBER));
 	}
 
 	private Long getCurrentUserId() {
