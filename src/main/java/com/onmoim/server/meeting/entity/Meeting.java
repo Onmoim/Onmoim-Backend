@@ -81,7 +81,7 @@ public class Meeting extends BaseEntity {
 	@Comment("일정 대표 이미지")
 	private String imgUrl;
 
-	// ===== 비즈니스 로직 (도메인 규칙) =====
+	// 비즈니스 로직 (도메인 규칙)
 
 	/**
 	 * 일정 생성 권한 확인
@@ -143,7 +143,7 @@ public class Meeting extends BaseEntity {
 		return LocalDateTime.now().isBefore(this.startAt.minusHours(24));
 	}
 
-	// ===== 상태 변경 메서드 =====
+	// 상태 변경 메서드
 
 	/**
 	 * 일정 참석 처리

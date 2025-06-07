@@ -15,6 +15,7 @@ import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
 import com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.UserMeeting;
+import com.onmoim.server.meeting.aop.MeetingLock;
 import com.onmoim.server.meeting.repository.MeetingRepository;
 import com.onmoim.server.meeting.repository.UserMeetingRepository;
 import com.onmoim.server.security.CustomUserDetails;
@@ -28,8 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 일정 관리 서비스
  *
- * 락 전략: 모든 일정 타입에 Named Lock 사용
- * - 빠른 타임아웃 (3초)으로 사용자 경험 개선
+ * 락 전략: AOP 기반 Named Lock
+ * - @MeetingLock 어노테이션으로 동시성 제어
+ * - 트랜잭션 시작 전 락 획득, 종료 후 락 해제
+ * - 커넥션 추가 사용 없이 안전한 동시성 보장
+ * - 타입별 타임아웃: 정기모임 1초, 번개모임 3초
  */
 @Slf4j
 @Service
@@ -81,185 +85,112 @@ public class MeetingService {
 	}
 
 	/**
-	 * 일정 참석 신청 (Named Lock)
-	 * - 모든 일정 타입에 동일한 3초 타임아웃 적용
+	 * 일정 참석 신청 (AOP Named Lock 적용)
+	 * - 트랜잭션 시작 전 락 획득, 종료 후 락 해제
+	 * - 커넥션 추가 사용 없음
 	 */
+	@MeetingLock
 	@Transactional
 	public void joinMeeting(Long meetingId) {
 		Long userId = getCurrentUserId();
 		User user = userQueryService.findById(userId);
 
-		joinMeetingWithNamedLock(meetingId, userId, user);
-	}
-
-	/**
-	 * 일정 참석 신청 (Named Lock)
-	 */
-	@Transactional
-	public void joinMeetingWithNamedLock(Long meetingId, Long userId, User user) {
-		String lockKey = "meeting_" + meetingId;
-
-		// 조기 검증 (락 획득 전 빠른 실패)
-		Meeting quickCheck = meetingQueryService.getById(meetingId);
-		if (!quickCheck.canJoin()) {
+		// 조기 검증 (락 보호 하에서)
+		Meeting meeting = meetingQueryService.getById(meetingId);
+		if (!meeting.canJoin()) {
 			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
 		}
 
-		// 중복 참석 조기 차단
+		// 중복 참석 검증 (락 보호 하에서)
 		if (userMeetingRepository.existsByMeetingIdAndUserId(meetingId, userId)) {
 			throw new CustomException(ErrorCode.MEETING_ALREADY_JOINED);
 		}
 
-		try {
-			// Named Lock 획득 (3초 타임아웃)
-			Integer lockResult = meetingRepository.getLock(lockKey, 3);
-			if (lockResult == null || lockResult <= 0) {
-				log.warn("일정 {} 참석 신청 중 Named Lock timeout 발생", meetingId);
-				throw new CustomException(ErrorCode.MEETING_LOCK_TIMEOUT);
-			}
+		// 비즈니스 로직 실행
+		meeting.join();
+		UserMeeting userMeeting = UserMeeting.create(meeting, user);
+		userMeetingRepository.save(userMeeting);
 
-			// 일정 조회 (락 보호 하에)
-			Meeting meeting = meetingQueryService.getById(meetingId);
-
-			meeting.join();
-			UserMeeting userMeeting = UserMeeting.create(meeting, user);
-			userMeetingRepository.save(userMeeting);
-
-			log.info("사용자 {}가 일정 {}에 참석 신청했습니다. (Named Lock, 참석: {}/{})",
-				userId, meetingId, meeting.getJoinCount(), meeting.getCapacity());
-
-		} finally {
-			// Named Lock 안전 해제
-			try {
-				meetingRepository.releaseLock(lockKey);
-			} catch (Exception e) {
-				log.error("Named Lock 해제 실패: {} - {}", lockKey, e.getMessage());
-			}
-		}
+		log.info("사용자 {}가 일정 {}에 참석 신청했습니다. (AOP Lock, 타입: {}, 참석: {}/{})",
+			userId, meetingId, meeting.getType(), meeting.getJoinCount(), meeting.getCapacity());
 	}
 
 	/**
-	 * 일정 참석 취소 (Named Lock 사용)
+	 * 일정 참석 취소 (AOP Named Lock 적용)
+	 * - 트랜잭션 시작 전 락 획득, 종료 후 락 해제
+	 * - 커넥션 추가 사용 없음
 	 */
+	@MeetingLock
 	@Transactional
 	public void leaveMeeting(Long meetingId) {
 		Long userId = getCurrentUserId();
-		String lockKey = "meeting_" + meetingId;
 
-		try {
-			// Named Lock 획득
-			Integer lockResult = meetingRepository.getLock(lockKey, 3);
-			if (lockResult == null || lockResult <= 0) {
-				log.warn("일정 {} 참석 취소 중 Named Lock timeout 발생", meetingId);
-				throw new CustomException(ErrorCode.MEETING_LOCK_TIMEOUT);
-			}
+		// 일정 조회 (락 보호 하에서)
+		Meeting meeting = meetingQueryService.getById(meetingId);
 
-			// 일정 조회
-			Meeting meeting = meetingQueryService.getById(meetingId);
+		// 참석 여부 검증
+		UserMeeting userMeeting = userMeetingRepository.findByMeetingIdAndUserId(meetingId, userId)
+			.orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_JOINED));
 
-			// 참석 여부 검증
-			UserMeeting userMeeting = userMeetingRepository.findByMeetingIdAndUserId(meetingId, userId)
-				.orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_JOINED));
+		meeting.leave();
+		userMeetingRepository.delete(userMeeting);
 
-			meeting.leave();
-			userMeetingRepository.delete(userMeeting);
-
-			// 자동 삭제 로직: 도메인 규칙으로 확인
-			if (meeting.shouldBeAutoDeleted()) {
-				deleteMeetingWithCleanup(meeting);
-				log.info("일정 {} 자동 삭제 완료 (참석자 {}명 이하)", meetingId, meeting.getJoinCount());
-			} else {
-				log.info("사용자 {}가 일정 {}에서 참석 취소했습니다. (Named Lock, 참석: {}/{})",
-					userId, meetingId, meeting.getJoinCount(), meeting.getCapacity());
-			}
-
-		} finally {
-			try {
-				meetingRepository.releaseLock(lockKey);
-			} catch (Exception e) {
-				log.error("Named Lock 해제 실패: {} - {}", lockKey, e.getMessage());
-			}
+		// 자동 삭제 로직: 도메인 규칙으로 확인
+		if (meeting.shouldBeAutoDeleted()) {
+			deleteMeetingWithCleanup(meeting);
+			log.info("일정 {} 자동 삭제 완료 (참석자 {}명 이하)", meetingId, meeting.getJoinCount());
+		} else {
+			log.info("사용자 {}가 일정 {}에서 참석 취소했습니다. (AOP Lock, 타입: {}, 참석: {}/{})",
+				userId, meetingId, meeting.getType(), meeting.getJoinCount(), meeting.getCapacity());
 		}
 	}
 
 	/**
-	 * 일정 수정 (Named Lock 사용)
+	 * 일정 수정 (트랜잭션만 사용 - 모임장 권한으로 동시성 이슈 없음)
 	 */
 	@Transactional
 	public void updateMeeting(Long meetingId, MeetingUpdateRequestDto request) {
-		String lockKey = "meeting_" + meetingId;
+		// 일정 조회 및 권한 검증
+		Meeting meeting = meetingQueryService.getById(meetingId);
+		Long userId = getCurrentUserId();
+		GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
 
-		try {
-			// Named Lock 획득
-			Integer lockResult = meetingRepository.getLock(lockKey, 3);
-			if (lockResult == null || lockResult <= 0) {
-				throw new CustomException(ErrorCode.MEETING_LOCK_TIMEOUT);
-			}
-
-			// 일정 조회 및 권한 검증
-			Meeting meeting = meetingQueryService.getById(meetingId);
-			Long userId = getCurrentUserId();
-			GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
-
-			if (!meeting.canBeManagedBy(groupUser)) {
-				throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
-			}
-
-			// 도메인 로직으로 일정 정보 업데이트
-			meeting.updateMeetingInfo(
-				request.getTitle(),
-				request.getStartAt(),
-				request.getPlaceName(),
-				request.getGeoPoint(),
-				request.getCapacity().intValue(),
-				request.getCost()
-			);
-
-		} finally {
-			try {
-				meetingRepository.releaseLock(lockKey);
-			} catch (Exception e) {
-				log.error("Named Lock 해제 실패: {} - {}", lockKey, e.getMessage());
-			}
+		if (!meeting.canBeManagedBy(groupUser)) {
+			throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
 		}
+
+		// 도메인 로직으로 일정 정보 업데이트
+		meeting.updateMeetingInfo(
+			request.getTitle(),
+			request.getStartAt(),
+			request.getPlaceName(),
+			request.getGeoPoint(),
+			request.getCapacity().intValue(),
+			request.getCost()
+		);
+
+		log.info("일정 {} 수정 완료 (타입: {}, 모임장 권한)", meetingId, meeting.getType());
 	}
 
 	/**
-	 * 일정 삭제 (Named Lock 사용)
+	 * 일정 삭제 (트랜잭션만 사용 - 모임장 권한으로 동시성 이슈 없음)
 	 */
 	@Transactional
 	public void deleteMeeting(Long meetingId) {
-		String lockKey = "meeting_" + meetingId;
+		// 일정 조회 및 권한 검증
+		Meeting meeting = meetingQueryService.getById(meetingId);
+		Long userId = getCurrentUserId();
+		GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
 
-		try {
-			// Named Lock 획득
-			Integer lockResult = meetingRepository.getLock(lockKey, 3);
-			if (lockResult == null || lockResult <= 0) {
-				throw new CustomException(ErrorCode.MEETING_LOCK_TIMEOUT);
-			}
-
-			// 일정 조회 및 권한 검증
-			Meeting meeting = meetingQueryService.getById(meetingId);
-			Long userId = getCurrentUserId();
-			GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
-
-			// 도메인 규칙 검증
-			if (!meeting.canBeManagedBy(groupUser)) {
-				throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
-			}
-
-			// 일정 삭제 처리
-			deleteMeetingWithCleanup(meeting);
-
-			log.info("일정 {} 삭제 완료 (모임장 권한)", meetingId);
-
-		} finally {
-			try {
-				meetingRepository.releaseLock(lockKey);
-			} catch (Exception e) {
-				log.error("Named Lock 해제 실패: {} - {}", lockKey, e.getMessage());
-			}
+		// 도메인 규칙 검증
+		if (!meeting.canBeManagedBy(groupUser)) {
+			throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
 		}
+
+		// 일정 삭제 처리
+		deleteMeetingWithCleanup(meeting);
+
+		log.info("일정 {} 삭제 완료 (모임장 권한, 타입: {})", meetingId, meeting.getType());
 	}
 
 	/**
