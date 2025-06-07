@@ -82,6 +82,9 @@ public class Meeting extends BaseEntity {
 	@Column(name = "creator_id", nullable = false)
 	private Long creatorId;
 
+	@Comment("일정 대표 이미지")
+	private String imgUrl;
+
 	/**
 	 * 일정 참석 처리
 	 */
@@ -130,6 +133,13 @@ public class Meeting extends BaseEntity {
 		this.geoPoint = geoPoint;
 		this.capacity = capacity;
 		this.cost = cost;
+	}
+	
+	/**
+	 * 일정 이미지 업데이트
+	 */
+	public void updateImage(String imgUrl) {
+		this.imgUrl = imgUrl;
 	}
 	
 	/**

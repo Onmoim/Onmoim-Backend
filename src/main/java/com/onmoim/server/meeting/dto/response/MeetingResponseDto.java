@@ -52,6 +52,9 @@ public class MeetingResponseDto {
 	@Schema(description = "작성자 ID", example = "1")
 	private Long creatorId;
 
+	@Schema(description = "일정 대표 이미지", example = "https://example.com/image.jpg")
+	private String imgUrl;
+
 	@Schema(description = "생성 시간", example = "2025-12-20T10:00:00")
 	private LocalDateTime createdDate;
 
@@ -69,6 +72,7 @@ public class MeetingResponseDto {
 			.cost(meeting.getCost())
 			.status(meeting.getStatus())
 			.creatorId(meeting.getCreatorId())
+			.imgUrl(meeting.getImgUrl())
 			.createdDate(meeting.getCreatedDate())
 			.build();
 	}

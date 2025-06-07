@@ -28,19 +28,13 @@ public class MeetingQueryService {
 
 	private final MeetingRepository meetingRepository;
 
+	//TODO: 일정 이미지 등록, 삭제는 모임장만! (번개와 정기모임 둘 다)
+
 	/**
 	 * 일정 ID로 조회
 	 */
 	public Meeting getById(Long id) {
 		return meetingRepository.findByIdAndNotDeleted(id)
-			.orElseThrow(() -> new CustomException(ErrorCode.NOT_EXISTS_GROUP));
-	}
-
-	/**
-	 * 일정 ID로 조회 (Lock 적용)
-	 */
-	public Meeting getByIdWithLock(Long id) {
-		return meetingRepository.findByIdAndNotDeletedWithLock(id)
 			.orElseThrow(() -> new CustomException(ErrorCode.NOT_EXISTS_GROUP));
 	}
 

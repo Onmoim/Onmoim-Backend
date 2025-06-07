@@ -3,6 +3,7 @@ package com.onmoim.server.meeting.repository;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -23,4 +24,17 @@ public interface UserMeetingRepository extends JpaRepository<UserMeeting, UserMe
 	@Query("SELECT CASE WHEN COUNT(um) > 0 THEN true ELSE false END " +
 		   "FROM UserMeeting um WHERE um.meeting.id = :meetingId AND um.user.id = :userId")
 	boolean existsByMeetingIdAndUserId(@Param("meetingId") Long meetingId, @Param("userId") Long userId);
+
+	/**
+	 * 특정 일정의 모든 참석자 삭제 (일정 삭제 시 사용)
+	 */
+	@Modifying
+	@Query("DELETE FROM UserMeeting um WHERE um.meeting.id = :meetingId")
+	void deleteByMeetingId(@Param("meetingId") Long meetingId);
+
+	/**
+	 * 특정 일정의 참석자 수 조회
+	 */
+	@Query("SELECT COUNT(um) FROM UserMeeting um WHERE um.meeting.id = :meetingId")
+	long countByMeetingId(@Param("meetingId") Long meetingId);
 }

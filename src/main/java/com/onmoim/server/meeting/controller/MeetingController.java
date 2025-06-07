@@ -181,7 +181,7 @@ public class MeetingController {
 	 * 일정 수정
 	 */
 	@PutMapping("/groups/{groupId}/meetings/{meetingId}")
-	@Operation(summary = "일정 수정", description = "일정 정보를 수정합니다. 정기모임은 모임장만, 번개모임은 작성자만 수정 가능하며, 시작 24시간 전까지만 수정할 수 있습니다.")
+	@Operation(summary = "일정 수정", description = "일정 정보를 수정합니다. 모임장만 수정 가능하며, 시작 24시간 전까지만 수정할 수 있습니다.")
 	public ResponseEntity<ResponseHandler<Void>> updateMeeting(
 		@PathVariable @Parameter(description = "모임 ID") Long groupId,
 		@PathVariable @Parameter(description = "일정 ID") Long meetingId,
@@ -192,12 +192,34 @@ public class MeetingController {
 	}
 
 	/**
+	 * 일정 삭제
+	 */
+	@DeleteMapping("/groups/{groupId}/meetings/{meetingId}")
+	@Operation(
+		summary = "일정 삭제",
+		description = "일정을 삭제합니다. 모임장만 삭제 가능합니다. 관련된 모든 데이터(참석자, 이미지)가 함께 삭제됩니다."
+	)
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "삭제 성공"),
+		@ApiResponse(responseCode = "400", description = "잘못된 요청"),
+		@ApiResponse(responseCode = "403", description = "권한 없음 (모임장만 삭제 가능)"),
+		@ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음")
+	})
+	public ResponseEntity<ResponseHandler<Void>> deleteMeeting(
+		@PathVariable @Parameter(description = "모임 ID") Long groupId,
+		@PathVariable @Parameter(description = "일정 ID") Long meetingId
+	) {
+		meetingService.deleteMeeting(meetingId);
+		return ResponseEntity.ok(ResponseHandler.response(null));
+	}
+
+	/**
 	 * 일정 이미지 업로드
 	 */
 	@PostMapping(value = "/groups/{groupId}/meetings/{meetingId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@Operation(
 		summary = "일정 이미지 업로드",
-		description = "일정의 대표 이미지를 업로드합니다. 정기모임은 모임장만, 번개모임은 작성자만 업로드 가능합니다."
+		description = "일정의 대표 이미지를 업로드합니다. 정기모임은 모임장만, 번개모임은 모임장 또는 주최자가 업로드 가능합니다. (생성의 일부분)"
 	)
 	@ApiResponses({
 		@ApiResponse(
@@ -206,7 +228,7 @@ public class MeetingController {
 			content = @Content(schema = @Schema(implementation = FileUploadResponseDto.class))
 		),
 		@ApiResponse(responseCode = "400", description = "잘못된 요청"),
-		@ApiResponse(responseCode = "403", description = "권한 없음"),
+		@ApiResponse(responseCode = "403", description = "권한 없음 (정기모임: 모임장만, 번개모임: 모임장 또는 주최자)"),
 		@ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음")
 	})
 	public ResponseEntity<ResponseHandler<FileUploadResponseDto>> uploadMeetingImage(
@@ -224,12 +246,12 @@ public class MeetingController {
 	@DeleteMapping("/groups/{groupId}/meetings/{meetingId}/image")
 	@Operation(
 		summary = "일정 이미지 삭제",
-		description = "일정의 대표 이미지를 삭제합니다. 정기모임은 모임장만, 번개모임은 작성자만 삭제 가능합니다."
+		description = "일정의 대표 이미지를 삭제합니다. 모든 일정 타입에서 모임장만 삭제 가능합니다. (관리 권한)"
 	)
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "이미지 삭제 성공"),
 		@ApiResponse(responseCode = "400", description = "잘못된 요청"),
-		@ApiResponse(responseCode = "403", description = "권한 없음"),
+		@ApiResponse(responseCode = "403", description = "권한 없음 (모임장만 가능)"),
 		@ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음")
 	})
 	public ResponseEntity<ResponseHandler<Void>> deleteMeetingImage(
