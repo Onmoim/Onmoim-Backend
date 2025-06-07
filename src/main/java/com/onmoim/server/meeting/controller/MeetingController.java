@@ -114,7 +114,7 @@ public class MeetingController {
 	}
 
 	/**
-	 * 그룹별 예정된 일정 목록 조회 (커서 기반)
+	 * 그룹별 예정된 일정 목록 조회
 	 */
 	@GetMapping("/groups/{groupId}/meetings")
 	@Operation(
@@ -161,7 +161,7 @@ public class MeetingController {
 	}
 
 	/**
-	 * 일정 참석 취소
+	 * 일정 참석 취소 (Service 직접 사용 - AOP Lock 포함)
 	 */
 	@PostMapping("/groups/{groupId}/meetings/{meetingId}/leave")
 	@Operation(summary = "일정 참석 취소", description = "일정 참석을 취소합니다.")
@@ -219,7 +219,7 @@ public class MeetingController {
 	@PostMapping(value = "/groups/{groupId}/meetings/{meetingId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@Operation(
 		summary = "일정 이미지 업로드",
-		description = "일정의 대표 이미지를 업로드합니다. 정기모임은 모임장만, 번개모임은 모임장 또는 주최자가 업로드 가능합니다. (생성의 일부분)"
+		description = "일정의 대표 이미지를 업로드합니다. 정기모임은 모임장만, 번개모임은 모임장 또는 주최자가 업로드 가능합니다."
 	)
 	@ApiResponses({
 		@ApiResponse(
@@ -228,7 +228,7 @@ public class MeetingController {
 			content = @Content(schema = @Schema(implementation = FileUploadResponseDto.class))
 		),
 		@ApiResponse(responseCode = "400", description = "잘못된 요청"),
-		@ApiResponse(responseCode = "403", description = "권한 없음 (정기모임: 모임장만, 번개모임: 모임장 또는 주최자)"),
+		@ApiResponse(responseCode = "403", description = "권한 없음"),
 		@ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음")
 	})
 	public ResponseEntity<ResponseHandler<FileUploadResponseDto>> uploadMeetingImage(
@@ -236,7 +236,7 @@ public class MeetingController {
 		@PathVariable @Parameter(description = "일정 ID") Long meetingId,
 		@RequestParam("file") @Parameter(description = "업로드할 이미지 파일") MultipartFile file
 	) {
-		FileUploadResponseDto response = meetingService.uploadMeetingImage(meetingId, file);
+		FileUploadResponseDto response = meetingService.updateMeetingImage(meetingId, file);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
@@ -246,7 +246,7 @@ public class MeetingController {
 	@DeleteMapping("/groups/{groupId}/meetings/{meetingId}/image")
 	@Operation(
 		summary = "일정 이미지 삭제",
-		description = "일정의 대표 이미지를 삭제합니다. 모든 일정 타입에서 모임장만 삭제 가능합니다. (관리 권한)"
+		description = "일정의 대표 이미지를 삭제합니다. 모든 일정 타입에서 모임장만 삭제 가능합니다."
 	)
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "이미지 삭제 성공"),
@@ -258,7 +258,7 @@ public class MeetingController {
 		@PathVariable @Parameter(description = "모임 ID") Long groupId,
 		@PathVariable @Parameter(description = "일정 ID") Long meetingId
 	) {
-		meetingService.deleteMeetingImage(meetingId);
+		meetingService.updateMeetingImage(meetingId, null);
 		return ResponseEntity.ok(ResponseHandler.response(null));
 	}
 

@@ -3,14 +3,13 @@ package com.onmoim.server.meeting.service;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
-import com.onmoim.server.group.entity.GroupUser;
-import com.onmoim.server.group.service.GroupUserQueryService;
 import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
 import com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto;
 import com.onmoim.server.meeting.entity.Meeting;
@@ -29,10 +28,12 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 일정 관리 서비스
  *
+ * 트랜잭션 최적화:
+ * - 파일 처리 메서드에서 TransactionTemplate 사용
+ *
  * 락 전략: AOP 기반 Named Lock
  * - @MeetingLock 어노테이션으로 동시성 제어
  * - 트랜잭션 시작 전 락 획득, 종료 후 락 해제
- * - 커넥션 추가 사용 없이 안전한 동시성 보장
  * - 타입별 타임아웃: 정기모임 1초, 번개모임 3초
  */
 @Slf4j
@@ -43,9 +44,10 @@ public class MeetingService {
 	private final MeetingRepository meetingRepository;
 	private final MeetingQueryService meetingQueryService;
 	private final UserQueryService userQueryService;
-	private final GroupUserQueryService groupUserQueryService;
 	private final UserMeetingRepository userMeetingRepository;
 	private final FileStorageService fileStorageService;
+	private final MeetingAuthService meetingAuthService;
+	private final TransactionTemplate transactionTemplate;
 
 	/**
 	 * 일정 생성
@@ -54,7 +56,6 @@ public class MeetingService {
 	public Long createMeeting(Long groupId, MeetingCreateRequestDto request) {
 		Long userId = getCurrentUserId();
 		User user = userQueryService.findById(userId);
-		GroupUser groupUser = getGroupUser(groupId, userId);
 
 		Meeting meeting = Meeting.meetingCreateBuilder()
 			.groupId(groupId)
@@ -68,9 +69,8 @@ public class MeetingService {
 			.creatorId(userId)
 			.build();
 
-		if (!meeting.canBeCreatedBy(groupUser)) {
-			throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
-		}
+		// 권한 검증
+		meetingAuthService.validateCreatePermission(groupId, userId, meeting);
 
 		Meeting savedMeeting = meetingRepository.save(meeting);
 
@@ -86,8 +86,6 @@ public class MeetingService {
 
 	/**
 	 * 일정 참석 신청 (AOP Named Lock 적용)
-	 * - 트랜잭션 시작 전 락 획득, 종료 후 락 해제
-	 * - 커넥션 추가 사용 없음
 	 */
 	@MeetingLock
 	@Transactional
@@ -117,8 +115,6 @@ public class MeetingService {
 
 	/**
 	 * 일정 참석 취소 (AOP Named Lock 적용)
-	 * - 트랜잭션 시작 전 락 획득, 종료 후 락 해제
-	 * - 커넥션 추가 사용 없음
 	 */
 	@MeetingLock
 	@Transactional
@@ -146,18 +142,15 @@ public class MeetingService {
 	}
 
 	/**
-	 * 일정 수정 (트랜잭션만 사용 - 모임장 권한으로 동시성 이슈 없음)
+	 * 일정 수정
 	 */
 	@Transactional
 	public void updateMeeting(Long meetingId, MeetingUpdateRequestDto request) {
 		// 일정 조회 및 권한 검증
 		Meeting meeting = meetingQueryService.getById(meetingId);
 		Long userId = getCurrentUserId();
-		GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
 
-		if (!meeting.canBeManagedBy(groupUser)) {
-			throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
-		}
+		meetingAuthService.validateManagePermission(meeting, userId);
 
 		// 도메인 로직으로 일정 정보 업데이트
 		meeting.updateMeetingInfo(
@@ -180,12 +173,8 @@ public class MeetingService {
 		// 일정 조회 및 권한 검증
 		Meeting meeting = meetingQueryService.getById(meetingId);
 		Long userId = getCurrentUserId();
-		GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
 
-		// 도메인 규칙 검증
-		if (!meeting.canBeManagedBy(groupUser)) {
-			throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
-		}
+		meetingAuthService.validateManagePermission(meeting, userId);
 
 		// 일정 삭제 처리
 		deleteMeetingWithCleanup(meeting);
@@ -200,7 +189,7 @@ public class MeetingService {
 		// 관련된 UserMeeting 데이터 삭제
 		userMeetingRepository.deleteByMeetingId(meeting.getId());
 
-		// 이미지가 있다면 S3에서 삭제
+		// 이미지가 있다면 S3에서 삭제 (공통 서비스 직접 사용)
 		if (meeting.getImgUrl() != null) {
 			try {
 				fileStorageService.deleteFile(meeting.getImgUrl());
@@ -215,78 +204,85 @@ public class MeetingService {
 	}
 
 	/**
-	 * 일정 이미지 업로드
+	 * 일정 이미지 업데이트
+	 * - file이 null이 아니면: 이미지 업로드 (기존 이미지 교체)
+	 * - file이 null이면: 이미지 삭제 (null로 설정)
 	 */
-	@Transactional
-	public FileUploadResponseDto uploadMeetingImage(Long meetingId, MultipartFile file) {
+	public FileUploadResponseDto updateMeetingImage(Long meetingId, MultipartFile file) {
 		Long userId = getCurrentUserId();
+
+		// 1. 권한 검증 및 데이터 조회 (트랜잭션 외부)
 		Meeting meeting = meetingQueryService.getById(meetingId);
-		GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
+		String oldImageUrl = meeting.getImgUrl();
 
-		// 도메인 규칙 검증
-		if (!meeting.canUpdateImageBy(groupUser)) {
-			throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
-		}
-
-		// 기존 이미지가 있다면 삭제
-		if (meeting.getImgUrl() != null) {
-			try {
-				fileStorageService.deleteFile(meeting.getImgUrl());
-			} catch (Exception e) {
-				log.warn("기존 이미지 삭제 실패: {}", e.getMessage());
+		if (file != null) {
+			// 이미지 업로드 권한 검증
+			meetingAuthService.validateImageUploadPermission(meeting, userId);
+		} else {
+			// 이미지 삭제 권한 검증
+			meetingAuthService.validateImageDeletePermission(meeting, userId);
+			if (oldImageUrl == null) {
+				throw new CustomException(ErrorCode.INVALID_USER);
 			}
 		}
 
-		// 새 이미지 업로드
-		FileUploadResponseDto response = fileStorageService.uploadFile(file, "meetings");
-
-		// Meeting 엔티티 업데이트
-		meeting.updateImage(response.getFileUrl());
-
-		log.info("일정 {} 이미지 업로드 성공: {}", meetingId, response.getFileUrl());
-
-		return response;
-	}
-
-	/**
-	 * 일정 이미지 삭제
-	 */
-	@Transactional
-	public void deleteMeetingImage(Long meetingId) {
-		Long userId = getCurrentUserId();
-		Meeting meeting = meetingQueryService.getById(meetingId);
-		GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
-
-		// 도메인 규칙 검증
-		if (!meeting.canDeleteImageBy(groupUser)) {
-			throw new CustomException(ErrorCode.GROUP_FORBIDDEN);
+		// 2. S3 작업 (트랜잭션 외부)
+		FileUploadResponseDto response = null;
+		if (file != null) {
+			// 새 이미지 업로드
+			response = fileStorageService.uploadFile(file, "meetings");
+			log.info("새 이미지 업로드 완료: {}", response.getFileUrl());
 		}
 
-		if (meeting.getImgUrl() == null) {
-			throw new CustomException(ErrorCode.INVALID_USER);
-		}
-
-		// S3에서 이미지 삭제
 		try {
-			fileStorageService.deleteFile(meeting.getImgUrl());
+			// 3. DB 업데이트 (짧은 트랜잭션)
+			String newImageUrl = (response != null) ? response.getFileUrl() : null;
+			transactionTemplate.execute(status -> {
+				Meeting freshMeeting = meetingQueryService.getById(meetingId);
+				freshMeeting.updateImage(newImageUrl);
+				return null;
+			});
+
+			// 4. 후처리 (트랜잭션 외부)
+			if (file != null) {
+				// 업로드인 경우: 기존 이미지 삭제
+				if (oldImageUrl != null) {
+					try {
+						fileStorageService.deleteFile(oldImageUrl);
+						log.info("기존 이미지 삭제 완료: {}", oldImageUrl);
+					} catch (Exception e) {
+						log.warn("기존 이미지 삭제 실패 (무시): {}", oldImageUrl, e);
+					}
+				}
+				log.info("일정 {} 이미지 업로드 성공: {}", meetingId, response.getFileUrl());
+			} else {
+				// 삭제인 경우: S3에서 이미지 삭제 (동기)
+				try {
+					fileStorageService.deleteFile(oldImageUrl);
+					log.info("S3 이미지 삭제 완료: {}", oldImageUrl);
+				} catch (Exception e) {
+					log.error("S3 이미지 삭제 실패: {}", oldImageUrl, e);
+					throw new CustomException(ErrorCode.FILE_DELETE_FAILED);
+				}
+				log.info("일정 {} 이미지 삭제 성공", meetingId);
+			}
+
+			return response;
+
 		} catch (Exception e) {
-			log.error("S3 이미지 삭제 실패: {}", e.getMessage());
-			throw new CustomException(ErrorCode.FILE_DELETE_FAILED);
+			// 5. 실패 시 정리 (업로드인 경우만)
+			if (response != null) {
+				try {
+					fileStorageService.deleteFile(response.getFileUrl());
+					log.warn("업로드 실패로 인한 파일 정리: {}", response.getFileUrl());
+				} catch (Exception cleanupException) {
+					log.error("파일 정리 실패: {}", response.getFileUrl(), cleanupException);
+				}
+			}
+			throw e;
 		}
-
-		// Meeting 엔티티에서 이미지 URL 제거
-		meeting.updateImage(null);
-
-		log.info("일정 {} 이미지 삭제 성공", meetingId);
 	}
 
-	/**
-	 * 그룹 사용자 정보 조회
-	 */
-	private GroupUser getGroupUser(Long groupId, Long userId) {
-		return groupUserQueryService.findById(groupId, userId)
-			.orElseThrow(() -> new CustomException(ErrorCode.NOT_GROUP_MEMBER));
-	}
 
 	private Long getCurrentUserId() {
 		CustomUserDetails principal = (CustomUserDetails) SecurityContextHolder.getContextHolderStrategy()
