@@ -151,10 +151,12 @@ public class Meeting extends BaseEntity {
 	 * 일정 참석 처리
 	 */
 	public void join() {
-		if (!canJoin()) {
+		// 1. 일정 시작 여부 확인
+		if (isStarted()) {
 			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
 		}
-		if (this.joinCount >= this.capacity) {
+		// 2. 정원 초과 또는 마감 상태 확인
+		if (this.status == MeetingStatus.FULL || this.joinCount >= this.capacity) {
 			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
 		}
 
@@ -174,18 +176,6 @@ public class Meeting extends BaseEntity {
 		updateStatusIfFull();
 	}
 
-	/**
-	 * 테스트용 참석 처리 (시간 제약 없음)
-	 * 프로덕션 코드에서는 사용하지 않음
-	 */
-	public void joinForTest() {
-		if (this.joinCount >= this.capacity) {
-			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
-		}
-
-		this.joinCount++;
-		updateStatusIfFull();
-	}
 
 	/**
 	 * 일정 참석 취소 처리

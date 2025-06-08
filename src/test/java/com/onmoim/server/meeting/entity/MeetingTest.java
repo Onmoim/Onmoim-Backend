@@ -80,7 +80,7 @@ class MeetingTest {
 		User creator = createUser(1L);
 		User otherUser = createUser(2L);
 		Meeting flashMeeting = createFlashMeetingWithCreator(creator.getId());
-		
+
 		GroupUser owner = createGroupUser(otherUser, Status.OWNER);
 		GroupUser creatorAsGroupUser = createGroupUser(creator, Status.MEMBER);
 		GroupUser otherMember = createGroupUser(otherUser, Status.MEMBER);
@@ -132,7 +132,7 @@ class MeetingTest {
 			.groupId(1L)
 			.type(MeetingType.FLASH)
 			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(7)) // 충분히 미래로 설정
+			.startAt(LocalDateTime.now().plusDays(7))
 			.placeName("테스트 장소")
 			.capacity(2)
 			.cost(0)
@@ -176,7 +176,7 @@ class MeetingTest {
 			.groupId(1L)
 			.type(MeetingType.FLASH)
 			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(7)) // 충분히 미래로 설정
+			.startAt(LocalDateTime.now().plusDays(7))
 			.placeName("테스트 장소")
 			.capacity(10)
 			.cost(0)
@@ -413,7 +413,7 @@ class MeetingTest {
 		// when
 		LocalDateTime newStartAt = LocalDateTime.now().plusDays(3);
 		GeoPoint newGeoPoint = new GeoPoint(37.555, 126.936);
-		
+
 		meeting.updateMeetingInfo(
 			"새로운 제목",
 			newStartAt,
@@ -512,8 +512,8 @@ class MeetingTest {
 		User user = User.builder()
 			.name("테스트 사용자")
 			.build();
-		
-		// 테스트용으로 ID 강제 설정 (reflection 사용)
+
+		// 테스트용으로 ID 강제 설정
 		try {
 			java.lang.reflect.Field idField = User.class.getDeclaredField("id");
 			idField.setAccessible(true);
@@ -521,7 +521,7 @@ class MeetingTest {
 		} catch (Exception e) {
 			// reflection 실패 시 무시 (실제 애플리케이션에서는 JPA가 처리)
 		}
-		
+
 		return user;
 	}
 
@@ -531,7 +531,7 @@ class MeetingTest {
 			.name("테스트 그룹")
 			.capacity(100)
 			.build();
-			
+
 		return GroupUser.create(dummyGroup, user, status);
 	}
-} 
+}

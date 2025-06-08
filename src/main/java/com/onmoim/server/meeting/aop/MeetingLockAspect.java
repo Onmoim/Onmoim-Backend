@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Meeting 도메인 전용 Named Lock AOP
- *
  * 특징:
  * - Group AOP와 분리된 독립적인 구조
  * - 패키지별 포인트컷으로 충돌 방지
@@ -124,7 +123,7 @@ public class MeetingLockAspect {
             }
         } catch (Exception e) {
             log.error("일정 타입 조회 중 오류 발생 - meetingId: {}, 기본 타임아웃 적용", meetingId, e);
-            return 2; // 기본값
+            return 2;
         }
     }
 }

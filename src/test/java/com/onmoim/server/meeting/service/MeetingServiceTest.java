@@ -329,7 +329,7 @@ class MeetingServiceTest {
 	@Test
 	@DisplayName("09. 진짜 동시성 테스트 - 20명이 10명 정원에 동시 참석 신청 (EntityManager 패턴)")
 	void test09_concurrentJoinMeeting_Success() throws InterruptedException {
-		// given - EntityManager로 데이터 직접 생성 및 커밋
+		// given
 		EntityManager em = emf.createEntityManager();
 		EntityTransaction tx = em.getTransaction();
 		List<User> userList = new ArrayList<>();
@@ -484,7 +484,7 @@ class MeetingServiceTest {
 	private void joinUserToMeeting(Meeting meeting, User user) {
 		UserMeeting userMeeting = UserMeeting.create(meeting, user);
 		userMeetingRepository.save(userMeeting);
-		meeting.joinForTest(); // 테스트용 메서드 사용
+		meeting.creatorJoin() ;
 	}
 
 	private void setAuthContext(Long userId) {
