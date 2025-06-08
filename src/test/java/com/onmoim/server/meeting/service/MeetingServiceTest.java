@@ -327,7 +327,7 @@ class MeetingServiceTest {
 	}
 
 	@Test
-	@DisplayName("09. 진짜 동시성 테스트 - 20명이 10명 정원에 동시 참석 신청")
+	@DisplayName("09.동시성 테스트 - 20명이 10명 정원에 동시 참석 신청")
 	void test09_concurrentJoinMeeting_Success() throws InterruptedException {
 		// given
 		EntityManager em = emf.createEntityManager();
@@ -390,17 +390,19 @@ class MeetingServiceTest {
 			final int idx = i;
 			executorService.submit(() -> {
 				try {
-					// SecurityContext 설정
+					// 각 스레드마다 인증 정보 설정
 					Long userId = userList.get(idx).getId();
 					var detail = new CustomUserDetails(userId, "test", "test");
-					var auth = UsernamePasswordAuthenticationToken.authenticated(detail, null, null);
-					SecurityContextHolder.getContext().setAuthentication(auth);
+					var authenticated = UsernamePasswordAuthenticationToken.authenticated(
+						detail, null, null);
+					SecurityContextHolder.getContext().setAuthentication(authenticated);
 
-					meetingService.joinMeetingForTest(finalMeetingId, userId);
+					meetingService.joinMeeting(finalMeetingId);
 					successCount.incrementAndGet();
 				} catch (Exception e) {
 					failCount.incrementAndGet();
 				} finally {
+					// 스레드 인증 정보 삭제
 					SecurityContextHolder.clearContext();
 					latch.countDown();
 				}

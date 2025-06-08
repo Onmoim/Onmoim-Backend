@@ -125,15 +125,6 @@ public class MeetingService {
 	}
 
 	/**
-	 * 테스트 코드용 일정 참석 신청 (AOP Named Lock 적용, SecurityContext 우회)
-	 */
-	@MeetingLock
-	@Transactional
-	public void joinMeetingForTest(Long meetingId, Long userId) {
-		joinMeetingInternal(meetingId, userId);
-	}
-
-	/**
 	 * 일정 참석 신청 내부 로직
 	 */
 	private void joinMeetingInternal(Long meetingId, Long userId) {
@@ -252,7 +243,7 @@ public class MeetingService {
 		meetingAuthService.validateManagePermission(meeting, userId);
 
 		String imageUrl = executeDeleteMeeting(meeting);
-		
+
 		if (imageUrl != null) {
 			tryDeleteFileFromS3(imageUrl);
 		}
@@ -272,9 +263,6 @@ public class MeetingService {
 		});
 	}
 
-	/**
-	 * 참석 취소 시 자동 삭제 (이미지 포함 즉시 처리)
-	 */
 	private void autoDeleteMeetingWithResources(Meeting meeting) {
 		userMeetingRepository.deleteByMeetingId(meeting.getId());
 
@@ -290,9 +278,7 @@ public class MeetingService {
 		meeting.softDelete();
 	}
 
-	/**
-	 * S3 파일 안전 삭제 (실패 시 로그만 기록)
-	 */
+
 	private void tryDeleteFileFromS3(String fileUrl) {
 		try {
 			fileStorageService.deleteFile(fileUrl);
