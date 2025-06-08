@@ -1,5 +1,7 @@
 package com.onmoim.server.meeting.aop;
 
+import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.common.exception.ErrorCode;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -56,7 +58,7 @@ public class MeetingLockAspect {
 
             if (!lockAcquired) {
                 log.warn("Meeting Named Lock 획득 실패 - 키: {}, 타임아웃: {}초, 결과: {}", lockKey, timeoutSeconds, lockResult);
-                throw new RuntimeException("일정 처리 중입니다. 잠시 후 다시 시도해주세요.");
+                throw new CustomException(ErrorCode.MEETING_LOCK_TIMEOUT);
             }
 
             log.debug("Meeting Named Lock 획득 성공 - 키: {}", lockKey);
