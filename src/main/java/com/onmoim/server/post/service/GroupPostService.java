@@ -10,8 +10,8 @@ import lombok.RequiredArgsConstructor;
 
 import com.onmoim.server.post.dto.request.CursorPageRequestDto;
 import com.onmoim.server.post.dto.request.GroupPostRequestDto;
+import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
-import com.onmoim.server.post.dto.response.PostListPageResponseDto;
 import com.onmoim.server.post.entity.GroupPostType;
 
 @Service
@@ -53,7 +53,7 @@ public class GroupPostService {
     /**
      * 커서 기반 페이징을 이용한 게시글 목록 조회
      */
-    public PostListPageResponseDto getPosts(
+    public CursorPageResponseDto<GroupPostResponseDto> getPosts(
             Long groupId,
             GroupPostType type,
             CursorPageRequestDto request

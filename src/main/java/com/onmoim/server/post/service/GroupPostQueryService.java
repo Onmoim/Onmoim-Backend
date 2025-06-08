@@ -10,8 +10,8 @@ import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.service.GroupQueryService;
 import com.onmoim.server.group.service.GroupUserQueryService;
 import com.onmoim.server.post.dto.request.CursorPageRequestDto;
+import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
-import com.onmoim.server.post.dto.response.PostListPageResponseDto;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.repository.GroupPostRepository;
@@ -86,13 +86,14 @@ public class GroupPostQueryService {
     /**
      * 커서 기반 페이징을 이용한 게시글 목록 조회 (N+1 문제 해결)
      */
-    public PostListPageResponseDto getPosts(
+    public CursorPageResponseDto<GroupPostResponseDto> getPosts(
             Long groupId,
             GroupPostType type,
             CursorPageRequestDto request
     ) {
         Group group = groupQueryService.getById(groupId);
 
+        // 최적화된 메서드 사용 - 게시글과 이미지를 함께 조회
         return groupPostRepository.findPostsWithImages(
                 group,
                 type,

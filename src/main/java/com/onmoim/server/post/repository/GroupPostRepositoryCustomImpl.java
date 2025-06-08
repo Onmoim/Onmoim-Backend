@@ -7,13 +7,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import com.onmoim.server.group.entity.Group;
-import com.onmoim.server.post.dto.response.GroupPostListResponseDto;
-import com.onmoim.server.post.dto.response.PostListPageResponseDto;
+import com.onmoim.server.post.dto.response.CursorPageResponseDto;
+import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.entity.PostImage;
 import com.onmoim.server.post.entity.QGroupPost;
-import com.onmoim.server.post.util.CursorTokenUtil;
 
 /**
  * 모임 게시글을 위한 커스텀 레포지토리 구현체 (Querydsl 구현)
@@ -25,24 +24,27 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
     private final PostImageRepository postImageRepository;
 
     @Override
-    public PostListPageResponseDto findPostsWithImages(
+    public CursorPageResponseDto<GroupPostResponseDto> findPostsWithImages(
             Group group,
             GroupPostType type,
             Long cursorId,
             int size
     ) {
+
         BooleanBuilder predicate = buildPredicate(group, type, cursorId);
+
         Deque<GroupPost> pagedPosts = fetchPagedPosts(predicate, size);
 
         boolean hasNext = pagedPosts.size() > size;
         Long nextCursorId = extractNextCursor(pagedPosts, size, hasNext);
 
-        List<GroupPostListResponseDto> dtos = mapToFlatDtoWithImages(pagedPosts);
+        List<GroupPostResponseDto> dtos = mapToDtoWithImages(pagedPosts);
 
-        // cursor ID를 토큰으로 인코딩하여 반환
-        String nextPageToken = CursorTokenUtil.encodeCursorToken(nextCursorId);
-
-        return PostListPageResponseDto.of(dtos, hasNext, nextPageToken);
+        return CursorPageResponseDto.<GroupPostResponseDto>builder()
+                .content(dtos)
+                .hasNext(hasNext)
+                .nextCursorId(nextCursorId)
+                .build();
     }
 
     private BooleanBuilder buildPredicate(Group group, GroupPostType type, Long cursorId) {
@@ -77,7 +79,7 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
         return posts.getLast().getId();
     }
 
-    private List<GroupPostListResponseDto> mapToFlatDtoWithImages(Collection<GroupPost> posts) {
+    private List<GroupPostResponseDto> mapToDtoWithImages(Collection<GroupPost> posts) {
         if (posts.isEmpty()) {
             return Collections.emptyList();
         }
@@ -97,7 +99,7 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
         );
 
         return posts.stream()
-                .map(post -> GroupPostListResponseDto.fromEntityWithImages(
+                .map(post -> GroupPostResponseDto.fromEntityWithImages(
                         post,
                         imagesByPostId.getOrDefault(post.getId(), Collections.emptyList())
                 ))
