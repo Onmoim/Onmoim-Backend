@@ -92,7 +92,7 @@ class MeetingServiceTest {
 		setAuthContext(owner.getId());
 
 		// when
-		Long meetingId = meetingService.createMeeting(group.getId(), request);
+		Long meetingId = meetingService.createMeeting(group.getId(), request, null);
 
 		// then
 		Meeting meeting = meetingQueryService.getById(meetingId);
@@ -133,7 +133,7 @@ class MeetingServiceTest {
 		setAuthContext(member.getId());
 
 		// when
-		Long meetingId = meetingService.createMeeting(group.getId(), request);
+		Long meetingId = meetingService.createMeeting(group.getId(), request, null);
 
 		// then
 		Meeting meeting = meetingQueryService.getById(meetingId);
@@ -167,7 +167,7 @@ class MeetingServiceTest {
 		setAuthContext(outsider.getId());
 
 		// when & then
-		assertThatThrownBy(() -> meetingService.createMeeting(group.getId(), request))
+		assertThatThrownBy(() -> meetingService.createMeeting(group.getId(), request, null))
 			.isInstanceOf(CustomException.class)
 			.hasMessage(ErrorCode.NOT_GROUP_MEMBER.getDetail());
 
@@ -284,7 +284,7 @@ class MeetingServiceTest {
 		setAuthContext(owner.getId());
 
 		// when
-		meetingService.updateMeeting(meeting.getId(), request);
+		meetingService.updateMeeting(meeting.getId(), request, null);
 
 		// then
 		Meeting updatedMeeting = meetingQueryService.getById(meeting.getId());

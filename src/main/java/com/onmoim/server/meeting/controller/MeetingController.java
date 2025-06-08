@@ -8,7 +8,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.common.dto.CursorPageResponse;
 import com.onmoim.server.common.response.ResponseHandler;
-import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
 import com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto;
 import com.onmoim.server.meeting.dto.response.MeetingResponseDto;
@@ -67,12 +66,12 @@ public class MeetingController {
 	}
 
 	/**
-	 * 일정 생성
+	 * 일정 생성 (이미지 포함)
 	 */
-	@PostMapping("/groups/{groupId}/meetings")
+	@PostMapping(value = "/groups/{groupId}/meetings", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@Operation(
 		summary = "일정 생성",
-		description = "새로운 일정을 생성합니다. 정기모임은 모임장만, 번개모임은 모임원이 생성 가능합니다.")
+		description = "새로운 일정을 생성합니다. 정기모임은 모임장만, 번개모임은 모임원이 생성 가능합니다. 대표 이미지도 함께 업로드할 수 있습니다.")
 	@ApiResponses({
 		@ApiResponse(
 			responseCode = "200",
@@ -86,9 +85,11 @@ public class MeetingController {
 	public ResponseEntity<ResponseHandler<Long>> createMeeting(
 		@PathVariable
 		@Parameter(description = "모임 ID") Long groupId,
-		@Valid @RequestBody MeetingCreateRequestDto request
+		@Valid @RequestPart("request") MeetingCreateRequestDto request,
+		@RequestPart(value = "image", required = false)
+		@Parameter(description = "일정 대표 이미지") MultipartFile image
 	) {
-		Long meetingId = meetingService.createMeeting(groupId, request);
+		Long meetingId = meetingService.createMeeting(groupId, request, image);
 		return ResponseEntity.ok(ResponseHandler.response(meetingId));
 	}
 
@@ -162,6 +163,7 @@ public class MeetingController {
 
 	/**
 	 * 일정 참석 취소
+	 */
 	@PostMapping("/groups/{groupId}/meetings/{meetingId}/leave")
 	@Operation(summary = "일정 참석 취소", description = "일정 참석을 취소합니다.")
 	@ApiResponses({
@@ -177,16 +179,26 @@ public class MeetingController {
 	}
 
 	/**
-	 * 일정 수정
+	 * 일정 수정 (이미지 포함)
 	 */
-	@PutMapping("/groups/{groupId}/meetings/{meetingId}")
-	@Operation(summary = "일정 수정", description = "일정 정보를 수정합니다. 모임장만 수정 가능하며, 시작 24시간 전까지만 수정할 수 있습니다.")
+	@PutMapping(value = "/groups/{groupId}/meetings/{meetingId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@Operation(
+		summary = "일정 수정",
+		description = "일정 정보를 수정합니다. 모임장만 수정 가능하며, 시작 24시간 전까지만 수정할 수 있습니다. 새 이미지를 업로드하면 기존 이미지는 교체됩니다.")
+	@ApiResponses({
+		@ApiResponse(responseCode = "200", description = "수정 성공"),
+		@ApiResponse(responseCode = "400", description = "잘못된 요청"),
+		@ApiResponse(responseCode = "403", description = "권한 없음"),
+		@ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음")
+	})
 	public ResponseEntity<ResponseHandler<Void>> updateMeeting(
 		@PathVariable @Parameter(description = "모임 ID") Long groupId,
 		@PathVariable @Parameter(description = "일정 ID") Long meetingId,
-		@Valid @RequestBody MeetingUpdateRequestDto request
+		@Valid @RequestPart("request") MeetingUpdateRequestDto request,
+		@RequestPart(value = "image", required = false)
+		@Parameter(description = "새 대표 이미지 (선택적)") MultipartFile image
 	) {
-		meetingService.updateMeeting(meetingId, request);
+		meetingService.updateMeeting(meetingId, request, image);
 		return ResponseEntity.ok(ResponseHandler.response(null));
 	}
 
@@ -209,55 +221,6 @@ public class MeetingController {
 		@PathVariable @Parameter(description = "일정 ID") Long meetingId
 	) {
 		meetingService.deleteMeeting(meetingId);
-		return ResponseEntity.ok(ResponseHandler.response(null));
-	}
-
-	/**
-	 * 일정 이미지 업로드
-	 */
-	@PostMapping(value = "/groups/{groupId}/meetings/{meetingId}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	@Operation(
-		summary = "일정 이미지 업로드",
-		description = "일정의 대표 이미지를 업로드합니다. 정기모임은 모임장만, 번개모임은 모임장 또는 주최자가 업로드 가능합니다."
-	)
-	@ApiResponses({
-		@ApiResponse(
-			responseCode = "200",
-			description = "이미지 업로드 성공",
-			content = @Content(schema = @Schema(implementation = FileUploadResponseDto.class))
-		),
-		@ApiResponse(responseCode = "400", description = "잘못된 요청"),
-		@ApiResponse(responseCode = "403", description = "권한 없음"),
-		@ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음")
-	})
-	public ResponseEntity<ResponseHandler<FileUploadResponseDto>> uploadMeetingImage(
-		@PathVariable @Parameter(description = "모임 ID") Long groupId,
-		@PathVariable @Parameter(description = "일정 ID") Long meetingId,
-		@RequestParam("file") @Parameter(description = "업로드할 이미지 파일") MultipartFile file
-	) {
-		FileUploadResponseDto response = meetingService.updateMeetingImage(meetingId, file);
-		return ResponseEntity.ok(ResponseHandler.response(response));
-	}
-
-	/**
-	 * 일정 이미지 삭제
-	 */
-	@DeleteMapping("/groups/{groupId}/meetings/{meetingId}/image")
-	@Operation(
-		summary = "일정 이미지 삭제",
-		description = "일정의 대표 이미지를 삭제합니다. 모든 일정 타입에서 모임장만 삭제 가능합니다."
-	)
-	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "이미지 삭제 성공"),
-		@ApiResponse(responseCode = "400", description = "잘못된 요청"),
-		@ApiResponse(responseCode = "403", description = "권한 없음 (모임장만 가능)"),
-		@ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음")
-	})
-	public ResponseEntity<ResponseHandler<Void>> deleteMeetingImage(
-		@PathVariable @Parameter(description = "모임 ID") Long groupId,
-		@PathVariable @Parameter(description = "일정 ID") Long meetingId
-	) {
-		meetingService.updateMeetingImage(meetingId, null);
 		return ResponseEntity.ok(ResponseHandler.response(null));
 	}
 
