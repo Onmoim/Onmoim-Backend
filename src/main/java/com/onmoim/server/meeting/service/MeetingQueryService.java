@@ -1,20 +1,26 @@
 package com.onmoim.server.meeting.service;
 
-import java.time.LocalDateTime;
+import static com.onmoim.server.meeting.entity.QMeeting.meeting;
 
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import com.onmoim.server.meeting.dto.response.PageResponseDto;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.data.domain.ScrollPosition;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Window;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.onmoim.server.common.dto.CursorPageResponse;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.meeting.dto.response.MeetingResponseDto;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingType;
 import com.onmoim.server.meeting.repository.MeetingRepository;
+import com.onmoim.server.meeting.repository.UserMeetingRepository;
+import com.onmoim.server.meeting.util.CursorUtils;
+import com.querydsl.core.BooleanBuilder;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 public class MeetingQueryService {
 
 	private final MeetingRepository meetingRepository;
+	private final UserMeetingRepository userMeetingRepository;
+	private final CursorUtils cursorUtils;
 
 	/**
 	 * 일정 ID로 조회
@@ -35,51 +43,124 @@ public class MeetingQueryService {
 			.orElseThrow(() -> new CustomException(ErrorCode.NOT_EXISTS_GROUP));
 	}
 
-	/**
-	 * 그룹의 예정된 모임 목록 조회 (타입 필터링 가능)
-	 */
-	public CursorPageResponse<MeetingResponseDto> getUpcomingMeetingsInGroup(Long groupId, MeetingType type, Long lastId, int size) {
-		Pageable pageable = PageRequest.of(0, size + 1);
-		LocalDateTime now = LocalDateTime.now();
-		Slice<Meeting> slice = meetingRepository.findUpcomingMeetings(groupId, now, type, lastId, pageable);
-
-		return buildCursorResponse(slice.getContent(), size);
-	}
+	//  토큰 기반 페이징 메서드들
 
 	/**
-	 * 내가 참여한 예정된 모임 목록 조회
-	 * No-Offset 커서 방식: lastId로 WHERE 조건 필터링 + size+1로 hasNext 판별
+	 * 그룹의 예정된 모임 목록 조회
+	 *
+	 * 클라이언트 친화적인 페이징 인터페이스
+	 * - 내부적으로 Keyset-Filtering 사용
+	 * - 클라이언트는 단순한 커서 토큰만 관리하면 됨
+	 *
+	 * @param groupId 그룹 ID
+	 * @param type 모임 타입 (null이면 전체 조회)
+	 * @param cursor 커서 토큰 (null이면 첫 페이지)
+	 * @param size 페이지 크기
+	 * @return 페이징된 모임 목록
 	 */
-	public CursorPageResponse<MeetingResponseDto> getMyUpcomingMeetings(Long userId, Long lastId, int size) {
-		Pageable pageable = PageRequest.of(0, size + 1);
-		LocalDateTime now = LocalDateTime.now();
-		Slice<Meeting> slice = meetingRepository.findUpcomingMeetingsByUser(userId, now, lastId, pageable);
+	public PageResponseDto<MeetingResponseDto> getUpcomingMeetingsInGroup(
+			Long groupId, MeetingType type, String cursor, int size) {
 
-		return buildCursorResponse(slice.getContent(), size);
-	}
+		ScrollPosition position = cursorUtils.decodeCursor(cursor);
+		Window<MeetingResponseDto> window = getUpcomingMeetingsInGroupPage(groupId, type, position, size);
 
-	/**
-	 * 커서 기반 응답 생성 (No-Offset 방식)
-	 * size+1개 조회 결과에서 hasNext 판별 후 마지막 요소 제거
-	 */
-	private CursorPageResponse<MeetingResponseDto> buildCursorResponse(java.util.List<Meeting> meetings, int requestedSize) {
-		boolean hasNext = meetings.size() > requestedSize;
-
-		// hasNext가 true면 마지막 요소 제거
-		if (hasNext) {
-			meetings.removeLast();
+		String nextCursor = null;
+		if (window.hasNext() && !window.getContent().isEmpty()) {
+			MeetingResponseDto lastMeeting = window.getContent().get(window.getContent().size() - 1);
+			nextCursor = cursorUtils.encodeCursor(lastMeeting.getStartAt(), lastMeeting.getId());
 		}
 
-		// 다음 커서 계산
-		Long nextCursorId = meetings.isEmpty()
-			? null
-			: meetings.get(meetings.size() - 1).getId();
+		return PageResponseDto.from(window, nextCursor);
+	}
 
-		return CursorPageResponse.<MeetingResponseDto>builder()
-			.content(meetings.stream().map(MeetingResponseDto::from).toList())
-			.hasNext(hasNext)
-			.nextCursorId(nextCursorId)
-			.build();
+	/**
+	 * 사용자가 참여한 예정된 모임 목록 조회
+	 *
+	 * 클라이언트 친화적인 페이징 인터페이스
+	 * - 복잡한 JOIN 로직을 커서 토큰으로 추상화
+	 * - 타입 안전성과 오류 처리 내장
+	 *
+	 * @param userId 사용자 ID
+	 * @param cursor 커서 토큰 (null이면 첫 페이지)
+	 * @param size 페이지 크기
+	 * @return 페이징된 모임 목록
+	 */
+	public PageResponseDto<MeetingResponseDto> getMyUpcomingMeetings(
+			Long userId, String cursor, int size) {
+
+		ScrollPosition position = cursorUtils.decodeCursor(cursor);
+		Window<MeetingResponseDto> window = getMyUpcomingMeetingsPage(userId, position, size);
+
+		String nextCursor = null;
+		if (window.hasNext() && !window.getContent().isEmpty()) {
+			MeetingResponseDto lastMeeting = window.getContent().get(window.getContent().size() - 1);
+			nextCursor = cursorUtils.encodeCursor(lastMeeting.getStartAt(), lastMeeting.getId());
+		}
+
+		return PageResponseDto.from(window, nextCursor);
+	}
+
+	// 내부 헬퍼 메서드들
+
+	/**
+	 * 그룹의 예정된 모임 목록 페이징 조회 (내부 구현)
+	 */
+	private Window<MeetingResponseDto> getUpcomingMeetingsInGroupPage(
+			Long groupId, MeetingType type, ScrollPosition position, int size) {
+
+		LocalDateTime now = LocalDateTime.now();
+
+		BooleanBuilder predicate = new BooleanBuilder()
+			.and(meeting.groupId.eq(groupId))
+			.and(meeting.startAt.gt(now))
+			.and(meeting.deletedDate.isNull());
+
+		if (type != null) {
+			predicate.and(meeting.type.eq(type));
+		}
+
+		Window<Meeting> window = meetingRepository.findBy(predicate, options -> options
+			.limit(size)
+			.sortBy(Sort.by("startAt", "id").ascending())
+			.scroll(position)
+		);
+
+		List<MeetingResponseDto> content = window.getContent().stream()
+			.map(MeetingResponseDto::from)
+			.toList();
+
+		return Window.from(content, window::positionAt, window.hasNext());
+	}
+
+	/**
+	 * 사용자가 참여한 예정된 모임 목록 페이징 조회 (내부 구현)
+	 */
+	private Window<MeetingResponseDto> getMyUpcomingMeetingsPage(
+			Long userId, ScrollPosition position, int size) {
+
+		LocalDateTime now = LocalDateTime.now();
+
+		List<Long> meetingIds = userMeetingRepository.findMeetingIdsByUserId(userId);
+		if (meetingIds.isEmpty()) {
+			return Window.from(List.of(), i -> position, false);
+		}
+
+		BooleanBuilder predicate = new BooleanBuilder()
+			.and(meeting.id.in(meetingIds))
+			.and(meeting.startAt.gt(now))
+			.and(meeting.deletedDate.isNull());
+
+		Window<Meeting> window = meetingRepository.findBy(predicate, options -> options
+			.limit(size)
+			.sortBy(Sort.by("startAt", "id").ascending())
+			.scroll(position)
+		);
+
+		List<MeetingResponseDto> content = window.getContent().stream()
+			.map(MeetingResponseDto::from)
+			.toList();
+
+		return Window.from(content, window::positionAt, window.hasNext());
 	}
 
 	/**

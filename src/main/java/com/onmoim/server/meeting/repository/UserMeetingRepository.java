@@ -1,5 +1,6 @@
 package com.onmoim.server.meeting.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,4 +38,10 @@ public interface UserMeetingRepository extends JpaRepository<UserMeeting, UserMe
 	 */
 	@Query("SELECT COUNT(um) FROM UserMeeting um WHERE um.meeting.id = :meetingId")
 	long countByMeetingId(@Param("meetingId") Long meetingId);
+
+	/**
+	 * 특정 사용자가 참여한 모든 일정 ID 조회
+	 */
+	@Query("SELECT um.meeting.id FROM UserMeeting um WHERE um.user.id = :userId")
+	List<Long> findMeetingIdsByUserId(@Param("userId") Long userId);
 }

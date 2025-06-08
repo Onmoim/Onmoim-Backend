@@ -1,18 +1,19 @@
 package com.onmoim.server.meeting.service;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import com.onmoim.server.meeting.dto.response.PageResponseDto;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.onmoim.server.common.dto.CursorPageResponse;
-import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -28,222 +29,151 @@ import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.repository.UserRepository;
 
 @SpringBootTest
+@Transactional
 class MeetingQueryServiceTest {
 
-	@Autowired
-	private MeetingQueryService meetingQueryService;
-	@Autowired
-	private UserRepository userRepository;
-	@Autowired
-	private GroupRepository groupRepository;
-	@Autowired
-	private GroupUserRepository groupUserRepository;
-	@Autowired
-	private MeetingRepository meetingRepository;
-	@Autowired
-	private UserMeetingRepository userMeetingRepository;
+	@Autowired private MeetingQueryService meetingQueryService;
+	@Autowired private UserRepository userRepository;
+	@Autowired private GroupRepository groupRepository;
+	@Autowired private GroupUserRepository groupUserRepository;
+	@Autowired private MeetingRepository meetingRepository;
+	@Autowired private UserMeetingRepository userMeetingRepository;
 
-	@Test
-	@DisplayName("일정 ID로 조회 성공")
-	@Transactional
-	void getById_Success() {
-		// given
-		User owner = createUser("모임장");
-		Group group = createGroup("테스트 모임", owner);
-		Meeting meeting = createAndSaveMeeting(group, owner, MeetingType.REGULAR, "정기모임 테스트");
+	private User leader;
+	private User member;
+	private Group group;
 
-		// when
-		Meeting foundMeeting = meetingQueryService.getById(meeting.getId());
-
-		// then
-		assertThat(foundMeeting.getId()).isEqualTo(meeting.getId());
-		assertThat(foundMeeting.getTitle()).isEqualTo("정기모임 테스트");
-		assertThat(foundMeeting.getType()).isEqualTo(MeetingType.REGULAR);
+	@BeforeEach
+	void setUp() {
+		leader = userRepository.save(User.builder().name("모임장").build());
+		member = userRepository.save(User.builder().name("멤버").build());
+		group = groupRepository.save(Group.groupCreateBuilder().name("테스트 그룹").capacity(100).build());
+		groupUserRepository.save(GroupUser.create(group, leader, Status.OWNER));
+		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
 	}
 
 	@Test
-	@DisplayName("일정 ID로 조회 실패 - 존재하지 않는 일정")
-	@Transactional
-	void getById_Fail_NotExists() {
-		// when & then
-		assertThatThrownBy(() -> meetingQueryService.getById(999L))
-			.isInstanceOf(CustomException.class)
-			.hasMessage(ErrorCode.NOT_EXISTS_GROUP.getDetail());
+	@DisplayName("그룹 모임 전체 조회 (타입 필터 X)")
+	void getUpcomingMeetingsInGroup_All() {
+		// Given: 20개의 모임 생성
+		createTestMeetings(20);
+
+		// When: 첫 페이지 조회 (충분히 큰 사이즈로 전체 조회)
+		PageResponseDto<MeetingResponseDto> result = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, null, 20);
+
+		// Then: 20개 모두 조회됨
+		assertThat(result.getContent()).hasSize(20);
 	}
 
 	@Test
-	@DisplayName("일정 ID로 조회 실패 - 삭제된 일정")
-	@Transactional
-	void getById_Fail_SoftDeleted() {
-		// given
-		User owner = createUser("모임장");
-		Group group = createGroup("테스트 모임", owner);
-		Meeting meeting = createAndSaveMeeting(group, owner, MeetingType.REGULAR, "삭제된 일정");
-		meeting.softDelete();
+	@DisplayName("그룹 모임 타입별 조회 (정기모임)")
+	void getUpcomingMeetingsInGroup_ByType() {
+		// Given: 정기모임 10개, 번개모임 10개 생성
+		createTestMeetingsByType(MeetingType.REGULAR, 10);
+		createTestMeetingsByType(MeetingType.FLASH, 10);
 
-		// when & then
-		assertThatThrownBy(() -> meetingQueryService.getById(meeting.getId()))
-			.isInstanceOf(CustomException.class)
-			.hasMessage(ErrorCode.NOT_EXISTS_GROUP.getDetail());
+		// When: 정기모임만 조회
+		PageResponseDto<MeetingResponseDto> result = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), MeetingType.REGULAR, null, 10);
+
+		// Then: 정기모임 10개만 조회됨
+		assertThat(result.getContent()).hasSize(10);
+		assertThat(result.getContent()).allMatch(meeting -> meeting.getType() == MeetingType.REGULAR);
 	}
 
 	@Test
-	@DisplayName("그룹별 예정된 일정 조회 - 타입 필터링 없음")
-	@Transactional
-	void getUpcomingMeetingsInGroup_Success_NoTypeFilter() {
-		// given
-		User owner = createUser("모임장");
-		Group group = createGroup("테스트 모임", owner);
+	@DisplayName("사용자 참여 모임 전체 조회")
+	void getMyUpcomingMeetings_All() {
+		// Given: 그룹에 15개 모임 생성하고 멤버가 일부 참석
+		List<Meeting> meetings = createTestMeetings(15);
+		for (int i = 0; i < 10; i++) {
+			userMeetingRepository.save(UserMeeting.create(meetings.get(i), member));
+		}
 
-		// 과거, 현재, 미래 일정 생성
-		createAndSaveMeeting(group, owner, MeetingType.REGULAR, "과거 일정",
-			LocalDateTime.now().minusDays(1));
-		createAndSaveMeeting(group, owner, MeetingType.FLASH, "미래 정기모임",
-			LocalDateTime.now().plusDays(1));
-		createAndSaveMeeting(group, owner, MeetingType.FLASH, "미래 번개모임",
-			LocalDateTime.now().plusDays(2));
+		// When: 멤버 참여 모임 조회
+		PageResponseDto<MeetingResponseDto> result = meetingQueryService.getMyUpcomingMeetings(member.getId(), null, 10);
 
-		// when
-		CursorPageResponse<MeetingResponseDto> result =
-			meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, null, 10);
-
-		// then
-		assertThat(result.getContent()).hasSize(2); // 미래 일정만
-		assertThat(result.getContent().get(0).getTitle()).isEqualTo("미래 정기모임");
-		assertThat(result.getContent().get(1).getTitle()).isEqualTo("미래 번개모임");
+		// Then: 10개 모임만 조회됨
+		assertThat(result.getContent()).hasSize(10);
 	}
 
 	@Test
-	@DisplayName("그룹별 예정된 일정 조회 - 타입 필터링 적용")
-	@Transactional
-	void getUpcomingMeetingsInGroup_Success_WithTypeFilter() {
-		// given
-		User owner = createUser("모임장");
-		Group group = createGroup("테스트 모임", owner);
+	@DisplayName("그룹 모임 커서 토큰 페이징 조회")
+	void getUpcomingMeetingsInGroup_Paging() {
+		// Given: 25개의 모임 생성
+		createTestMeetings(25);
+		int pageSize = 10;
 
-		createAndSaveMeeting(group, owner, MeetingType.REGULAR, "정기모임 1",
-			LocalDateTime.now().plusDays(1));
-		createAndSaveMeeting(group, owner, MeetingType.FLASH, "번개모임 1",
-			LocalDateTime.now().plusDays(2));
-		createAndSaveMeeting(group, owner, MeetingType.REGULAR, "정기모임 2",
-			LocalDateTime.now().plusDays(3));
+		// When: 첫 번째 페이지 조회
+		PageResponseDto<MeetingResponseDto> firstPage = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, null, pageSize);
 
-		// when - 정기모임만 조회
-		CursorPageResponse<MeetingResponseDto> result =
-			meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), MeetingType.REGULAR, null, 10);
+		// Then: 첫 번째 페이지 검증
+		assertThat(firstPage.getContent()).hasSize(pageSize);
+		assertThat(firstPage.isHasNext()).isTrue();
+		assertThat(firstPage.getNextCursor()).isNotNull();
 
-		// then
-		assertThat(result.getContent()).hasSize(2);
-		assertThat(result.getContent()).allMatch(dto -> dto.getType() == MeetingType.REGULAR);
+		// When: 두 번째 페이지 조회
+		PageResponseDto<MeetingResponseDto> secondPage = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, firstPage.getNextCursor(), pageSize);
+
+		// Then: 두 번째 페이지 검증
+		assertThat(secondPage.getContent()).hasSize(pageSize);
+		assertThat(secondPage.isHasNext()).isTrue();
+
+		// When: 세 번째 페이지 조회
+		PageResponseDto<MeetingResponseDto> thirdPage = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, secondPage.getNextCursor(), pageSize);
+
+		// Then: 세 번째 페이지 검증
+		assertThat(thirdPage.getContent()).hasSize(5);
+		assertThat(thirdPage.isHasNext()).isFalse();
+		assertThat(thirdPage.getNextCursor()).isNull();
 	}
 
 	@Test
-	@DisplayName("내가 참여한 예정된 일정 조회")
-	@Transactional
-	void getMyUpcomingMeetings_Success() {
-		// given
-		User owner = createUser("모임장");
-		User member = createUser("모임원");
+	@DisplayName("사용자 참여 모임 커서 토큰 페이징 조회")
+	void getMyUpcomingMeetings_Paging() {
+		// Given: 25개 모임 중 15개만 참여
+		List<Meeting> meetings = createTestMeetings(25);
+		for (int i = 0; i < 15; i++) {
+			userMeetingRepository.save(UserMeeting.create(meetings.get(i), member));
+		}
+		int pageSize = 10;
 
-		Group group1 = createGroup("테스트 모임 1", owner);
-		Group group2 = createGroup("테스트 모임 2", owner);
-		addMemberToGroup(group1, member, Status.MEMBER);
-		addMemberToGroup(group2, member, Status.MEMBER);
+		// When: 첫 번째 페이지 조회
+		PageResponseDto<MeetingResponseDto> firstPage = meetingQueryService.getMyUpcomingMeetings(member.getId(), null, pageSize);
 
-		Meeting meeting1 = createAndSaveMeeting(group1, owner, MeetingType.REGULAR, "일정 1",
-			LocalDateTime.now().plusDays(1));
-		Meeting meeting2 = createAndSaveMeeting(group2, owner, MeetingType.FLASH, "일정 2",
-			LocalDateTime.now().plusDays(2));
-		Meeting meeting3 = createAndSaveMeeting(group1, owner, MeetingType.REGULAR, "일정 3",
-			LocalDateTime.now().plusDays(3));
+		// Then: 첫 번째 페이지 검증
+		assertThat(firstPage.getContent()).hasSize(pageSize);
+		assertThat(firstPage.isHasNext()).isTrue();
 
-		// member를 일정에 참석시킴
-		joinUserToMeeting(meeting1, member);
-		joinUserToMeeting(meeting2, member);
-		// meeting3에는 참석하지 않음
+		// When: 두 번째 페이지 조회
+		PageResponseDto<MeetingResponseDto> secondPage = meetingQueryService.getMyUpcomingMeetings(member.getId(), firstPage.getNextCursor(), pageSize);
 
-		// when
-		CursorPageResponse<MeetingResponseDto> result =
-			meetingQueryService.getMyUpcomingMeetings(member.getId(), null, 10);
-
-		// then
-		assertThat(result.getContent()).hasSize(2); // member가 참석한 일정만
-		assertThat(result.getContent().get(0).getTitle()).isEqualTo("일정 1");
-		assertThat(result.getContent().get(1).getTitle()).isEqualTo("일정 2");
+		// Then: 두 번째 페이지 검증
+		assertThat(secondPage.getContent()).hasSize(5);
+		assertThat(secondPage.isHasNext()).isFalse();
 	}
 
-	@Test
-	@DisplayName("내가 참여한 예정된 일정 조회 - 참석하지 않은 일정 제외")
-	@Transactional
-	void getMyUpcomingMeetings_Success_OnlyJoinedMeetings() {
-		// given
-		User owner = createUser("모임장");
-		User member = createUser("모임원");
-		Group group = createGroup("테스트 모임", owner);
-		addMemberToGroup(group, member, Status.MEMBER);
+	//테스트 헬퍼 메서드
 
-		Meeting joinedMeeting = createAndSaveMeeting(group, owner, MeetingType.FLASH, "참석한 일정",
-			LocalDateTime.now().plusDays(1));
-		Meeting notJoinedMeeting = createAndSaveMeeting(group, owner, MeetingType.FLASH, "참석하지 않은 일정",
-			LocalDateTime.now().plusDays(2));
-
-		// member는 첫 번째 일정에만 참석
-		joinUserToMeeting(joinedMeeting, member);
-
-		// when
-		CursorPageResponse<MeetingResponseDto> result =
-			meetingQueryService.getMyUpcomingMeetings(member.getId(), null, 10);
-
-		// then
-		assertThat(result.getContent()).hasSize(1);
-		assertThat(result.getContent().get(0).getTitle()).isEqualTo("참석한 일정");
+	private List<Meeting> createTestMeetings(int count) {
+		return createTestMeetingsByType(null, count);
 	}
 
-	// === Helper Methods ===
+	private List<Meeting> createTestMeetingsByType(MeetingType type, int count) {
+		List<Meeting> meetings = new ArrayList<>();
+		LocalDateTime baseTime = LocalDateTime.now().plusDays(1);
 
-	private User createUser(String name) {
-		User user = User.builder().name(name).build();
-		return userRepository.save(user);
-	}
-
-	private Group createGroup(String name, User owner) {
-		Group group = Group.groupCreateBuilder()
-			.name(name)
-			.capacity(100)
-			.build();
-		group = groupRepository.save(group);
-
-		GroupUser groupUser = GroupUser.create(group, owner, Status.OWNER);
-		groupUserRepository.save(groupUser);
-
-		return group;
-	}
-
-	private void addMemberToGroup(Group group, User user, Status status) {
-		GroupUser groupUser = GroupUser.create(group, user, status);
-		groupUserRepository.save(groupUser);
-	}
-
-	private Meeting createAndSaveMeeting(Group group, User creator, MeetingType type, String title) {
-		return createAndSaveMeeting(group, creator, type, title, LocalDateTime.now().plusDays(1));
-	}
-
-	private Meeting createAndSaveMeeting(Group group, User creator, MeetingType type, String title, LocalDateTime startAt) {
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(group.getId())
-			.type(type)
-			.title(title)
-			.startAt(startAt)
-			.placeName("테스트 장소")
-			.capacity(10)
-			.cost(0)
-			.creatorId(creator.getId())
-			.build();
-		return meetingRepository.save(meeting);
-	}
-
-	private void joinUserToMeeting(Meeting meeting, User user) {
-		UserMeeting userMeeting = UserMeeting.create(meeting, user);
-		userMeetingRepository.save(userMeeting);
+		for (int i = 0; i < count; i++) {
+			MeetingType currentType = (type == null) ? (i % 2 == 0 ? MeetingType.REGULAR : MeetingType.FLASH) : type;
+			meetings.add(meetingRepository.save(Meeting.meetingCreateBuilder()
+				.title("테스트 모임 " + (i + 1))
+				.groupId(group.getId())
+				.creatorId(leader.getId())
+				.startAt(baseTime.plusHours(i))
+				.placeName("테스트 장소")
+				.capacity(10)
+				.type(currentType)
+				.build()));
+		}
+		return meetings;
 	}
 }

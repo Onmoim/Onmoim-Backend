@@ -31,24 +31,23 @@ import lombok.NoArgsConstructor;
 //
 // 인덱스 1: idx_meeting_group_start_id (group_id, start_at, id)
 //    - 대상 쿼리: findUpcomingMeetings (타입 필터 X)
-//    - 효과: 그룹별 모임을 시간순으로 빠르게 조회 (커버링 인덱스)
+//    - 그룹별 모임을 시간순으로 빠르게 조회 (커버링 인덱스)
 //    - 사용 케이스: "특정 그룹의 모든 예정된 모임"
 //
 // 인덱스 2: idx_meeting_group_type_start_id (group_id, type, start_at, id)
 //    - 대상 쿼리: findUpcomingMeetings (타입 필터 O)
-//    - 효과: 그룹+타입 조건으로 필터링된 조회 최적화
+//    - 그룹+타입 조건으로 필터링된 조회 최적화
 //    - 사용 케이스: "특정 그룹의 정기모임만", "특정 그룹의 번개모임만"
 //
 // 인덱스 3: idx_meeting_id_deleted (id, deleted_date)
 //    - 대상 쿼리: findByIdAndNotDeleted, findMeetingTypeById
-//    - 효과: Soft Delete 패턴의 단건 조회 최적화
 //    - 사용 케이스: 모임 상세 조회, AOP 락을 위한 타입 조회
 //
 
 @Table(name = "meeting", indexes = {
-	@Index(name = "idx_meeting_group_start_id", columnList = "group_id, start_at, id"),
-	@Index(name = "idx_meeting_group_type_start_id", columnList = "group_id, type, start_at, id"),
-	@Index(name = "idx_meeting_id_deleted", columnList = "id, deleted_date")
+	@Index(name = "idx_meeting_group_start_id", columnList = "group_id, start_at, meeting_id"),
+	@Index(name = "idx_meeting_group_type_start_id", columnList = "group_id, type, start_at, meeting_id"),
+	@Index(name = "idx_meeting_id_deleted", columnList = "meeting_id, deleted_date")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
