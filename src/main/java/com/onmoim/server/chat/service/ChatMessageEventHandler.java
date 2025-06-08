@@ -7,6 +7,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.onmoim.server.chat.dto.ChatMessageDto;
+import com.onmoim.server.chat.dto.ChatRoomListUpdateDto;
 import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.entity.DeliveryStatus;
 
@@ -48,5 +49,11 @@ public class ChatMessageEventHandler {
 			// 실패 재시도 처리
 			chatMessageRetryService.failedProcess(message, destination);
 		}
+	}
+
+	public void handleHandleList(RoomListSendEvent event){
+		ChatRoomListUpdateDto message = event.chatRoomListUpdateDto();
+		String destination = event.destination();
+		messagingTemplate.convertAndSend(destination, message);
 	}
 }
