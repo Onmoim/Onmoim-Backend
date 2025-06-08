@@ -74,10 +74,10 @@ public class MeetingService {
 
 		Meeting savedMeeting = meetingRepository.save(meeting);
 
-		// 생성자는 자동으로 참석 처리
+		// 생성자는 자동으로 참석 처리 (시간 제약 없음)
 		UserMeeting userMeeting = UserMeeting.create(savedMeeting, user);
 		userMeetingRepository.save(userMeeting);
-		savedMeeting.join();
+		savedMeeting.creatorJoin();
 
 		log.info("사용자 {}가 모임 {}에 일정 {}을 생성했습니다.", userId, groupId, savedMeeting.getId());
 
@@ -91,6 +91,22 @@ public class MeetingService {
 	@Transactional
 	public void joinMeeting(Long meetingId) {
 		Long userId = getCurrentUserId();
+		joinMeetingInternal(meetingId, userId);
+	}
+
+	/**
+	 * 테스트용 일정 참석 신청 (AOP Named Lock 적용, SecurityContext 우회)
+	 */
+	@MeetingLock
+	@Transactional
+	public void joinMeetingForTest(Long meetingId, Long userId) {
+		joinMeetingInternal(meetingId, userId);
+	}
+
+	/**
+	 * 일정 참석 신청 내부 로직
+	 */
+	private void joinMeetingInternal(Long meetingId, Long userId) {
 		User user = userQueryService.findById(userId);
 
 		// 조기 검증 (락 보호 하에서)

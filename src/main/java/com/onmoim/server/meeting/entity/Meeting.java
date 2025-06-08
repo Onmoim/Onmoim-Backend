@@ -65,6 +65,7 @@ public class Meeting extends BaseEntity {
 
 	@Comment("현재 참석 인원")
 	@Column(name = "join_count")
+	@Builder.Default
 	private int joinCount = 0;
 
 	@Comment("참가 비용")
@@ -72,6 +73,7 @@ public class Meeting extends BaseEntity {
 
 	@Comment("일정 상태")
 	@Enumerated(EnumType.STRING)
+	@Builder.Default
 	private MeetingStatus status = MeetingStatus.OPEN;
 
 	@Comment("작성자 ID (논리 FK)")
@@ -152,6 +154,31 @@ public class Meeting extends BaseEntity {
 		if (!canJoin()) {
 			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
 		}
+		if (this.joinCount >= this.capacity) {
+			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
+		}
+
+		this.joinCount++;
+		updateStatusIfFull();
+	}
+
+	/**
+	 * 생성자 자동 참석 처리 (시간 제약 없음)
+	 */
+	public void creatorJoin() {
+		if (this.joinCount >= this.capacity) {
+			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
+		}
+
+		this.joinCount++;
+		updateStatusIfFull();
+	}
+
+	/**
+	 * 테스트용 참석 처리 (시간 제약 없음)
+	 * 프로덕션 코드에서는 사용하지 않음
+	 */
+	public void joinForTest() {
 		if (this.joinCount >= this.capacity) {
 			throw new CustomException(ErrorCode.GROUP_CAPACITY_EXCEEDED);
 		}

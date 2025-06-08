@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.onmoim.server.meeting.entity.UserMeeting;
 import com.onmoim.server.meeting.entity.UserMeetingId;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface UserMeetingRepository extends JpaRepository<UserMeeting, UserMeetingId> {
 
