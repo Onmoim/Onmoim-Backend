@@ -312,7 +312,7 @@ public class MeetingService {
 
 
 
-		private Long getCurrentUserId() {
+	private Long getCurrentUserId() {
 		CustomUserDetails principal = (CustomUserDetails) SecurityContextHolder.getContextHolderStrategy()
 			.getContext()
 			.getAuthentication()
