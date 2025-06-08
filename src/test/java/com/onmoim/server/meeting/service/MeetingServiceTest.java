@@ -82,7 +82,7 @@ class MeetingServiceTest {
 		MeetingCreateRequestDto request = MeetingCreateRequestDto.builder()
 			.type(MeetingType.REGULAR)
 			.title("정기모임일정_" + uniqueId)
-			.startAt(LocalDateTime.now().plusDays(30)) // 30일 후로 통일
+			.startAt(LocalDateTime.now().plusDays(30))
 			.placeName("강남역")
 			.geoPoint(new GeoPoint(37.498, 127.027))
 			.capacity(10)
@@ -123,7 +123,7 @@ class MeetingServiceTest {
 		MeetingCreateRequestDto request = MeetingCreateRequestDto.builder()
 			.type(MeetingType.FLASH)
 			.title("번개모임일정_" + uniqueId)
-			.startAt(LocalDateTime.now().plusDays(30)) // 30일 후로 통일
+			.startAt(LocalDateTime.now().plusDays(30))
 			.placeName("홍대입구역")
 			.geoPoint(new GeoPoint(37.557, 126.924))
 			.capacity(5)
@@ -327,7 +327,7 @@ class MeetingServiceTest {
 	}
 
 	@Test
-	@DisplayName("09. 진짜 동시성 테스트 - 20명이 10명 정원에 동시 참석 신청 (EntityManager 패턴)")
+	@DisplayName("09. 진짜 동시성 테스트 - 20명이 10명 정원에 동시 참석 신청")
 	void test09_concurrentJoinMeeting_Success() throws InterruptedException {
 		// given
 		EntityManager em = emf.createEntityManager();

@@ -15,16 +15,16 @@ import com.onmoim.server.meeting.entity.MeetingType;
 public interface MeetingRepository extends JpaRepository<Meeting, Long> {
 
 	/**
-	 * 그룹별 예정된 일정 목록 조회 (타입 필터링, 커서 기반)
+	 * 그룹의 예정된 모임 목록 조회 (타입 필터링 가능)
 	 */
-	@Query("SELECT m FROM Meeting m WHERE m.groupId = :groupId AND m.startAt > :now AND (:type IS NULL OR m.type = :type) AND (:cursorId IS NULL OR m.id > :cursorId) AND m.deletedDate IS NULL ORDER BY m.startAt ASC, m.id ASC")
-	Slice<Meeting> findUpcomingMeetingsByGroupIdAndTypeAfterCursor(@Param("groupId") Long groupId, @Param("now") LocalDateTime now, @Param("type") MeetingType type, @Param("cursorId") Long cursorId, Pageable pageable);
+	@Query("SELECT m FROM Meeting m WHERE m.groupId = :groupId AND m.startAt > :now AND (:type IS NULL OR m.type = :type) AND (:lastId IS NULL OR m.id > :lastId) AND m.deletedDate IS NULL ORDER BY m.startAt ASC, m.id ASC")
+	Slice<Meeting> findUpcomingMeetings(@Param("groupId") Long groupId, @Param("now") LocalDateTime now, @Param("type") MeetingType type, @Param("lastId") Long lastId, Pageable pageable);
 
 	/**
-	 * 사용자의 예정된 일정 조회 (커서 기반)
+	 * 사용자가 참여한 예정된 모임 목록 조회
 	 */
-	@Query("SELECT m FROM Meeting m JOIN UserMeeting um ON m.id = um.meeting.id WHERE um.user.id = :userId AND m.startAt > :now AND (:cursorId IS NULL OR m.id > :cursorId) AND m.deletedDate IS NULL ORDER BY m.startAt ASC, m.id ASC")
-	Slice<Meeting> findUpcomingMeetingsByUserIdAfterCursor(@Param("userId") Long userId, @Param("now") LocalDateTime now, @Param("cursorId") Long cursorId, Pageable pageable);
+	@Query("SELECT m FROM Meeting m JOIN UserMeeting um ON m.id = um.meeting.id WHERE um.user.id = :userId AND m.startAt > :now AND (:lastId IS NULL OR m.id > :lastId) AND m.deletedDate IS NULL ORDER BY m.startAt ASC, m.id ASC")
+	Slice<Meeting> findUpcomingMeetingsByUser(@Param("userId") Long userId, @Param("now") LocalDateTime now, @Param("lastId") Long lastId, Pageable pageable);
 
 	/**
 	 * 일정 단건 조회 (삭제되지 않은 것만)
@@ -33,12 +33,12 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
 	Optional<Meeting> findByIdAndNotDeleted(@Param("id") Long id);
 
 	/**
-	 * 일정 타입만 조회 (AOP Lock용)
+	 * 일정 타입만 조회
 	 */
 	@Query("SELECT m.type FROM Meeting m WHERE m.id = :meetingId AND m.deletedDate IS NULL")
 	MeetingType findMeetingTypeById(@Param("meetingId") Long meetingId);
 
-	// ===== 네임드 락 관련 =====
+	// 네임드 락 관련
 
 	/**
 	 * MySQL 네임드 락 획득

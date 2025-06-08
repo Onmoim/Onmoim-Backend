@@ -37,15 +37,14 @@ public class MeetingQueryService {
 	}
 
 	/**
-	 * 그룹별 예정된 일정 목록 조회 (타입 필터링, 커서 기반)
+	 * 그룹의 예정된 모임 목록 조회 (타입 필터링 가능)
 	 */
-	public CursorPageResponse<MeetingResponseDto> getMeetingsByGroupIdAndType(Long groupId, MeetingType type, Long cursorId, int size) {
+	public CursorPageResponse<MeetingResponseDto> getUpcomingMeetingsInGroup(Long groupId, MeetingType type, Long lastId, int size) {
 		Pageable pageable = PageRequest.of(0, size);
 		LocalDateTime now = LocalDateTime.now();
-		Slice<Meeting> slice = meetingRepository.findUpcomingMeetingsByGroupIdAndTypeAfterCursor(groupId, now, type, cursorId, pageable);
+		Slice<Meeting> slice = meetingRepository.findUpcomingMeetings(groupId, now, type, lastId, pageable);
 
 		CursorPageResponse<Meeting> meetingPage = CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
-
 		return CursorPageResponse.<MeetingResponseDto>builder()
 			.content(meetingPage.getContent().stream().map(MeetingResponseDto::from).toList())
 			.hasNext(meetingPage.isHasNext())
@@ -54,12 +53,12 @@ public class MeetingQueryService {
 	}
 
 	/**
-	 * 사용자가 속한 모든 모임의 예정된 일정 조회 (커서 기반)
+	 * 내가 참여한 예정된 모임 목록 조회
 	 */
-	public CursorPageResponse<MeetingResponseDto> getUpcomingMeetingsByUserId(Long userId, Long cursorId, int size) {
+	public CursorPageResponse<MeetingResponseDto> getMyUpcomingMeetings(Long userId, Long lastId, int size) {
 		Pageable pageable = PageRequest.of(0, size);
 		LocalDateTime now = LocalDateTime.now();
-		Slice<Meeting> slice = meetingRepository.findUpcomingMeetingsByUserIdAfterCursor(userId, now, cursorId, pageable);
+		Slice<Meeting> slice = meetingRepository.findUpcomingMeetingsByUser(userId, now, lastId, pageable);
 
 		CursorPageResponse<Meeting> meetingPage = CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
 		return CursorPageResponse.<MeetingResponseDto>builder()

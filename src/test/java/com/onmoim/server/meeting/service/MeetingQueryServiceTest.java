@@ -91,7 +91,7 @@ class MeetingQueryServiceTest {
 	@Test
 	@DisplayName("그룹별 예정된 일정 조회 - 타입 필터링 없음")
 	@Transactional
-	void getMeetingsByGroupIdAndType_Success_NoTypeFilter() {
+	void getUpcomingMeetingsInGroup_Success_NoTypeFilter() {
 		// given
 		User owner = createUser("모임장");
 		Group group = createGroup("테스트 모임", owner);
@@ -106,7 +106,7 @@ class MeetingQueryServiceTest {
 
 		// when
 		CursorPageResponse<MeetingResponseDto> result = 
-			meetingQueryService.getMeetingsByGroupIdAndType(group.getId(), null, null, 10);
+			meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, null, 10);
 
 		// then
 		assertThat(result.getContent()).hasSize(2); // 미래 일정만
@@ -117,7 +117,7 @@ class MeetingQueryServiceTest {
 	@Test
 	@DisplayName("그룹별 예정된 일정 조회 - 타입 필터링 적용")
 	@Transactional
-	void getMeetingsByGroupIdAndType_Success_WithTypeFilter() {
+	void getUpcomingMeetingsInGroup_Success_WithTypeFilter() {
 		// given
 		User owner = createUser("모임장");
 		Group group = createGroup("테스트 모임", owner);
@@ -131,7 +131,7 @@ class MeetingQueryServiceTest {
 
 		// when - 정기모임만 조회
 		CursorPageResponse<MeetingResponseDto> result = 
-			meetingQueryService.getMeetingsByGroupIdAndType(group.getId(), MeetingType.REGULAR, null, 10);
+			meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), MeetingType.REGULAR, null, 10);
 
 		// then
 		assertThat(result.getContent()).hasSize(2);
@@ -139,9 +139,9 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@DisplayName("그룹별 예정된 일정 조회 - 커서 페이징")
+	@DisplayName("그룹별 예정된 일정 조회 - 페이지네이션")
 	@Transactional
-	void getMeetingsByGroupIdAndType_Success_CursorPaging() {
+	void getUpcomingMeetingsInGroup_Success_Pagination() {
 		// given
 		User owner = createUser("모임장");
 		Group group = createGroup("테스트 모임", owner);
@@ -156,7 +156,7 @@ class MeetingQueryServiceTest {
 
 		// when - 첫 번째 페이지 (크기: 2)
 		CursorPageResponse<MeetingResponseDto> page1 = 
-			meetingQueryService.getMeetingsByGroupIdAndType(group.getId(), null, null, 2);
+			meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, null, 2);
 
 		// then - 첫 번째 페이지 검증
 		assertThat(page1.getContent()).hasSize(2);
@@ -165,7 +165,7 @@ class MeetingQueryServiceTest {
 
 		// when - 두 번째 페이지
 		CursorPageResponse<MeetingResponseDto> page2 = 
-			meetingQueryService.getMeetingsByGroupIdAndType(group.getId(), null, page1.getNextCursorId(), 2);
+			meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, page1.getNextCursorId(), 2);
 
 		// then - 두 번째 페이지 검증
 		assertThat(page2.getContent()).hasSize(1);
@@ -173,9 +173,9 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@DisplayName("사용자별 예정된 일정 조회")
+	@DisplayName("내가 참여한 예정된 일정 조회")
 	@Transactional
-	void getUpcomingMeetingsByUserId_Success() {
+	void getMyUpcomingMeetings_Success() {
 		// given
 		User owner = createUser("모임장");
 		User member = createUser("모임원");
@@ -199,7 +199,7 @@ class MeetingQueryServiceTest {
 
 		// when
 		CursorPageResponse<MeetingResponseDto> result = 
-			meetingQueryService.getUpcomingMeetingsByUserId(member.getId(), null, 10);
+			meetingQueryService.getMyUpcomingMeetings(member.getId(), null, 10);
 
 		// then
 		assertThat(result.getContent()).hasSize(2); // member가 참석한 일정만
@@ -208,9 +208,9 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@DisplayName("사용자별 예정된 일정 조회 - 커서 페이징")
+	@DisplayName("내가 참여한 예정된 일정 조회 - 페이지네이션")
 	@Transactional
-	void getUpcomingMeetingsByUserId_Success_CursorPaging() {
+	void getMyUpcomingMeetings_Success_Pagination() {
 		// given
 		User owner = createUser("모임장");
 		User member = createUser("모임원");
@@ -226,7 +226,7 @@ class MeetingQueryServiceTest {
 
 		// when - 첫 번째 페이지 (크기: 3)
 		CursorPageResponse<MeetingResponseDto> page1 = 
-			meetingQueryService.getUpcomingMeetingsByUserId(member.getId(), null, 3);
+			meetingQueryService.getMyUpcomingMeetings(member.getId(), null, 3);
 
 		// then - 첫 번째 페이지 검증
 		assertThat(page1.getContent()).hasSize(3);
@@ -234,7 +234,7 @@ class MeetingQueryServiceTest {
 
 		// when - 두 번째 페이지
 		CursorPageResponse<MeetingResponseDto> page2 = 
-			meetingQueryService.getUpcomingMeetingsByUserId(member.getId(), page1.getNextCursorId(), 3);
+			meetingQueryService.getMyUpcomingMeetings(member.getId(), page1.getNextCursorId(), 3);
 
 		// then - 두 번째 페이지 검증
 		assertThat(page2.getContent()).hasSize(2);
@@ -242,9 +242,9 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@DisplayName("사용자별 예정된 일정 조회 - 참석하지 않은 일정 제외")
+	@DisplayName("내가 참여한 예정된 일정 조회 - 참석하지 않은 일정 제외")
 	@Transactional
-	void getUpcomingMeetingsByUserId_Success_OnlyJoinedMeetings() {
+	void getMyUpcomingMeetings_Success_OnlyJoinedMeetings() {
 		// given
 		User owner = createUser("모임장");
 		User member = createUser("모임원");
@@ -261,7 +261,7 @@ class MeetingQueryServiceTest {
 
 		// when
 		CursorPageResponse<MeetingResponseDto> result = 
-			meetingQueryService.getUpcomingMeetingsByUserId(member.getId(), null, 10);
+			meetingQueryService.getMyUpcomingMeetings(member.getId(), null, 10);
 
 		// then
 		assertThat(result.getContent()).hasSize(1);

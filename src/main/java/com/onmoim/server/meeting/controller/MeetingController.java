@@ -40,12 +40,12 @@ public class MeetingController {
 	private final MeetingQueryService meetingQueryService;
 
 	/**
-	 * 내가 속한 모든 모임의 예정된 일정 조회 (커서 기반)
+	 * 내가 속한 모든 모임의 예정된 일정 조회
 	 */
 	@GetMapping("/meetings/my")
 	@Operation(
 		summary = "내 예정 일정 조회",
-		description = "내가 속한 모든 모임의 예정된 일정을 시간순으로 조회합니다. 무한 스크롤을 위한 커서 기반 페이징입니다.")
+		description = "내가 속한 모든 모임의 예정된 일정을 시간순으로 조회합니다. 무한 스크롤을 위한 페이지네이션입니다.")
 	@ApiResponses({
 		@ApiResponse(
 			responseCode = "200",
@@ -56,13 +56,13 @@ public class MeetingController {
 	})
 	public ResponseEntity<ResponseHandler<CursorPageResponse<MeetingResponseDto>>> getMyUpcomingMeetings(
 		@RequestParam(required = false)
-		@Parameter(description = "커서 ID (다음 페이지 조회용)") Long cursorId,
+		@Parameter(description = "마지막 모임 ID (다음 페이지 조회용)") Long lastId,
 		@RequestParam(defaultValue = "10")
 		@Parameter(description = "페이지 크기") int size
 	) {
 		Long userId = getCurrentUserId();
 		CursorPageResponse<MeetingResponseDto> response =
-			meetingQueryService.getUpcomingMeetingsByUserId(userId, cursorId, size);
+			meetingQueryService.getMyUpcomingMeetings(userId, lastId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
@@ -119,7 +119,7 @@ public class MeetingController {
 	@GetMapping("/groups/{groupId}/meetings")
 	@Operation(
 		summary = "그룹별 예정된 일정 목록 조회",
-		description = "특정 모임의 예정된 일정 목록을 시간순으로 조회합니다. 과거 일정은 제외됩니다. 무한 스크롤을 위한 커서 기반 페이징입니다.")
+		description = "특정 모임의 예정된 일정 목록을 시간순으로 조회합니다. 과거 일정은 제외됩니다. 무한 스크롤을 위한 페이지네이션입니다.")
 	@ApiResponses({
 		@ApiResponse(
 			responseCode = "200",
@@ -128,17 +128,17 @@ public class MeetingController {
 				schema = @Schema(implementation = CursorPageResponse.class))),
 		@ApiResponse(responseCode = "404", description = "모임을 찾을 수 없음")
 	})
-	public ResponseEntity<ResponseHandler<CursorPageResponse<MeetingResponseDto>>> getMeetingsCursor(
+	public ResponseEntity<ResponseHandler<CursorPageResponse<MeetingResponseDto>>> getGroupUpcomingMeetings(
 		@PathVariable @Parameter(description = "모임 ID") Long groupId,
 		@RequestParam(required = false)
-		@Parameter(description = "커서 ID (다음 페이지 조회용)") Long cursorId,
+		@Parameter(description = "마지막 모임 ID (다음 페이지 조회용)") Long lastId,
 		@RequestParam(defaultValue = "10")
 		@Parameter(description = "페이지 크기") int size,
 		@RequestParam(required = false)
 		@Parameter(description = "일정 유형 필터 (REGULAR: 정기모임, FLASH: 번개모임)") MeetingType type
 	) {
 		CursorPageResponse<MeetingResponseDto> response =
-			meetingQueryService.getMeetingsByGroupIdAndType(groupId, type, cursorId, size);
+			meetingQueryService.getUpcomingMeetingsInGroup(groupId, type, lastId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
@@ -161,8 +161,7 @@ public class MeetingController {
 	}
 
 	/**
-	 * 일정 참석 취소 (Service 직접 사용 - AOP Lock 포함)
-	 */
+	 * 일정 참석 취소
 	@PostMapping("/groups/{groupId}/meetings/{meetingId}/leave")
 	@Operation(summary = "일정 참석 취소", description = "일정 참석을 취소합니다.")
 	@ApiResponses({
