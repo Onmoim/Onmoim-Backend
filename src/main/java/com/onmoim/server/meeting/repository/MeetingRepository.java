@@ -1,6 +1,7 @@
 package com.onmoim.server.meeting.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
