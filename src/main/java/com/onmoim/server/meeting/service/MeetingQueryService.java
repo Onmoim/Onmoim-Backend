@@ -45,6 +45,7 @@ public class MeetingQueryService {
 		Slice<Meeting> slice = meetingRepository.findUpcomingMeetingsByGroupIdAndTypeAfterCursor(groupId, now, type, cursorId, pageable);
 
 		CursorPageResponse<Meeting> meetingPage = CursorPaginationHelper.fromSliceWithId(slice, Meeting::getId);
+
 		return CursorPageResponse.<MeetingResponseDto>builder()
 			.content(meetingPage.getContent().stream().map(MeetingResponseDto::from).toList())
 			.hasNext(meetingPage.isHasNext())

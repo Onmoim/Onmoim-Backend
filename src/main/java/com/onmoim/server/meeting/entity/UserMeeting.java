@@ -8,6 +8,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
@@ -17,7 +18,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "user_meeting")
+@Table(name = "user_meeting", indexes = {
+	@Index(name = "idx_user_meeting_user_id", columnList = "user_id")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserMeeting {
@@ -45,4 +48,4 @@ public class UserMeeting {
 		userMeeting.id = new UserMeetingId(meeting.getId(), user.getId());
 		return userMeeting;
 	}
-} 
+}
