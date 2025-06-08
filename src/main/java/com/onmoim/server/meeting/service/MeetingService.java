@@ -69,7 +69,7 @@ public class MeetingService {
 		} catch (Exception e) {
 
 			if (imageUrl != null) {
-				deleteFileFromS3Silently(imageUrl);
+				tryDeleteFileFromS3(imageUrl);
 				log.warn("일정 생성 실패로 업로드된 이미지 롤백: {}", imageUrl);
 			}
 			throw e;
@@ -175,7 +175,7 @@ public class MeetingService {
 
 		// 자동 삭제 로직
 		if (meeting.shouldBeAutoDeleted()) {
-			deleteMeetingWithCleanup(meeting);
+			autoDeleteMeetingWithResources(meeting);
 			log.info("일정 {} 자동 삭제 완료 (참석자 {}명 이하)", meetingId, meeting.getJoinCount());
 		} else {
 			log.info("사용자 {}가 일정 {}에서 참석 취소했습니다. (AOP Lock, 타입: {}, 참석: {}/{})",
@@ -205,11 +205,11 @@ public class MeetingService {
 			executeUpdateMeeting(meetingId, request, newImageUrl);
 
 			if (newImageUrl != null && oldImageUrl != null) {
-				deleteFileFromS3Silently(oldImageUrl);
+				tryDeleteFileFromS3(oldImageUrl);
 			}
 		} catch (Exception e) {
 			if (newImageUrl != null) {
-				deleteFileFromS3Silently(newImageUrl);
+				tryDeleteFileFromS3(newImageUrl);
 				log.warn("일정 수정 실패로 새 이미지 롤백: {}", newImageUrl);
 			}
 			throw e;
@@ -252,9 +252,9 @@ public class MeetingService {
 		meetingAuthService.validateManagePermission(meeting, userId);
 
 		String imageUrl = executeDeleteMeeting(meeting);
-
+		
 		if (imageUrl != null) {
-			deleteFileFromS3Silently(imageUrl);
+			tryDeleteFileFromS3(imageUrl);
 		}
 
 		log.info("일정 {} 삭제 완료 (모임장 권한, 타입: {})", meetingId, meeting.getType());
@@ -273,9 +273,9 @@ public class MeetingService {
 	}
 
 	/**
-	 * 일정 삭제 및 정리 작업 (참석 취소 시 자동 삭제용)
+	 * 참석 취소 시 자동 삭제 (이미지 포함 즉시 처리)
 	 */
-	private void deleteMeetingWithCleanup(Meeting meeting) {
+	private void autoDeleteMeetingWithResources(Meeting meeting) {
 		userMeetingRepository.deleteByMeetingId(meeting.getId());
 
 		if (meeting.getImgUrl() != null) {
@@ -291,14 +291,14 @@ public class MeetingService {
 	}
 
 	/**
-	 * S3에서 파일을 조용히 삭제 (실패해도 로그만 남김)
+	 * S3 파일 안전 삭제 (실패 시 로그만 기록)
 	 */
-	private void deleteFileFromS3Silently(String fileUrl) {
+	private void tryDeleteFileFromS3(String fileUrl) {
 		try {
 			fileStorageService.deleteFile(fileUrl);
-			log.info("기존 이미지 삭제 완료: {}", fileUrl);
+			log.info("이미지 삭제 완료: {}", fileUrl);
 		} catch (Exception e) {
-			log.warn("기존 이미지 삭제 실패 (무시됨): {}", e.getMessage());
+			log.warn("이미지 삭제 실패 (계속 진행): {}", e.getMessage());
 		}
 	}
 
