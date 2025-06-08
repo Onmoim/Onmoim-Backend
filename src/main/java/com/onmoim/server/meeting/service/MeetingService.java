@@ -95,7 +95,7 @@ public class MeetingService {
 	}
 
 	/**
-	 * 테스트용 일정 참석 신청 (AOP Named Lock 적용, SecurityContext 우회)
+	 * 테스트 코드용 일정 참석 신청 (AOP Named Lock 적용, SecurityContext 우회)
 	 */
 	@MeetingLock
 	@Transactional
@@ -109,18 +109,17 @@ public class MeetingService {
 	private void joinMeetingInternal(Long meetingId, Long userId) {
 		User user = userQueryService.findById(userId);
 
-		// 조기 검증 (락 보호 하에서)
+		// 조기 검증
 		Meeting meeting = meetingQueryService.getById(meetingId);
 		if (!meeting.canJoin()) {
 			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
 		}
 
-		// 중복 참석 검증 (락 보호 하에서)
+		// 중복 참석 검증
 		if (userMeetingRepository.existsByMeetingIdAndUserId(meetingId, userId)) {
 			throw new CustomException(ErrorCode.MEETING_ALREADY_JOINED);
 		}
 
-		// 비즈니스 로직 실행
 		meeting.join();
 		UserMeeting userMeeting = UserMeeting.create(meeting, user);
 		userMeetingRepository.save(userMeeting);
@@ -130,7 +129,7 @@ public class MeetingService {
 	}
 
 	/**
-	 * 일정 참석 취소 (AOP Named Lock 적용)
+	 * 일정 참석 취소
 	 */
 	@MeetingLock
 	@Transactional
@@ -147,7 +146,7 @@ public class MeetingService {
 		meeting.leave();
 		userMeetingRepository.delete(userMeeting);
 
-		// 자동 삭제 로직: 도메인 규칙으로 확인
+		// 자동 삭제 로직
 		if (meeting.shouldBeAutoDeleted()) {
 			deleteMeetingWithCleanup(meeting);
 			log.info("일정 {} 자동 삭제 완료 (참석자 {}명 이하)", meetingId, meeting.getJoinCount());
@@ -162,13 +161,12 @@ public class MeetingService {
 	 */
 	@Transactional
 	public void updateMeeting(Long meetingId, MeetingUpdateRequestDto request) {
-		// 일정 조회 및 권한 검증
+
 		Meeting meeting = meetingQueryService.getById(meetingId);
 		Long userId = getCurrentUserId();
 
 		meetingAuthService.validateManagePermission(meeting, userId);
 
-		// 도메인 로직으로 일정 정보 업데이트
 		meeting.updateMeetingInfo(
 			request.getTitle(),
 			request.getStartAt(),
@@ -182,17 +180,16 @@ public class MeetingService {
 	}
 
 	/**
-	 * 일정 삭제 (트랜잭션만 사용 - 모임장 권한으로 동시성 이슈 없음)
+	 * 일정 삭제
 	 */
 	@Transactional
 	public void deleteMeeting(Long meetingId) {
-		// 일정 조회 및 권한 검증
+
 		Meeting meeting = meetingQueryService.getById(meetingId);
 		Long userId = getCurrentUserId();
 
 		meetingAuthService.validateManagePermission(meeting, userId);
 
-		// 일정 삭제 처리
 		deleteMeetingWithCleanup(meeting);
 
 		log.info("일정 {} 삭제 완료 (모임장 권한, 타입: {})", meetingId, meeting.getType());
@@ -202,10 +199,8 @@ public class MeetingService {
 	 * 일정 삭제 및 정리 작업
 	 */
 	private void deleteMeetingWithCleanup(Meeting meeting) {
-		// 관련된 UserMeeting 데이터 삭제
 		userMeetingRepository.deleteByMeetingId(meeting.getId());
 
-		// 이미지가 있다면 S3에서 삭제 (공통 서비스 직접 사용)
 		if (meeting.getImgUrl() != null) {
 			try {
 				fileStorageService.deleteFile(meeting.getImgUrl());
@@ -215,92 +210,109 @@ public class MeetingService {
 			}
 		}
 
-		// 일정 소프트 삭제
 		meeting.softDelete();
 	}
 
 	/**
 	 * 일정 이미지 업데이트
-	 * - file이 null이 아니면: 이미지 업로드 (기존 이미지 교체)
-	 * - file이 null이면: 이미지 삭제 (null로 설정)
+	 * - file이 null이 아니면: 이미지 업로드 로직 호출
+	 * - file이 null이면: 이미지 삭제 로직 호출
 	 */
 	public FileUploadResponseDto updateMeetingImage(Long meetingId, MultipartFile file) {
 		Long userId = getCurrentUserId();
-
-		// 1. 권한 검증 및 데이터 조회 (트랜잭션 외부)
+		// 실제 로직 시작 전, Meeting 엔티티는 한 번만 조회합니다.
 		Meeting meeting = meetingQueryService.getById(meetingId);
-		String oldImageUrl = meeting.getImgUrl();
 
 		if (file != null) {
-			// 이미지 업로드 권한 검증
-			meetingAuthService.validateImageUploadPermission(meeting, userId);
+			return uploadNewImage(userId, meeting, file);
 		} else {
-			// 이미지 삭제 권한 검증
-			meetingAuthService.validateImageDeletePermission(meeting, userId);
-			if (oldImageUrl == null) {
-				throw new CustomException(ErrorCode.INVALID_USER);
-			}
+			deleteExistingImage(userId, meeting);
+			return null; // 삭제 성공 시 별도 응답 없음
 		}
+	}
 
-		// 2. S3 작업 (트랜잭션 외부)
-		FileUploadResponseDto response = null;
-		if (file != null) {
-			// 새 이미지 업로드
-			response = fileStorageService.uploadFile(file, "meetings");
-			log.info("새 이미지 업로드 완료: {}", response.getFileUrl());
-		}
+	/**
+	 * 새 이미지를 업로드하고 기존 이미지를 교체합니다.
+	 */
+	private FileUploadResponseDto uploadNewImage(Long userId, Meeting meeting, MultipartFile file) {
+		meetingAuthService.validateImageUploadPermission(meeting, userId);
+		final String oldImageUrl = meeting.getImgUrl();
+
+		// 1. 새 이미지 S3 업로드
+		FileUploadResponseDto newImage = fileStorageService.uploadFile(file, "meetings");
+		log.info("새 이미지 업로드 완료: {}", newImage.getFileUrl());
 
 		try {
-			// 3. DB 업데이트 (짧은 트랜잭션)
-			String newImageUrl = (response != null) ? response.getFileUrl() : null;
-			transactionTemplate.execute(status -> {
-				Meeting freshMeeting = meetingQueryService.getById(meetingId);
-				freshMeeting.updateImage(newImageUrl);
-				return null;
-			});
+			// 2. DB에 URL 업데이트 (짧은 트랜잭션)
+			updateMeetingImageUrlInTransaction(meeting.getId(), newImage.getFileUrl());
 
-			// 4. 후처리 (트랜잭션 외부)
-			if (file != null) {
-				// 업로드인 경우: 기존 이미지 삭제
-				if (oldImageUrl != null) {
-					try {
-						fileStorageService.deleteFile(oldImageUrl);
-						log.info("기존 이미지 삭제 완료: {}", oldImageUrl);
-					} catch (Exception e) {
-						log.warn("기존 이미지 삭제 실패 (무시): {}", oldImageUrl, e);
-					}
-				}
-				log.info("일정 {} 이미지 업로드 성공: {}", meetingId, response.getFileUrl());
-			} else {
-				// 삭제인 경우: S3에서 이미지 삭제 (동기)
-				try {
-					fileStorageService.deleteFile(oldImageUrl);
-					log.info("S3 이미지 삭제 완료: {}", oldImageUrl);
-				} catch (Exception e) {
-					log.error("S3 이미지 삭제 실패: {}", oldImageUrl, e);
-					throw new CustomException(ErrorCode.FILE_DELETE_FAILED);
-				}
-				log.info("일정 {} 이미지 삭제 성공", meetingId);
+			// 3. 기존 이미지 S3에서 삭제 (성공 여부와 관계없이 진행)
+			if (oldImageUrl != null) {
+				deleteFileFromS3Silently(oldImageUrl);
 			}
+			return newImage;
 
-			return response;
+		} catch (Exception dbException) {
+			// 4. DB 업데이트 실패 시, 업로드했던 새 이미지 롤백
+			log.warn("DB 업데이트 실패. 업로드된 S3 파일을 롤백합니다: {}", newImage.getFileUrl(), dbException);
+			deleteFileFromS3Silently(newImage.getFileUrl());
+			throw dbException;
+		}
+	}
 
+	/**
+	 * 기존 이미지의 DB 정보를 삭제하고 S3에서 파일을 제거합니다.
+	 */
+	private void deleteExistingImage(Long userId, Meeting meeting) {
+		meetingAuthService.validateImageDeletePermission(meeting, userId);
+		final String imageUrlToDelete = meeting.getImgUrl();
+
+		if (imageUrlToDelete == null) {
+			throw new CustomException(ErrorCode.MEETING_NOT_FOUND, "삭제할 이미지가 이미 존재하지 않습니다.");
+		}
+
+		// 1. DB에서 URL 먼저 null로 업데이트
+		updateMeetingImageUrlInTransaction(meeting.getId(), null);
+
+		// 2. S3에서 파일 삭제. 실패 시 에러 발생
+		try {
+			fileStorageService.deleteFile(imageUrlToDelete);
+			log.info("S3에서 이미지 삭제 완료: {}", imageUrlToDelete);
+		} catch (Exception s3Exception) {
+			// S3 삭제 실패는 심각한 오류로 간주하고 로깅.
+			// DB는 이미 업데이트 되었으므로 사용자 경험에는 영향이 적지만, 일관성 유지를 위해 예외를 던짐
+			log.error("DB 업데이트는 성공했으나 S3 파일 삭제에 실패했습니다. 수동 확인이 필요합니다: {}", imageUrlToDelete, s3Exception);
+			throw new CustomException(ErrorCode.FILE_DELETE_FAILED);
+		}
+	}
+
+	/**
+	 * 트랜잭션 내에서 Meeting의 이미지 URL을 업데이트하는 헬퍼 메서드
+	 */
+	private void updateMeetingImageUrlInTransaction(Long meetingId, String newImageUrl) {
+		transactionTemplate.execute(status -> {
+			Meeting freshMeeting = meetingQueryService.getById(meetingId);
+			freshMeeting.updateImage(newImageUrl);
+			return null;
+		});
+	}
+
+	/**
+	 * S3 파일 삭제를 시도하고, 실패 시 경고 로그만 남기는 헬퍼 메서드
+	 */
+	private void deleteFileFromS3Silently(String fileUrl) {
+		try {
+			fileStorageService.deleteFile(fileUrl);
+			log.info("S3 파일 자동 정리 성공: {}", fileUrl);
 		} catch (Exception e) {
-			// 5. 실패 시 정리 (업로드인 경우만)
-			if (response != null) {
-				try {
-					fileStorageService.deleteFile(response.getFileUrl());
-					log.warn("업로드 실패로 인한 파일 정리: {}", response.getFileUrl());
-				} catch (Exception cleanupException) {
-					log.error("파일 정리 실패: {}", response.getFileUrl(), cleanupException);
-				}
-			}
-			throw e;
+			log.warn("S3 파일 자동 정리 실패 (무시): {}, 원인: {}", fileUrl, e.getMessage());
 		}
 	}
 
 
-	private Long getCurrentUserId() {
+
+
+		private Long getCurrentUserId() {
 		CustomUserDetails principal = (CustomUserDetails) SecurityContextHolder.getContextHolderStrategy()
 			.getContext()
 			.getAuthentication()

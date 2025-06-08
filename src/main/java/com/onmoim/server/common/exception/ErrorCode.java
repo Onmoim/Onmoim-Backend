@@ -25,6 +25,7 @@ public enum ErrorCode {
 	INVALID_USER(BAD_REQUEST, "잘못된 사용자입니다."),
 	INVALID_LOCATION(BAD_REQUEST, "잘못된 위치 정보입니다."),
 	INVALID_CATEGORY(BAD_REQUEST, "잘못된 카테고리입니다."),
+	FILE_NOT_FOUND(BAD_REQUEST, "삭제할 이미지가 이미 존재하지 않습니다."),
 
 	/* ------------------ 400 BAD_REQUEST : 유저 관련 오류 ------------------ */
 	ALREADY_EXISTS_USER(BAD_REQUEST, "이미 가입된 사용자입니다."),

@@ -476,7 +476,7 @@ class MeetingServiceTest {
 		// 생성자 자동 참석 (시간 제약 없음)
 		UserMeeting userMeeting = UserMeeting.create(meeting, creator);
 		userMeetingRepository.save(userMeeting);
-		meeting.creatorJoin(); // join() 대신 creatorJoin() 사용
+		meeting.creatorJoin();
 
 		return meeting;
 	}
