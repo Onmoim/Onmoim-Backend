@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.service.CategoryQueryService;
+import com.onmoim.server.chat.dto.ChatRoomResponse;
+import com.onmoim.server.chat.service.ChatMessageService;
+import com.onmoim.server.chat.service.ChatRoomService;
 import com.onmoim.server.group.aop.NamedLock;
 import com.onmoim.server.group.aop.Retry;
 import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
@@ -37,6 +40,8 @@ public class GroupService {
 	private final LocationQueryService locationQueryService;
 	private final CategoryQueryService categoryQueryService;
 	private final GroupUserRepository groupUserRepository;
+	private final ChatRoomService chatRoomService;
+	private final ChatMessageService chatMessageService;
 
 	@Transactional
 	public Long createGroup(CreateGroupRequestDto request) {
@@ -52,6 +57,9 @@ public class GroupService {
 			.category(category)
 			.build();
 		groupQueryService.saveGroup(group);
+
+		ChatRoomResponse room = chatRoomService.createRoom(request.getName(), request.getDescription(), user.getId());
+		chatMessageService.sendSystemMessage(room.getId(), "채팅방이 생성되었습니다.");
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
 		groupUserQueryService.save(groupUser);

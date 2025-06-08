@@ -1,6 +1,8 @@
-package com.onmoim.server.chat.dto;
+package com.onmoim.server.chat.example;
 
 import java.time.LocalDateTime;
+
+import com.onmoim.server.chat.entity.MessageType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ChatMessage {
+public class TestChatMessage {
 
 	private String messageId;
 	private String senderId;
@@ -19,7 +21,4 @@ public class ChatMessage {
 	private LocalDateTime timestamp;
 	private MessageType type;
 
-	public enum MessageType {
-		CHAT, JOIN, LEAVE, ERROR
-	}
 }

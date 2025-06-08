@@ -1,12 +1,12 @@
 package com.onmoim.server.chat.example;
 
+import static com.onmoim.server.chat.entity.SubscribeRegistry.*;
+
 import java.security.Principal;
 
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
-
-import com.onmoim.server.chat.dto.ChatMessage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ public class SocketTestController {
 	 * Test web site (https://jiangxy.github.io/websocket-debug-tool/)
 	 *
 	 * 1. [연결] ws://localhost:{port}/ws-chat
-	 * 2. [구독] /system/queue/error
+	 * 2. [구독] /system/queue
 	 * 3. [전송] /app/example.error
 	 * //BODY
 	 * {
@@ -45,12 +45,13 @@ public class SocketTestController {
 	 */
 
 	@MessageMapping("/example.error")
-	public void handleChatMessage(ChatMessage message, Principal principal) {
+	public void handleChatMessage(TestChatMessage message, Principal principal) {
 		if (message.getContent().contains("error")) {
 			throw new RuntimeException("테스트용 에러입니다.");
 		}
 
-		messagingTemplate.convertAndSendToUser(principal.getName(), "/queue/error", "정상 처리되었습니다.");
+		String destination = ERROR_SUBSCRIBE_DESTINATION.getDestination();
+		messagingTemplate.convertAndSendToUser(principal.getName(), destination, "정상 처리되었습니다.");
 	}
 
 }
