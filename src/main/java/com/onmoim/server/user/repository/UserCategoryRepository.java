@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.entity.UserCategory;
 import com.onmoim.server.user.entity.UserCategoryId;
 
@@ -14,5 +15,7 @@ public interface UserCategoryRepository extends JpaRepository<UserCategory, User
 
 	@Query("select uc.category.name from UserCategory uc where uc.user.id = :userId")
 	List<String> findCategoryNamesByUserId(@Param("userId") Long userId);
+
+	List<UserCategory> findUserCategoriesByUser(User user);
 
 }

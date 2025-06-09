@@ -88,4 +88,12 @@ public class User extends BaseEntity {
 			.build();
 	}
 
+	public void updateProfile(String name, String gender, LocalDateTime birth, Long addressId, String profileImgUrl, String introduction) {
+		this.name = name;
+		this.gender = gender;
+		this.birth = birth;
+		this.addressId = addressId;
+		this.introduction = introduction;
+		this.profileImgUrl = profileImgUrl;
+	}
 }

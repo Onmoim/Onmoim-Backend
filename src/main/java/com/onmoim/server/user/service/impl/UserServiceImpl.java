@@ -16,6 +16,7 @@ import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
 import com.onmoim.server.user.dto.request.SignupRequestDto;
+import com.onmoim.server.user.dto.request.UpdateProfileRequestDto;
 import com.onmoim.server.user.dto.response.ProfileResponseDto;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.entity.UserCategory;
@@ -106,6 +107,44 @@ public class UserServiceImpl implements UserService {
 		response = userMapperCustom.toProfileResponseDto(user);
 
 		return response;
+	}
+
+	@Override
+	public void updateUserProfile(Long userId, UpdateProfileRequestDto request) {
+		User user = userRepository.findById(getCurrentUserId())
+			.orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+		// 1. user 테이블 update
+		user.updateProfile(
+			request.getName(),
+			request.getGender(),
+			request.getBirth(),
+			request.getAddressId(),
+			request.getIntroduction(),
+			request.getProfileImgUrl()
+		);
+
+		// 2. user_category 테이블 delete
+		List<UserCategory> userCategoryList = userCategoryRepository.findUserCategoriesByUser(user);
+		if (userCategoryList != null) {
+			userCategoryRepository.deleteAll(userCategoryList);
+		}
+
+		// 3. user_category 테이블 insert
+		List<Long> categoryIdList = request.getCategoryIdList();
+
+		for (Long categoryId : categoryIdList) {
+			Category category = categoryRepository.findById(categoryId)
+				.orElseThrow(() -> new CustomException(INVALID_CATEGORY));
+
+			UserCategory userCategory = UserCategory.builder()
+				.user(user)
+				.category(category)
+				.build();
+
+			userCategoryRepository.save(userCategory);
+		}
+
 	}
 
 }
