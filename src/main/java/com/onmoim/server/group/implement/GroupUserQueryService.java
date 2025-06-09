@@ -1,4 +1,4 @@
-package com.onmoim.server.group.service;
+package com.onmoim.server.group.implement;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
 
@@ -9,8 +9,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.group.dto.response.CursorPageResponseDto;
-import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -30,7 +28,7 @@ public class GroupUserQueryService {
 		try {
 			groupUserRepository.save(groupUser);
 		} catch (DataIntegrityViolationException e) {
-			throw new CustomException(TOO_MANY_REQUESTS);
+			throw new CustomException(TOO_MANY_REQUEST);
 		}
 	}
 
@@ -44,6 +42,14 @@ public class GroupUserQueryService {
 	}
 
 	public GroupUser checkAndGetOwner(Long groupId, Long userId) {
+		return validateOwner(groupId, userId);
+	}
+
+	public void checkOwner(Long groupId, Long userId) {
+		validateOwner(groupId, userId);
+	}
+
+	private GroupUser validateOwner(Long groupId, Long userId) {
 		return findById(groupId, userId)
 			.filter(GroupUser::isOwner)
 			.orElseThrow(() -> new CustomException(GROUP_FORBIDDEN));
@@ -52,21 +58,27 @@ public class GroupUserQueryService {
 	public GroupUser checkAndGetMember(Long groupId, Long userId) {
 		return findById(groupId, userId)
 			.filter(GroupUser::isMember)
-			.orElseThrow(() -> new CustomException(INVALID_USER));
+			.orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND_IN_GROUP));
 	}
 
 	public GroupUser checkCanLeave(Long groupId, Long userId) {
 		GroupUser groupUser = findById(groupId, userId)
 			.filter(GroupUser::isJoined)
-			.orElseThrow(() -> new CustomException(INVALID_USER));
+			.orElseThrow(() -> new CustomException(NOT_GROUP_MEMBER));
 
-		if (groupUser.isOwner()) {
+		// 현재 사용자 모임장 + 모임 회원 2명 이상
+		if (groupUser.isOwner() && countMembers(groupId) > 1) {
 			throw new CustomException(GROUP_OWNER_TRANSFER_REQUIRED);
 		}
 		return groupUser;
 	}
 
 	public void leave(GroupUser groupUser) {
+		// 현재 사용자 모임장 바로 모임 삭제
+		if (groupUser.isOwner()) {
+			groupUser.getGroup().softDelete();
+			return;
+		}
 		groupUser.updateStatus(Status.PENDING);
 	}
 
@@ -93,25 +105,13 @@ public class GroupUserQueryService {
 		}
 	}
 
-	// fetch join 사용해서 모임 멤버 조회
-	public CursorPageResponseDto<GroupMembersResponseDto> findGroupUserAndMembers(Long groupId, Long cursorId, int size) {
-		List<GroupUser> result = groupUserRepository.findGroupUsers(groupId, cursorId, size);
-		boolean hasNext = result.size() > size;
-		extractPageContent(result, hasNext);
-		List<GroupMembersResponseDto> list = result.stream()
-			.map(GroupMembersResponseDto::new)
-			.toList();
-		Long totalCount = cursorId == null ? groupUserRepository.countGroupMembers(groupId) : null ;
-		return CursorPageResponseDto.<GroupMembersResponseDto>builder()
-			.content(list)
-			.totalCount(totalCount)
-			.hasNext(hasNext)
-			.cursorId(list.isEmpty() ? null : list.getLast().getUserId())
-			.build();
+	// 현재 모임 회원 수
+	public Long countMembers(Long groupId) {
+		return groupUserRepository.countGroupMembers(groupId);
 	}
-	private void extractPageContent(List<GroupUser> result, boolean hasNext) {
-		if (hasNext){
-			result.removeLast();
-		}
+
+	// fetch join 사용해서 모임 멤버 조회
+	public List<GroupUser> findGroupUserAndMembers(Long groupId, Long cursorId, int size) {
+		return groupUserRepository.findGroupUsers(groupId, cursorId, size);
 	}
 }
