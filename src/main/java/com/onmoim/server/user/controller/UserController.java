@@ -1,6 +1,7 @@
 package com.onmoim.server.user.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -129,6 +130,30 @@ public class UserController {
 	public ResponseEntity<ResponseHandler<String>> updateUserProfile(@PathVariable Long id, @RequestBody @Valid UpdateProfileRequestDto request) {
 		userService.updateUserProfile(id, request);
 		return ResponseEntity.ok(ResponseHandler.response("프로필 수정이 완료되었습니다."));
+	}
+
+	@DeleteMapping("/{id}")
+	@Operation(
+		summary = "회원 탈퇴",
+		description = "회원이 서비스를 탈퇴합니다."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "회원 탈퇴 성공",
+			content = @Content(
+				mediaType = "application/json",
+				schema = @Schema(implementation = ResponseHandler.class)
+			)
+		),
+		@ApiResponse(
+			responseCode = "409",
+			description = "CONFLICT - 비즈니스 로직 오류"
+		)
+	})
+	public ResponseEntity<ResponseHandler<String>> leaveUser(@PathVariable Long id) {
+		userService.leaveUser(id);
+		return ResponseEntity.ok(ResponseHandler.response("회원 탈퇴가 완료되었습니다."));
 	}
 
 }

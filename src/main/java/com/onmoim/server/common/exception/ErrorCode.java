@@ -50,14 +50,19 @@ public enum ErrorCode {
 	/* ------------------ 409 CONFLICT : 요청 충돌 ------------------ */
 	TOO_MANY_REQUESTS(CONFLICT, "잠시 후 다시 시도해 주세요"),
 
-	/* ------------------ 400 BAD_REQUEST : 권한 관련 오류 ------------------ */
+	/* ------------------ 409 CONFLICT : 유저 관련 오류(비즈니스 로직상 불가) ------------------ */
+	IS_GROUP_OWNER(CONFLICT, "탈퇴를 위해 모임장 권한 양도가 필요합니다."),
+
+	/* ------------------ 403 FORBIDDEN : 권한 관련 오류 ------------------ */
 	NOT_GROUP_MEMBER(FORBIDDEN, "모임 멤버만 접근 가능합니다."),
+	FORBIDDEN_USER_ACCESS(FORBIDDEN, "다른 사용자의 계정에 접근할 수 없습니다"),
 
 	/* ------------------ 401 UNAUTHORIZED : Auth 관련 오류 ------------------ */
 	INVALID_REFRESH_TOKEN(UNAUTHORIZED, "유효하지 않은 refresh token입니다."),
 	REFRESH_TOKEN_MISMATCH(UNAUTHORIZED, "저장된 refresh token과 일치하지 않습니다."),
 	USER_NOT_FOUND(UNAUTHORIZED, "존재하지 않는 사용자입니다."),
 	UNAUTHORIZED_ACCESS(UNAUTHORIZED, "인증되지 않은 사용자입니다.");
+
 
 
 	private final HttpStatus httpStatus;

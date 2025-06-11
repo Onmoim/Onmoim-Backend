@@ -15,4 +15,6 @@ public interface UserService {
 
 	public void updateUserProfile(Long userId, UpdateProfileRequestDto request);
 
+	public void leaveUser(Long id);
+
 }

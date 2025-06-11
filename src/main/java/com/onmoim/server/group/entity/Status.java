@@ -11,6 +11,7 @@ public enum Status {
 	OWNER("모임장"),
 	MEMBER("회원"),
 	BOOKMARK("북마크"),
-	BAN("차단");
+	BAN("차단"),
+	DELETED("삭제");
 	private final String description;
 }

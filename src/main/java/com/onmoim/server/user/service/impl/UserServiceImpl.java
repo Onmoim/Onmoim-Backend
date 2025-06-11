@@ -14,6 +14,10 @@ import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.group.entity.GroupUser;
+import com.onmoim.server.group.entity.Status;
+import com.onmoim.server.group.repository.GroupUserRepository;
+import com.onmoim.server.oauth.service.RefreshTokenService;
 import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
 import com.onmoim.server.user.dto.request.SignupRequestDto;
 import com.onmoim.server.user.dto.request.UpdateProfileRequestDto;
@@ -37,6 +41,8 @@ public class UserServiceImpl implements UserService {
 	private final CategoryRepository categoryRepository;
 	private final UserCategoryRepository userCategoryRepository;
 	private final UserMapperCustom userMapperCustom;
+	private final GroupUserRepository groupUserRepository;
+	private final RefreshTokenService refreshTokenService;
 
 	public Long getCurrentUserId() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -145,6 +151,40 @@ public class UserServiceImpl implements UserService {
 			userCategoryRepository.save(userCategory);
 		}
 
+	}
+
+	@Override
+	@Transactional
+	public void leaveUser(Long id) {
+		Long userId = getCurrentUserId();
+
+		if (!userId.equals(id)) {
+			throw new CustomException(FORBIDDEN_USER_ACCESS);
+		}
+
+		User user = userRepository.findById(userId)
+			.orElseThrow(() -> new CustomException(USER_NOT_FOUND));
+
+		// 탈퇴하려는 유저가 모임장으로 있는 모임이 하나 이상 있는 경우 exception
+		boolean isGroupOwner = groupUserRepository.existsByUserIdAndStatus(userId, Status.OWNER);
+		if (isGroupOwner) {
+			throw new CustomException(ErrorCode.IS_GROUP_OWNER);
+		}
+
+		// TODO: 1. meeting_user 삭제
+		// TODO: 2. meeting 삭제(참석자가 본인 포함 1명일 경우)
+
+		// 3. group_user 테이블 soft delete
+		List<GroupUser> groupUserList = groupUserRepository.findGroupUserByUserId(userId);
+		if (!groupUserList.isEmpty()) {
+			groupUserList.forEach(GroupUser::deleteGroupUser);
+		}
+
+		// 4. user 테이블 soft delete
+		user.leaveUser();
+
+		// 5. redis에서 refresh token 삭제
+		refreshTokenService.deleteRefreshToken(id);
 	}
 
 }

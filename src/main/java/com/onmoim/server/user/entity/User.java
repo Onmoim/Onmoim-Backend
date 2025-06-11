@@ -96,4 +96,17 @@ public class User extends BaseEntity {
 		this.introduction = introduction;
 		this.profileImgUrl = profileImgUrl;
 	}
+
+	public void leaveUser() {
+		this.oauthId = null;
+		this.provider = null;
+		this.email = null;
+		this.name = "deletedUser";
+		this.gender = null;
+		this.birth = null;
+		this.addressId = null;
+		this.introduction = null;
+		this.profileImgUrl = null;
+		this.softDelete();
+	}
 }

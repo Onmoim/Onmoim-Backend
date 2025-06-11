@@ -99,4 +99,10 @@ public class GroupUser extends BaseEntity {
 	public boolean isJoined() {
 		return isOwner() || isMember();
 	}
+
+	public void deleteGroupUser() {
+		this.status = Status.DELETED;
+		this.softDelete();
+	}
+
 }
