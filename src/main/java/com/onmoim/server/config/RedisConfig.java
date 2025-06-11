@@ -26,13 +26,16 @@ public class RedisConfig {
 	@Bean
 	@Primary
 	public RedisTemplate<String, String> redisTemplate() {
-		// redisTemplate를 받아와서 set, get, delete를 사용
 		RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
-		// setKeySerializer, setValueSerializer 설정
-		// redis-cli을 통해 직접 데이터를 조회 시 알아볼 수 없는 형태로 출력되는 것을 방지
-		redisTemplate.setKeySerializer(new StringRedisSerializer());
-		redisTemplate.setValueSerializer(new StringRedisSerializer());
+		StringRedisSerializer serializer = new StringRedisSerializer();
+
+		redisTemplate.setKeySerializer(serializer);
+		redisTemplate.setValueSerializer(serializer);
 		redisTemplate.setConnectionFactory(redisConnectionFactory());
+
+		// ElastiCache 충돌 방지용
+		redisTemplate.setHashKeySerializer(serializer);
+		redisTemplate.setHashValueSerializer(serializer);
 
 		return redisTemplate;
 	}
