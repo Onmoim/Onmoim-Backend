@@ -19,7 +19,7 @@
         console.log("ID Token:", idToken);
 
         // 백엔드로 POST 요청
-        fetch("http://localhost:8080/api/v1/auth/oauth", {
+        fetch(`${window.location.origin}/api/v1/auth/oauth`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
