@@ -9,9 +9,11 @@ import com.onmoim.server.oauth.service.RefreshTokenService;
 import com.onmoim.server.oauth.token.TokenProperties;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RefreshTokenServiceImpl implements RefreshTokenService {
 
 	private final RedisTemplate<String, String> redisTemplate;
@@ -19,11 +21,16 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
 	@Override
 	public void saveRefreshToken(Long userId, String refreshToken) {
+		String key = getKey(userId);
+		log.info("Redis 저장 시작: key={}, value={}", key, refreshToken);
+
 		redisTemplate.opsForValue().set(
-			getKey(userId),
+			key,
 			refreshToken,
 			Duration.ofMillis(tokenProperties.getRefreshExpirationTime())
 		);
+
+		log.info("Redis 저장 완료: key={}", key);
 	}
 
 	private String getKey(Long userId) {
