@@ -1,10 +1,13 @@
 package com.onmoim.server.group.controller;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,7 +17,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,6 +29,7 @@ import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.response.Message;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
+import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.service.GroupService;
 import com.onmoim.server.security.JwtAuthenticationFilter;
 
@@ -173,6 +179,49 @@ class GroupControllerTest {
 	}
 
 	@Test
+	@DisplayName("모임 수정 성공")
+	@WithMockUser(roles = "USER")
+	void updateGroupSuccess() throws Exception {
+		// given
+		doNothing().when(groupService).updateGroup(
+			anyLong(),
+			anyString(),
+			anyInt(),
+			any());
+
+		// path variable
+		var groupId = 1L;
+		// img
+		var file = new MockMultipartFile(
+			"file",
+			"test.jpeg",
+			MediaType.IMAGE_JPEG_VALUE,
+			"<<test data>>".getBytes(StandardCharsets.UTF_8)
+		);
+		// json
+		var jsonPart = new MockMultipartFile(
+			"request",
+			null,
+			MediaType.APPLICATION_JSON_VALUE,
+			mapper.writeValueAsBytes(GroupUpdateRequestDto.builder()
+				.description("description")
+				.capacity(10)
+				.build()
+			)
+		);
+		// expected
+		mvc.perform(multipart(
+			HttpMethod.PATCH,
+ "/api/v1/groups/{groupId}", groupId)
+			.file(file)
+			.file(jsonPart)
+			)
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.message").value(Message.SUCCESS.getDescription()))
+			.andExpect(jsonPath("$.data").value("수정 성공"));
+	}
+
+	@Test
 	@DisplayName("모임 가입 성공")
 	@WithMockUser(roles = "USER")
 	void joinGroupSuccess() throws Exception {
@@ -201,14 +250,14 @@ class GroupControllerTest {
 	@WithMockUser(roles = "USER")
 	void joinGroupFailure2() throws Exception {
 		// given
-		doThrow(new CustomException(ErrorCode.GROUP_ALREADY_JOINED))
+		doThrow(new CustomException(GROUP_ALREADY_JOINED))
 			.when(groupService).joinGroup(anyLong());
 
 		// expected
 		mvc.perform(post("/api/v1/groups/{groupId}/join", 1L))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.message").value(ErrorCode.GROUP_ALREADY_JOINED.toString()))
-			.andExpect(jsonPath("$.data").value(ErrorCode.GROUP_ALREADY_JOINED.getDetail()))
+			.andExpect(jsonPath("$.message").value(GROUP_ALREADY_JOINED.toString()))
+			.andExpect(jsonPath("$.data").value(GROUP_ALREADY_JOINED.getDetail()))
 			.andDo(print());
 	}
 }

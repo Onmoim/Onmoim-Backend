@@ -46,6 +46,20 @@ class ConcurrencyTest {
 		userRepository.deleteAll();
 	}
 
+	private void setSecurityContext(Long userId) {
+		var detail = new CustomUserDetails(
+			userId,
+			null,
+			null
+		);
+		var authenticated = UsernamePasswordAuthenticationToken.authenticated(
+			detail,
+			null,
+			null
+		);
+		SecurityContextHolder.getContext().setAuthentication(authenticated);
+	}
+
 	@Test
 	@DisplayName("동시에 가입 요청 테스트")
 	@Transactional
@@ -53,7 +67,6 @@ class ConcurrencyTest {
 		// given
 		assertThat(TestTransaction.isActive()).isTrue();
 
-		List<User> userList = new ArrayList<>();
 		Group group = Group.builder()
 			.name("group")
 			.capacity(10)
@@ -61,10 +74,15 @@ class ConcurrencyTest {
 
 		groupRepository.save(group);
 		final Long groupId = group.getId();
+
+		List<User> userList = new ArrayList<>();
+
 		User owner = User.builder().name("모임장").build();
 		userList.add(owner);
+
 		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
 		userRepository.save(owner);
+
 		IntStream.range(0, 20).forEach(i -> {
 			User user = User.builder()
 				.name("test" + i)
@@ -86,10 +104,7 @@ class ConcurrencyTest {
 				try {
 					// 각 쓰레드마다 인증 정보 세팅
 					Long userId = userList.get(idx).getId();
-					var detail = new CustomUserDetails(userId, "test", "test");
-					var authenticated = UsernamePasswordAuthenticationToken.authenticated(
-						detail, null, null);
-					SecurityContextHolder.getContext().setAuthentication(authenticated);
+					setSecurityContext(userId);
 
 					// 동시성 테스트
 					groupService.joinGroup(groupId);
