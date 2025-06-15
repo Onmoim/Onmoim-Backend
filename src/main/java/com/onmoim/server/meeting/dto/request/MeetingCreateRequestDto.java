@@ -43,7 +43,7 @@ public class MeetingCreateRequestDto {
 	@Schema(description = "장소 좌표")
 	private GeoPoint geoPoint;
 
-	@Min(value = 1, message = "최대 참석 인원은 1 이상이어야 합니다.")
+	@Min(value = 2, message = "최대 참석 인원은 2 이상이어야 합니다.")
 	@Schema(description = "최대 참석 인원", example = "10")
 	private int capacity;
 
