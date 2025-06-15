@@ -7,6 +7,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.meeting.entity.MeetingType;
 import com.onmoim.server.meeting.repository.MeetingRepository;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
  * - 패키지별 포인트컷으로 충돌 방지
  * - 타입별 다른 타임아웃 적용
  * - Order(0)으로 최우선 실행
+ * - 동일 커넥션에서 락 획득/해제를 위한 트랜잭션 내 실행
  */
 @Slf4j
 @Aspect
@@ -34,7 +36,9 @@ public class MeetingLockAspect {
     /**
      * Meeting 패키지 내의 @MeetingLock 어노테이션에만 적용
      * - 포인트컷을 패키지로 제한하여 Group AOP와 충돌 방지
+     * - 트랜잭션 내에서 실행하여 동일 커넥션에서 락 획득/해제 보장
      */
+    @Transactional
     @Around("@annotation(meetingLock) && execution(* com.onmoim.server.meeting..*(..))")
     public Object executeWithLock(ProceedingJoinPoint joinPoint, MeetingLock meetingLock) throws Throwable {
         // 1. 메서드 파라미터에서 meetingId 추출
@@ -44,9 +48,9 @@ public class MeetingLockAspect {
             return joinPoint.proceed();
         }
 
-        // 2. 일정 타입 조회 및 타임아웃 결정
+        // 2. 일정 타입 조회 및 타임아웃 결정 (조회 실패 시 예외 발생)
         int timeoutSeconds = determineLockTimeout(meetingId);
-        String lockKey = "meeting_" + meetingId;
+        String lockKey = meetingLock.lockPrefix() + "_" + meetingId;
 
         log.debug("Meeting Named Lock 시작 - 키: {}, 타임아웃: {}초", lockKey, timeoutSeconds);
 
@@ -67,7 +71,7 @@ public class MeetingLockAspect {
             return joinPoint.proceed();
 
         } finally {
-            // 5. 락 해제
+            // 5. 락 해제 (동일 트랜잭션/커넥션에서 해제)
             if (lockAcquired) {
                 try {
                     Integer releaseResult = meetingRepository.releaseLock(lockKey);
@@ -84,7 +88,6 @@ public class MeetingLockAspect {
      */
     private Long extractMeetingId(ProceedingJoinPoint joinPoint) {
         Object[] args = joinPoint.getArgs();
-        String[] paramNames = {"meetingId", "id"};
 
         // 첫 번째 Long 타입 파라미터를 meetingId로 간주
         for (Object arg : args) {
@@ -101,15 +104,15 @@ public class MeetingLockAspect {
      * 일정 타입에 따른 락 타임아웃 결정
      * - 정기모임: 1초
      * - 번개모임: 3초 (경합성이 더 높을 거라 예상)
-     * - 조회 실패: 2초 (기본값)
+     * - 타입 조회 실패 시: 예외 발생으로 락 획득 방지
      */
     private int determineLockTimeout(Long meetingId) {
         try {
             MeetingType meetingType = meetingRepository.findMeetingTypeById(meetingId);
 
             if (meetingType == null) {
-                log.warn("일정 타입 조회 실패 - meetingId: {}, 기본 타임아웃 적용", meetingId);
-                return 2; // 기본값
+                log.error("일정 타입 조회 실패 - meetingId: {}, 잘못된 ID이거나 삭제된 일정입니다.", meetingId);
+                throw new CustomException(ErrorCode.NOT_EXISTS_GROUP); // 기존 에러코드 재사용
             }
 
             switch (meetingType) {
@@ -123,9 +126,12 @@ public class MeetingLockAspect {
                     log.warn("알 수 없는 일정 타입: {} - meetingId: {}, 기본 타임아웃 적용", meetingType, meetingId);
                     return 2;
             }
+        } catch (CustomException e) {
+            // 이미 발생한 CustomException은 그대로 전파
+            throw e;
         } catch (Exception e) {
-            log.error("일정 타입 조회 중 오류 발생 - meetingId: {}, 기본 타임아웃 적용", meetingId, e);
-            return 2;
+            log.error("일정 타입 조회 중 오류 발생 - meetingId: {}, 데이터베이스 오류 또는 잘못된 ID", meetingId, e);
+            throw new CustomException(ErrorCode.NOT_EXISTS_GROUP);
         }
     }
 }
