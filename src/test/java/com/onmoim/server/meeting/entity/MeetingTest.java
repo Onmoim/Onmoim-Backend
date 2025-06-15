@@ -459,7 +459,7 @@ class MeetingTest {
 		assertThat(meeting.getDeletedDate()).isNotNull();
 	}
 
-	// === Helper Methods ===
+	//Helper Methods
 
 	private Meeting createRegularMeeting() {
 		return Meeting.meetingCreateBuilder()

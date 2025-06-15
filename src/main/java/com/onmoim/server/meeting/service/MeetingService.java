@@ -14,7 +14,6 @@ import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
 import com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.UserMeeting;
-import com.onmoim.server.meeting.aop.MeetingLock;
 import com.onmoim.server.meeting.repository.MeetingRepository;
 import com.onmoim.server.meeting.repository.UserMeetingRepository;
 import com.onmoim.server.security.CustomUserDetails;
@@ -32,10 +31,6 @@ import lombok.extern.slf4j.Slf4j;
  * - 이미지 업로드는 트랜잭션 밖에서 처리
  * - DB 작업만 짧은 트랜잭션으로 처리
  *
- * 락 전략: AOP 기반 Named Lock
- * - @MeetingLock 어노테이션으로 동시성 제어
- * - 트랜잭션 시작 전 락 획득, 종료 후 락 해제
- * - 타입별 타임아웃: 정기모임 1초, 번개모임 3초
  */
 @Slf4j
 @Service
@@ -117,17 +112,9 @@ public class MeetingService {
 	/**
 	 * 일정 참석 신청
 	 */
-	@MeetingLock
 	@Transactional
 	public void joinMeeting(Long meetingId) {
 		Long userId = getCurrentUserId();
-		joinMeetingInternal(meetingId, userId);
-	}
-
-	/**
-	 * 일정 참석 신청 내부 로직
-	 */
-	private void joinMeetingInternal(Long meetingId, Long userId) {
 		User user = userQueryService.findById(userId);
 
 		Meeting meeting = meetingQueryService.getById(meetingId);
@@ -144,14 +131,13 @@ public class MeetingService {
 		UserMeeting userMeeting = UserMeeting.create(meeting, user);
 		userMeetingRepository.save(userMeeting);
 
-		log.info("사용자 {}가 일정 {}에 참석 신청했습니다. (AOP Lock, 타입: {}, 참석: {}/{})",
+		log.info("사용자 {}가 일정 {}에 참석 신청했습니다. (Facade Named Lock 보장, 타입: {}, 참석: {}/{})",
 			userId, meetingId, meeting.getType(), meeting.getJoinCount(), meeting.getCapacity());
 	}
 
 	/**
 	 * 일정 참석 취소
 	 */
-	@MeetingLock
 	@Transactional
 	public void leaveMeeting(Long meetingId) {
 		Long userId = getCurrentUserId();
@@ -169,7 +155,7 @@ public class MeetingService {
 			autoDeleteMeetingWithResources(meeting);
 			log.info("일정 {} 자동 삭제 완료 (참석자 {}명 이하)", meetingId, meeting.getJoinCount());
 		} else {
-			log.info("사용자 {}가 일정 {}에서 참석 취소했습니다. (AOP Lock, 타입: {}, 참석: {}/{})",
+			log.info("사용자 {}가 일정 {}에서 참석 취소했습니다. (Facade Named Lock 보장, 타입: {}, 참석: {}/{})",
 				userId, meetingId, meeting.getType(), meeting.getJoinCount(), meeting.getCapacity());
 		}
 	}

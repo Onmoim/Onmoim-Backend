@@ -15,6 +15,7 @@ import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingType;
 import com.onmoim.server.meeting.service.MeetingQueryService;
 import com.onmoim.server.meeting.service.MeetingService;
+import com.onmoim.server.meeting.service.MeetingFacadeService;
 import com.onmoim.server.security.CustomUserDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +38,7 @@ public class MeetingController {
 
 	private final MeetingService meetingService;
 	private final MeetingQueryService meetingQueryService;
+	private final MeetingFacadeService meetingFacadeService;
 
 	/**
 	 * 내가 속한 모든 모임의 예정된 일정 조회
@@ -157,7 +159,7 @@ public class MeetingController {
 		@PathVariable @Parameter(description = "모임 ID") Long groupId,
 		@PathVariable @Parameter(description = "일정 ID") Long meetingId
 	) {
-		meetingService.joinMeeting(meetingId);
+		meetingFacadeService.joinMeeting(meetingId);
 		return ResponseEntity.ok(ResponseHandler.response(null));
 	}
 
@@ -174,7 +176,7 @@ public class MeetingController {
 		@PathVariable @Parameter(description = "모임 ID") Long groupId,
 		@PathVariable @Parameter(description = "일정 ID") Long meetingId
 	) {
-		meetingService.leaveMeeting(meetingId);
+		meetingFacadeService.leaveMeeting(meetingId);
 		return ResponseEntity.ok(ResponseHandler.response(null));
 	}
 

@@ -68,6 +68,8 @@ class MeetingServiceTest {
 	private EntityManagerFactory emf;
 	@Autowired
 	private TransactionTemplate transactionTemplate;
+	@Autowired
+	private MeetingFacadeService meetingFacadeService;
 
 	@Test
 	@DisplayName("01. 정기모임 일정 생성 성공 - 모임장 권한")
@@ -327,8 +329,8 @@ class MeetingServiceTest {
 	}
 
 	@Test
-	@DisplayName("09.동시성 테스트 - 20명이 10명 정원에 동시 참석 신청")
-	void test09_concurrentJoinMeeting_Success() throws InterruptedException {
+	@DisplayName("09.동시성 테스트 - 20명이 3명 정원에 동시 참석 신청 (파사드 패턴 극한 상황)")
+	void test09_concurrentJoinMeeting_WithFacade() throws InterruptedException {
 		// given
 		EntityManager em = emf.createEntityManager();
 		EntityTransaction tx = em.getTransaction();
@@ -354,7 +356,7 @@ class MeetingServiceTest {
 				.title("테스트일정")
 				.startAt(LocalDateTime.now().plusDays(30))
 				.placeName("테스트장소")
-				.capacity(10)
+				.capacity(3)
 				.cost(0)
 				.creatorId(owner.getId())
 				.build();
@@ -379,7 +381,7 @@ class MeetingServiceTest {
 
 		final Long finalMeetingId = meetingId;
 
-		// when - 20명이 동시에 참석 신청
+		// when - 20명이 동시에 3명 정원에 참석 신청 (파사드 패턴 사용)
 		int taskCount = 20;
 		ExecutorService executorService = Executors.newFixedThreadPool(20);
 		CountDownLatch latch = new CountDownLatch(taskCount);
@@ -397,7 +399,8 @@ class MeetingServiceTest {
 						detail, null, null);
 					SecurityContextHolder.getContext().setAuthentication(authenticated);
 
-					meetingService.joinMeeting(finalMeetingId);
+					// 🎭 파사드 패턴 사용 (완벽한 Named Lock 보장)
+					meetingFacadeService.joinMeeting(finalMeetingId);
 					successCount.incrementAndGet();
 				} catch (Exception e) {
 					failCount.incrementAndGet();
@@ -412,14 +415,17 @@ class MeetingServiceTest {
 		latch.await();
 		executorService.shutdown();
 
-		// then
+		// then - 정확히 3명만 참석해야 함 (생성자 1명 + 신청자 2명)
 		Meeting finalMeeting = meetingQueryService.getById(finalMeetingId);
-		assertThat(finalMeeting.getJoinCount()).isEqualTo(10);
-		assertThat(successCount.get()).isEqualTo(9);
-		assertThat(failCount.get()).isEqualTo(11);
+		assertThat(finalMeeting.getJoinCount()).isEqualTo(3);
+		assertThat(successCount.get()).isEqualTo(2);  // 2명만 성공
+		assertThat(failCount.get()).isEqualTo(18);    // 18명 실패
 
 		long actualParticipants = userMeetingRepository.countByMeetingId(finalMeetingId);
-		assertThat(actualParticipants).isEqualTo(10);
+		assertThat(actualParticipants).isEqualTo(3);
+
+		System.out.println("🔥 MeetingService 극한 동시성 테스트 성공!");
+		System.out.println("   - 경쟁률: 10:1 (20명 중 2명만 성공!)");
 
 		cleanupTestData(finalMeetingId);
 	}
