@@ -1,5 +1,10 @@
 package com.onmoim.server.meeting.service;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -13,13 +18,13 @@ import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
 import com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.UserMeeting;
+import com.onmoim.server.meeting.repository.MeetingLockRepository;
 import com.onmoim.server.meeting.repository.MeetingRepository;
 import com.onmoim.server.meeting.repository.UserMeetingRepository;
 import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.service.UserQueryService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -33,8 +38,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class MeetingService {
+
+	private static final String LOCK_KEY_PREFIX = "meeting::";
+	private static final int LOCK_TIMEOUT_SECONDS = 5;
 
 	private final MeetingRepository meetingRepository;
 	private final MeetingQueryService meetingQueryService;
@@ -43,6 +50,20 @@ public class MeetingService {
 	private final FileStorageService fileStorageService;
 	private final MeetingAuthService meetingAuthService;
 	private final TransactionTemplate transactionTemplate;
+	private final DataSource dataSource;
+	private final MeetingLockRepository meetingLockRepository;
+
+	public MeetingService(MeetingRepository meetingRepository, MeetingQueryService meetingQueryService, UserQueryService userQueryService, UserMeetingRepository userMeetingRepository, FileStorageService fileStorageService, MeetingAuthService meetingAuthService, TransactionTemplate transactionTemplate, DataSource dataSource, MeetingLockRepository meetingLockRepository) {
+		this.meetingRepository = meetingRepository;
+		this.meetingQueryService = meetingQueryService;
+		this.userQueryService = userQueryService;
+		this.userMeetingRepository = userMeetingRepository;
+		this.fileStorageService = fileStorageService;
+		this.meetingAuthService = meetingAuthService;
+		this.transactionTemplate = transactionTemplate;
+		this.dataSource = new LazyConnectionDataSourceProxy(dataSource);
+		this.meetingLockRepository = meetingLockRepository;
+	}
 
 	/**
 	 * 일정 생성 (이미지 포함)
@@ -113,24 +134,53 @@ public class MeetingService {
 	 */
 	public void joinMeeting(Long meetingId) {
 		Long userId = getCurrentUserId();
-		User user = userQueryService.findById(userId);
 
-		Meeting meeting = meetingQueryService.getById(meetingId);
-		if (!meeting.canJoin()) {
-			throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
-		}
-
-		// 중복 참석 검증
 		if (userMeetingRepository.existsByMeetingIdAndUserId(meetingId, userId)) {
 			throw new CustomException(ErrorCode.MEETING_ALREADY_JOINED);
 		}
 
-		meeting.join();
-		UserMeeting userMeeting = UserMeeting.create(meeting, user);
-		userMeetingRepository.save(userMeeting);
+		String lockKey = LOCK_KEY_PREFIX + meetingId;
+		Connection conn = DataSourceUtils.getConnection(dataSource);
 
-		log.info("사용자 {}가 일정 {}에 참석 신청했습니다. (AOP Named Lock 보장, 타입: {}, 참석: {}/{})",
-			userId, meetingId, meeting.getType(), meeting.getJoinCount(), meeting.getCapacity());
+		try {
+			conn.setAutoCommit(true);
+			if (!meetingLockRepository.getLock(conn, lockKey, LOCK_TIMEOUT_SECONDS)) {
+				throw new CustomException(ErrorCode.MEETING_LOCK_TIMEOUT);
+			}
+
+			conn.setAutoCommit(false);
+			transactionTemplate.executeWithoutResult(status -> {
+				Meeting meeting = meetingQueryService.getById(meetingId);
+				if (!meeting.canJoin()) {
+					throw new CustomException(ErrorCode.MEETING_ALREADY_CLOSED);
+				}
+				if (userMeetingRepository.existsByMeetingIdAndUserId(meetingId, userId)) {
+					return;
+				}
+
+				User user = userQueryService.findById(userId);
+				meeting.join();
+				UserMeeting userMeeting = UserMeeting.create(meeting, user);
+				userMeetingRepository.save(userMeeting);
+
+				log.info("사용자 {}가 일정 {}에 참석 신청했습니다. (타입: {}, 참석: {}/{})",
+						userId, meetingId, meeting.getType(), meeting.getJoinCount(), meeting.getCapacity());
+			});
+
+		} catch (SQLException e) {
+			throw new RuntimeException("데이터베이스 연결 또는 락 처리 중 오류가 발생했습니다.", e);
+		} finally {
+			try {
+				if (conn != null) {
+					conn.setAutoCommit(true);
+					meetingLockRepository.releaseLock(conn, lockKey);
+				}
+			} catch (SQLException e) {
+				log.error("락 해제 또는 커넥션 원상 복구 중 오류 발생", e);
+			} finally {
+				DataSourceUtils.releaseConnection(conn, dataSource);
+			}
+		}
 	}
 
 	/**
@@ -138,22 +188,47 @@ public class MeetingService {
 	 */
 	public void leaveMeeting(Long meetingId) {
 		Long userId = getCurrentUserId();
+		String lockKey = LOCK_KEY_PREFIX + meetingId;
+		Connection conn = DataSourceUtils.getConnection(dataSource);
 
-		Meeting meeting = meetingQueryService.getById(meetingId);
+		try {
+			conn.setAutoCommit(true);
+			if (!meetingLockRepository.getLock(conn, lockKey, LOCK_TIMEOUT_SECONDS)) {
+				throw new CustomException(ErrorCode.MEETING_LOCK_TIMEOUT);
+			}
 
-		UserMeeting userMeeting = userMeetingRepository.findByMeetingIdAndUserId(meetingId, userId)
-			.orElseThrow(() -> new CustomException(ErrorCode.MEETING_NOT_JOINED));
+			conn.setAutoCommit(false);
+			transactionTemplate.executeWithoutResult(status -> {
+				UserMeeting userMeeting = userMeetingRepository.findByMeetingIdAndUserId(meetingId, userId).orElse(null);
+				if (userMeeting == null) {
+					return;
+				}
 
-		meeting.leave();
-		userMeetingRepository.delete(userMeeting);
+				Meeting meeting = meetingQueryService.getById(meetingId);
+				meeting.leave();
+				userMeetingRepository.delete(userMeeting);
 
-		// 자동 삭제 로직
-		if (meeting.shouldBeAutoDeleted()) {
-			autoDeleteMeetingWithResources(meeting);
-			log.info("일정 {} 자동 삭제 완료 (참석자 {}명 이하)", meetingId, meeting.getJoinCount());
-		} else {
-			log.info("사용자 {}가 일정 {}에서 참석 취소했습니다. (AOP Named Lock 보장, 타입: {}, 참석: {}/{})",
-				userId, meetingId, meeting.getType(), meeting.getJoinCount(), meeting.getCapacity());
+				if (meeting.shouldBeAutoDeleted()) {
+					autoDeleteMeetingWithResources(meeting);
+					log.info("일정 {} 자동 삭제 완료 (참석자 {}명 이하)", meetingId, meeting.getJoinCount());
+				} else {
+					log.info("사용자 {}가 일정 {}에서 참석 취소했습니다. (타입: {}, 참석: {}/{})",
+							userId, meetingId, meeting.getType(), meeting.getJoinCount(), meeting.getCapacity());
+				}
+			});
+		} catch (SQLException e) {
+			throw new RuntimeException("데이터베이스 연결 또는 락 처리 중 오류가 발생했습니다.", e);
+		} finally {
+			try {
+				if (conn != null) {
+					conn.setAutoCommit(true);
+					meetingLockRepository.releaseLock(conn, lockKey);
+				}
+			} catch (SQLException e) {
+				log.error("락 해제 또는 커넥션 원상 복구 중 오류 발생", e);
+			} finally {
+				DataSourceUtils.releaseConnection(conn, dataSource);
+			}
 		}
 	}
 

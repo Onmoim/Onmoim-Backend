@@ -424,9 +424,6 @@ class MeetingServiceTest {
 		long actualParticipants = userMeetingRepository.countByMeetingId(finalMeetingId);
 		assertThat(actualParticipants).isEqualTo(3);
 
-		System.out.println("🔥 MeetingService 극한 동시성 테스트 성공!");
-		System.out.println("   - 경쟁률: 10:1 (20명 중 2명만 성공!)");
-
 		cleanupTestData(finalMeetingId);
 	}
 
