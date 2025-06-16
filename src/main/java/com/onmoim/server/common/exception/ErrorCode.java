@@ -70,6 +70,9 @@ public enum ErrorCode {
 	/* ------------------ 429 TOO_MANY_REQUESTS : 과도한 요청 ------------------ */
 	MEETING_LOCK_TIMEOUT(HttpStatus.TOO_MANY_REQUESTS, "다른 사용자가 처리 중입니다. 잠시 후 다시 시도해 주세요"),
 
+	/* ------------------ 500 INTERNAL_SERVER_ERROR : 시스템 오류 ------------------ */
+	LOCK_SYSTEM_ERROR(INTERNAL_SERVER_ERROR, "락 시스템 오류가 발생했습니다. 잠시 후 다시 시도해 주세요"),
+
 	/* ------------------ 400 BAD_REQUEST : 권한 관련 오류 ------------------ */
 	NOT_GROUP_MEMBER(FORBIDDEN, "모임 멤버만 접근 가능합니다."),
 

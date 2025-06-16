@@ -4,14 +4,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import org.springframework.stereotype.Repository;
+
+import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.common.exception.ErrorCode;
 
 @Repository
 public class MeetingLockRepositoryImpl implements MeetingLockRepository {
 
 	private static final String GET_LOCK_SQL      = "SELECT GET_LOCK(?, ?)";
 	private static final String RELEASE_LOCK_SQL  = "SELECT RELEASE_LOCK(?)";
-	private static final String ERROR_MSG         = "LOCK 을 수행하는 중에 오류가 발생하였습니다.";
 
 	@Override
 	public boolean getLock(Connection conn, String key, int timeout) {
@@ -22,7 +25,7 @@ public class MeetingLockRepositoryImpl implements MeetingLockRepository {
 				return rs.next() && rs.getInt(1) == 1;
 			}
 		} catch (SQLException e) {
-			throw new RuntimeException(ERROR_MSG, e);
+			throw new CustomException(ErrorCode.LOCK_SYSTEM_ERROR);
 		}
 	}
 
@@ -32,7 +35,7 @@ public class MeetingLockRepositoryImpl implements MeetingLockRepository {
 			ps.setString(1, key);
 			ps.executeQuery();
 		} catch (SQLException e) {
-			throw new RuntimeException(ERROR_MSG, e);
+			throw new CustomException(ErrorCode.LOCK_SYSTEM_ERROR);
 		}
 	}
 }
