@@ -205,10 +205,10 @@ public class Meeting extends BaseEntity {
 	}
 
 	/**
-	 * 자동 삭제 대상인지 확인
+	 * 자동 삭제 대상인지 확인 (참석자가 1명 이하이고, 일정이 이미 시작된 경우)
 	 */
 	public boolean shouldBeAutoDeleted() {
-		return this.joinCount <= 1;
+		return this.joinCount <= 1 && isStarted();
 	}
 
 	/**
