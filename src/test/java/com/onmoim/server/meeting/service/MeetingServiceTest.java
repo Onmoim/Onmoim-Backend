@@ -286,7 +286,7 @@ class MeetingServiceTest {
 		setAuthContext(owner.getId());
 
 		// when
-		meetingService.updateMeeting(meeting.getId(), request, null);
+		meetingService.updateMeeting(meeting.getId(), request);
 
 		// then
 		Meeting updatedMeeting = meetingQueryService.getById(meeting.getId());
@@ -329,6 +329,93 @@ class MeetingServiceTest {
 	}
 
 	@Test
+	@DisplayName("일정 수정 동시성 테스트 - 정원 축소와 참석 취소가 동시에 발생할 때")
+	void testConcurrentUpdateAndLeaveMeeting() throws InterruptedException {
+		// given
+		final List<User> members = new ArrayList<>();
+		final Holder<User> ownerHolder = new Holder<>();
+		final Holder<Long> meetingIdHolder = new Holder<>();
+
+		transactionTemplate.executeWithoutResult(status -> {
+			User owner = createUser("모임장_" + UUID.randomUUID().toString().substring(0, 8));
+			Group group = createGroup("테스트모임_" + UUID.randomUUID().toString().substring(0, 8), owner);
+			Meeting meeting = createMeeting(group, owner, MeetingType.FLASH, 10, "update_concurrent");
+
+			// 5명의 모임원 생성 및 미리 참석
+			for (int i = 0; i < 5; i++) {
+				User member = createUser("모임원" + i);
+				addMemberToGroup(group, member, Status.MEMBER);
+				joinUserToMeeting(meeting, member);
+				members.add(member);
+			}
+			meetingRepository.save(meeting); // joinCount 변경사항 최종 저장
+
+			ownerHolder.value = owner;
+			meetingIdHolder.value = meeting.getId();
+		});
+
+		final User owner = ownerHolder.value;
+		final Long meetingId = meetingIdHolder.value;
+
+		CountDownLatch latch = new CountDownLatch(2);
+		AtomicInteger exceptionCount = new AtomicInteger(0);
+
+		// when
+		ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+		// 스레드 1: 관리자가 정원을 5명으로 줄이려고 시도 (현재 인원 6명보다 적으므로 실패해야 함)
+		executorService.submit(() -> {
+			try {
+				setAuthContext(owner.getId());
+				var request = new com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto(
+						"수정된 제목", LocalDateTime.now().plusDays(1), "수정된 장소", null, 5, 0
+				);
+				meetingFacadeService.updateMeeting(meetingId, request);
+			} catch (Exception e) {
+				System.out.println("예상된 예외 발생(정원 축소 실패): " + e.getMessage());
+				exceptionCount.incrementAndGet();
+			} finally {
+				clearAuthContext();
+				latch.countDown();
+			}
+		});
+
+		// 스레드 2: 모임원 중 한 명이 탈퇴 시도
+		executorService.submit(() -> {
+			try {
+				User leavingMember = members.get(0);
+				setAuthContext(leavingMember.getId());
+				meetingFacadeService.leaveMeeting(meetingId);
+			} catch (Exception e) {
+				System.err.println("참석 취소 중 예상치 못한 오류 발생: " + e.getMessage());
+			} finally {
+				clearAuthContext();
+				latch.countDown();
+			}
+		});
+
+		latch.await();
+		executorService.shutdown();
+
+		// then
+		Meeting finalMeeting = meetingQueryService.getById(meetingId);
+
+		// 어떤 경우에도 최종 인원(5명)이 정원보다 많아지는 상황은 없어야 함
+		assertThat(finalMeeting.getJoinCount()).isEqualTo(5);
+		assertThat(finalMeeting.getCapacity()).isGreaterThanOrEqualTo(finalMeeting.getJoinCount());
+
+		if (exceptionCount.get() == 1) { // 시나리오 1: update가 먼저 실패
+			assertThat(finalMeeting.getCapacity()).isEqualTo(10);
+			System.out.println("시나리오 1 통과: 정원 축소 실패 후 참석 취소 성공");
+		} else { // 시나리오 2: leave가 먼저 성공
+			assertThat(finalMeeting.getCapacity()).isEqualTo(5);
+			System.out.println("시나리오 2 통과: 참석 취소 성공 후 정원 축소 성공");
+		}
+
+		cleanupTestData(meetingId);
+	}
+
+	@Test
 	@DisplayName("09.동시성 테스트 - 20명이 3명 정원에 동시 참석 신청")
 	void test09_concurrentJoinMeeting_WithFacade() throws InterruptedException {
 		// given
@@ -340,11 +427,11 @@ class MeetingServiceTest {
 		try {
 			tx.begin();
 
-			User owner = User.builder().name("모임장").build();
+			User owner = User.builder().name("모임장_" + UUID.randomUUID().toString().substring(0, 8)).build();
 			em.persist(owner);
 
 			Group group = Group.groupCreateBuilder()
-				.name("테스트모임")
+				.name("테스트모임_" + UUID.randomUUID().toString().substring(0, 8))
 				.capacity(100)
 				.build();
 			em.persist(group);
@@ -501,5 +588,10 @@ class MeetingServiceTest {
 
 	private void clearAuthContext() {
 		SecurityContextHolder.clearContext();
+	}
+
+	// 값 공유를 위한 간단한 홀더 클래스
+	private static class Holder<T> {
+		T value;
 	}
 }

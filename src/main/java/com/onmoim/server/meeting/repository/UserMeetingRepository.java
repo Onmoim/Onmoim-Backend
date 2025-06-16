@@ -34,6 +34,13 @@ public interface UserMeetingRepository extends JpaRepository<UserMeeting, UserMe
 	void deleteByMeetingId(@Param("meetingId") Long meetingId);
 
 	/**
+	 * 여러 일정의 모든 참석자 삭제 (테스트용)
+	 */
+	@Modifying
+	@Query("DELETE FROM UserMeeting um WHERE um.meeting.id IN :meetingIds")
+	void deleteAllByMeetingIdIn(@Param("meetingIds") List<Long> meetingIds);
+
+	/**
 	 * 특정 일정의 참석자 수 조회
 	 */
 	@Query("SELECT COUNT(um) FROM UserMeeting um WHERE um.meeting.id = :meetingId")

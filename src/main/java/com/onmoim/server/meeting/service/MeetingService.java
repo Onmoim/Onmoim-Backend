@@ -26,6 +26,7 @@ import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.service.UserQueryService;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -72,49 +73,46 @@ public class MeetingService {
 		Long userId = getCurrentUserId();
 		User user = userQueryService.findById(userId);
 
-		String imageUrl = null;
+		// 1. DB에 일정 정보 먼저 저장
+		Long meetingId = executeCreateMeeting(groupId, request, userId, user);
+
+		// 2. 이미지 업로드 후, 이미지 URL 업데이트
 		if (image != null && !image.isEmpty()) {
-			FileUploadResponseDto uploadResult = fileStorageService.uploadFile(image, "meetings");
-			imageUrl = uploadResult.getFileUrl();
-			log.info("일정 생성용 이미지 업로드 완료: {}", imageUrl);
-		}
-
-		try {
-			return executeCreateMeeting(groupId, request, userId, user, imageUrl);
-		} catch (Exception e) {
-
-			if (imageUrl != null) {
-				tryDeleteFileFromS3(imageUrl);
-				log.warn("일정 생성 실패로 업로드된 이미지 롤백: {}", imageUrl);
+			try {
+				String imageUrl = fileStorageService.uploadFile(image, "meetings").getFileUrl();
+				transactionTemplate.executeWithoutResult(status -> {
+					Meeting meeting = meetingQueryService.getById(meetingId);
+					meeting.updateImage(imageUrl);
+				});
+				log.info("일정 {} 생성 후 이미지 업로드 완료: {}", meetingId, imageUrl);
+			} catch (Exception e) {
+				// 이미지 업로드/업데이트 실패 시, 이미 생성된 일정은 그대로 두되 경고 로그만 남김
+				log.warn("일정 {}은(는) 생성되었지만, 이미지 업로드/업데이트에 실패했습니다: {}", meetingId, e.getMessage());
 			}
-			throw e;
 		}
+
+		return meetingId;
 	}
 
 	/**
-	 * 일정 생성 DB 작업
+	 * 일정 생성 DB 작업 (이미지 URL 제외)
 	 */
 	private Long executeCreateMeeting(Long groupId, MeetingCreateRequestDto request,
-									  Long userId, User user, String imageUrl) {
+									  Long userId, User user) {
 		return transactionTemplate.execute(status -> {
 			Meeting meeting = Meeting.meetingCreateBuilder()
-				.groupId(groupId)
-				.type(request.getType())
-				.title(request.getTitle())
-				.startAt(request.getStartAt())
-				.placeName(request.getPlaceName())
-				.geoPoint(request.getGeoPoint())
-				.capacity(request.getCapacity())
-				.cost(request.getCost())
-				.creatorId(userId)
-				.build();
+					.groupId(groupId)
+					.type(request.getType())
+					.title(request.getTitle())
+					.startAt(request.getStartAt())
+					.placeName(request.getPlaceName())
+					.geoPoint(request.getGeoPoint())
+					.capacity(request.getCapacity())
+					.cost(request.getCost())
+					.creatorId(userId)
+					.build();
 
 			meetingAuthService.validateCreatePermission(groupId, userId, meeting);
-
-			if (imageUrl != null) {
-				meetingAuthService.validateImageUploadPermission(meeting, userId);
-				meeting.updateImage(imageUrl);
-			}
 
 			Meeting savedMeeting = meetingRepository.save(meeting);
 
@@ -233,92 +231,88 @@ public class MeetingService {
 	}
 
 	/**
-	 * 일정 수정 (이미지 포함)
+	 * 일정 정보 수정
 	 */
-	public void updateMeeting(Long meetingId, MeetingUpdateRequestDto request, MultipartFile image) {
-		Long userId = getCurrentUserId();
+	public void updateMeeting(Long meetingId, MeetingUpdateRequestDto request) {
+		String lockKey = LOCK_KEY_PREFIX + meetingId;
+		Connection conn = DataSourceUtils.getConnection(dataSource);
 
-		Meeting meeting = meetingQueryService.getById(meetingId);
-		meetingAuthService.validateManagePermission(meeting, userId);
-
-		String newImageUrl = null;
-		if (image != null && !image.isEmpty()) {
-			meetingAuthService.validateImageUploadPermission(meeting, userId);
-			FileUploadResponseDto uploadResult = fileStorageService.uploadFile(image, "meetings");
-			newImageUrl = uploadResult.getFileUrl();
-			log.info("일정 수정용 새 이미지 업로드 완료: {}", newImageUrl);
-		}
-
-		final String oldImageUrl = meeting.getImgUrl();
 		try {
-			executeUpdateMeeting(meetingId, request, newImageUrl);
+			conn.setAutoCommit(true);
+			if (!meetingLockRepository.getLock(conn, lockKey, LOCK_TIMEOUT_SECONDS)) {
+				throw new CustomException(ErrorCode.MEETING_LOCK_TIMEOUT);
+			}
 
-			if (newImageUrl != null && oldImageUrl != null) {
-				tryDeleteFileFromS3(oldImageUrl);
+			conn.setAutoCommit(false);
+			transactionTemplate.executeWithoutResult(status -> {
+				Long userId = getCurrentUserId();
+				Meeting meeting = meetingQueryService.getById(meetingId);
+				meetingAuthService.validateManagePermission(meeting, userId);
+
+				meeting.updateMeetingInfo(
+						request.getTitle(),
+						request.getStartAt(),
+						request.getPlaceName(),
+						request.getGeoPoint(),
+						request.getCapacity(),
+						request.getCost()
+				);
+			});
+		} catch (SQLException e) {
+			throw new RuntimeException("데이터베이스 연결 또는 락 처리 중 오류가 발생했습니다.", e);
+		} finally {
+			try {
+				if (conn != null) {
+					conn.setAutoCommit(true);
+					meetingLockRepository.releaseLock(conn, lockKey);
+				}
+			} catch (SQLException e) {
+				log.error("락 해제 또는 커넥션 원상 복구 중 오류 발생", e);
+			} finally {
+				DataSourceUtils.releaseConnection(conn, dataSource);
 			}
-		} catch (Exception e) {
-			if (newImageUrl != null) {
-				tryDeleteFileFromS3(newImageUrl);
-				log.warn("일정 수정 실패로 새 이미지 롤백: {}", newImageUrl);
-			}
-			throw e;
 		}
-
-		log.info("일정 {} 수정 완료 (타입: {}, 모임장 권한)", meetingId, meeting.getType());
 	}
 
 	/**
-	 * 일정 수정 DB 작업
+	 * 일정 이미지 수정 (별도 트랜잭션)
 	 */
-	private void executeUpdateMeeting(Long meetingId, MeetingUpdateRequestDto request, String newImageUrl) {
-		transactionTemplate.execute(status -> {
-			Meeting meeting = meetingQueryService.getById(meetingId);
+	@Transactional
+	public void updateMeetingImage(Long meetingId, MultipartFile image) {
+		Long userId = getCurrentUserId();
+		Meeting meeting = meetingQueryService.getById(meetingId);
+		meetingAuthService.validateManagePermission(meeting, userId);
 
-			meeting.updateMeetingInfo(
-				request.getTitle(),
-				request.getStartAt(),
-				request.getPlaceName(),
-				request.getGeoPoint(),
-				request.getCapacity().intValue(),
-				request.getCost()
-			);
+		// 기존 이미지 삭제
+		final String oldImageUrl = meeting.getImgUrl();
+		if (oldImageUrl != null) {
+			tryDeleteFileFromS3(oldImageUrl);
+		}
 
-			if (newImageUrl != null) {
-				meeting.updateImage(newImageUrl);
-			}
-
-			return null;
-		});
+		// 새 이미지 업로드 및 URL 업데이트
+		String newImageUrl = fileStorageService.uploadFile(image, "meetings").getFileUrl();
+		meeting.updateImage(newImageUrl);
+		log.info("일정 {} 이미지 수정 완료: {}", meetingId, newImageUrl);
 	}
 
 	/**
 	 * 일정 삭제
 	 */
+	@Transactional
 	public void deleteMeeting(Long meetingId) {
-		Meeting meeting = meetingQueryService.getById(meetingId);
 		Long userId = getCurrentUserId();
-
+		Meeting meeting = meetingQueryService.getById(meetingId);
 		meetingAuthService.validateManagePermission(meeting, userId);
 
-		String imageUrl = executeDeleteMeeting(meeting);
+		String imageUrl = meeting.getImgUrl();
+		userMeetingRepository.deleteByMeetingId(meeting.getId());
+		meeting.softDelete();
 
 		if (imageUrl != null) {
 			tryDeleteFileFromS3(imageUrl);
 		}
 
 		log.info("일정 {} 삭제 완료 (모임장 권한, 타입: {})", meetingId, meeting.getType());
-	}
-
-	/**
-	 * 일정 삭제 DB 작업
-	 */
-	private String executeDeleteMeeting(Meeting meeting) {
-		return transactionTemplate.execute(status -> {
-			userMeetingRepository.deleteByMeetingId(meeting.getId());
-			String imageUrl = meeting.getImgUrl();
-			meeting.softDelete();
-			return imageUrl; // S3 삭제용으로 반환
-		});
 	}
 
 	private void autoDeleteMeetingWithResources(Meeting meeting) {
@@ -335,7 +329,6 @@ public class MeetingService {
 
 		meeting.softDelete();
 	}
-
 
 	private void tryDeleteFileFromS3(String fileUrl) {
 		try {

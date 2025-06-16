@@ -200,7 +200,13 @@ public class MeetingController {
 		@RequestPart(value = "image", required = false)
 		@Parameter(description = "새 대표 이미지 (선택적)") MultipartFile image
 	) {
-		meetingService.updateMeeting(meetingId, request, image);
+
+		meetingFacadeService.updateMeeting(meetingId, request);
+
+		if (image != null && !image.isEmpty()) {
+			meetingService.updateMeetingImage(meetingId, image);
+		}
+
 		return ResponseEntity.ok(ResponseHandler.response(null));
 	}
 
