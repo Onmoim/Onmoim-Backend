@@ -30,17 +30,17 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Meeting MySQL Named Lock AOP
-
- * 1. @Order(HIGHEST_PRECEDENCE)로 트랜잭션 AOP보다 먼저 실행
+ * 
+ * 1. @Order(3)로 Group Named Lock(@Order(2)) 다음에 실행
  * 2. LazyConnectionDataSourceProxy로 커넥션 동일성 보장
  * 3. SpEL로 동적 락 키 생성
- * 4. try-finally로 락 해제  보장
+ * 4. try-finally로 락 해제 보장
  * 5. autocommit 모드 명시적 제어
  */
 @Slf4j
 @Aspect
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE) // 트랜잭션 AOP보다 먼저 실행
+@Order(3) // Group NamedLock(@Order(2)) 다음에 실행되는 하위 도메인
 public class MeetingNamedLockAspect {
 
     // === 락 관리 설정 상수 ===
