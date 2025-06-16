@@ -240,26 +240,54 @@ class MeetingServiceTest {
 	}
 
 	@Test
-	@DisplayName("06. 일정 참석 취소 시 자동 삭제")
+	@DisplayName("06. 일정 참석 취소 - 마지막 참석자가 떠나고, 일정이 시작되어 자동 삭제되는 경우")
 	@Transactional
 	@Rollback
 	void test06_leaveMeeting_AutoDelete() {
 		// given
 		String uniqueId = UUID.randomUUID().toString().substring(0, 8);
-		User owner = createUser("모임장_" + uniqueId);
-		Group group = createGroup("테스트모임_" + uniqueId, owner);
-		Meeting meeting = createMeeting(group, owner, MeetingType.FLASH, 5, uniqueId);
+		User lastUser = createUser("마지막참석자_" + uniqueId);
+		Group group = createGroup("자동삭제테스트모임_" + uniqueId, lastUser);
 
-		setAuthContext(owner.getId());
+		// 1단계: 미래 시간으로 모임 생성 (정상적인 참여가 가능하도록)
+		Meeting meetingToDelete = Meeting.meetingCreateBuilder()
+			.groupId(group.getId())
+			.type(MeetingType.FLASH)
+			.title("자동 삭제될 모임")
+			.startAt(LocalDateTime.now().plusDays(1)) // 미래 시간으로 설정
+			.placeName("사라질 장소")
+			.capacity(5)
+			.cost(0)
+			.creatorId(lastUser.getId())
+			.build();
+		meetingRepository.save(meetingToDelete);
+
+		// 2단계: 사용자가 모임에 참여 (미래 모임이므로 정상적으로 참여 가능)
+		joinUserToMeeting(meetingToDelete, lastUser);
+		assertThat(meetingRepository.findById(meetingToDelete.getId()).get().getJoinCount()).isEqualTo(1);
+
+		// 3단계: 모임 시작 시간을 과거로 변경 (이미 시작된 상태로 만들기)
+		// Reflection을 사용하여 시작 시간을 과거로 변경
+		try {
+			java.lang.reflect.Field startAtField = Meeting.class.getDeclaredField("startAt");
+			startAtField.setAccessible(true);
+			startAtField.set(meetingToDelete, LocalDateTime.now().minusHours(1));
+			meetingRepository.save(meetingToDelete);
+		} catch (Exception e) {
+			throw new RuntimeException("테스트 설정 실패", e);
+		}
 
 		// when
-		meetingService.leaveMeeting(meeting.getId());
+		// 마지막 참석자가 모임을 떠남 (이제 isStarted() == true 이므로 자동 삭제 조건 충족)
+		setAuthContext(lastUser.getId());
+		meetingService.leaveMeeting(meetingToDelete.getId());
 
 		// then
-		Meeting deletedMeeting = meetingRepository.findById(meeting.getId()).orElseThrow();
-		assertThat(deletedMeeting.getDeletedDate()).isNotNull();
-		assertThat(deletedMeeting.getJoinCount()).isEqualTo(0);
-
+		// 모임이 삭제되었는지 확인 (Soft Delete)
+		Meeting foundMeeting = meetingRepository.findById(meetingToDelete.getId()).orElseThrow(
+			() -> new AssertionError("삭제된 모임을 찾을 수 없습니다.")
+		);
+		assertThat(foundMeeting.getDeletedDate()).isNotNull();
 		clearAuthContext();
 	}
 

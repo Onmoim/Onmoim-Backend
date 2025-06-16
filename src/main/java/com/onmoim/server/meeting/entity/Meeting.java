@@ -139,7 +139,9 @@ public class Meeting extends BaseEntity {
 	 * 일정 참석 취소 가능 여부 확인
 	 */
 	public boolean canLeave() {
-		return !isStarted();
+		// 기본적으로는 시작 전까지만 취소 가능
+		// 단, 이미 시작된 모임이라도 자동 삭제 조건(1명 이하)이면 취소 허용
+		return !isStarted() || (isStarted() && this.joinCount <= 1);
 	}
 
 	/**
@@ -179,7 +181,6 @@ public class Meeting extends BaseEntity {
 		this.joinCount++;
 		updateStatusIfFull();
 	}
-
 
 	/**
 	 * 일정 참석 취소 처리

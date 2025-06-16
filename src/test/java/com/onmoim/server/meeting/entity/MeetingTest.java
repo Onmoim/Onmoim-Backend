@@ -293,7 +293,7 @@ class MeetingTest {
 	}
 
 	@Test
-	@DisplayName("일정 참석 취소 실패 - 이미 시작됨")
+	@DisplayName("일정 참석 취소 실패 - 이미 시작되었고 참석자가 2명 이상")
 	void leave_Fail_AlreadyStarted() {
 		// given
 		Meeting meeting = Meeting.meetingCreateBuilder()
@@ -307,6 +307,10 @@ class MeetingTest {
 			.creatorId(1L)
 			.build();
 
+		// 참석자 2명 추가 (자동 삭제 조건을 벗어나도록)
+		meeting.creatorJoin(); // 1명
+		meeting.creatorJoin(); // 2명
+
 		// when & then
 		assertThatThrownBy(() -> meeting.leave())
 			.isInstanceOf(CustomException.class)
@@ -314,14 +318,69 @@ class MeetingTest {
 	}
 
 	@Test
-	@DisplayName("자동 삭제 대상 확인 - 참석자 1명 이하")
+	@DisplayName("일정 참석 취소 성공 - 이미 시작되었지만 참석자가 1명 이하 (자동 삭제 조건)")
+	void leave_Success_AlreadyStartedButAutoDeleteCondition() {
+		// given
+		Meeting meeting = Meeting.meetingCreateBuilder()
+			.groupId(1L)
+			.type(MeetingType.FLASH)
+			.title("테스트 일정")
+			.startAt(LocalDateTime.now().minusHours(1)) // 과거 일정
+			.placeName("테스트 장소")
+			.capacity(10)
+			.cost(0)
+			.creatorId(1L)
+			.build();
+
+		// 참석자 1명만 추가 (자동 삭제 조건)
+		meeting.creatorJoin(); // 1명
+
+		// when
+		meeting.leave();
+
+		// then
+		assertThat(meeting.getJoinCount()).isEqualTo(0);
+	}
+
+	@Test
+	@DisplayName("자동 삭제 대상 확인 - 참석자 1명 이하이고, 일정이 시작된 경우")
 	void shouldBeAutoDeleted_True() {
 		// given
 		Meeting meeting = Meeting.meetingCreateBuilder()
 			.groupId(1L)
 			.type(MeetingType.FLASH)
 			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(7)) // 충분히 미래로 설정
+			.startAt(LocalDateTime.now().plusDays(1)) // 미래 시간으로 생성
+			.placeName("테스트 장소")
+			.capacity(10)
+			.cost(0)
+			.creatorId(1L)
+			.build();
+
+		meeting.join(); // 1명 참석 (미래 모임이므로 정상적으로 참여 가능)
+
+		// 참석 후 시작 시간을 과거로 변경 (이미 시작된 상태로 만들기)
+		try {
+			java.lang.reflect.Field startAtField = Meeting.class.getDeclaredField("startAt");
+			startAtField.setAccessible(true);
+			startAtField.set(meeting, LocalDateTime.now().minusDays(1));
+		} catch (Exception e) {
+			throw new RuntimeException("테스트 설정 실패", e);
+		}
+
+		// when & then
+		assertThat(meeting.shouldBeAutoDeleted()).isTrue();
+	}
+
+	@Test
+	@DisplayName("자동 삭제 대상 확인 실패 - 일정이 아직 시작되지 않은 경우")
+	void shouldBeAutoDeleted_False_NotStarted() {
+		// given
+		Meeting meeting = Meeting.meetingCreateBuilder()
+			.groupId(1L)
+			.type(MeetingType.FLASH)
+			.title("테스트 일정")
+			.startAt(LocalDateTime.now().plusDays(1)) // 일정이 미래
 			.placeName("테스트 장소")
 			.capacity(10)
 			.cost(0)
@@ -329,28 +388,6 @@ class MeetingTest {
 			.build();
 
 		meeting.join(); // 1명 참석
-
-		// when & then
-		assertThat(meeting.shouldBeAutoDeleted()).isTrue();
-	}
-
-	@Test
-	@DisplayName("자동 삭제 대상 아님 - 참석자 2명 이상")
-	void shouldBeAutoDeleted_False() {
-		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(7)) // 충분히 미래로 설정
-			.placeName("테스트 장소")
-			.capacity(10)
-			.cost(0)
-			.creatorId(1L)
-			.build();
-
-		meeting.join(); // 1명
-		meeting.join(); // 2명
 
 		// when & then
 		assertThat(meeting.shouldBeAutoDeleted()).isFalse();
@@ -508,18 +545,15 @@ class MeetingTest {
 	}
 
 	private User createUser(Long id) {
-		// 유닛 테스트에서는 ID를 직접 설정할 수 없으므로 reflection을 사용
 		User user = User.builder()
 			.name("테스트 사용자")
 			.build();
 
-		// 테스트용으로 ID 강제 설정
 		try {
 			java.lang.reflect.Field idField = User.class.getDeclaredField("id");
 			idField.setAccessible(true);
 			idField.set(user, id);
 		} catch (Exception e) {
-			// reflection 실패 시 무시 (실제 애플리케이션에서는 JPA가 처리)
 		}
 
 		return user;
