@@ -30,24 +30,31 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Meeting MySQL Named Lock AOP
- *
- * 완벽한 락 관리 패턴:
+
  * 1. @Order(HIGHEST_PRECEDENCE)로 트랜잭션 AOP보다 먼저 실행
  * 2. LazyConnectionDataSourceProxy로 커넥션 동일성 보장
  * 3. SpEL로 동적 락 키 생성
- * 4. try-finally로 락 해제 100% 보장
+ * 4. try-finally로 락 해제  보장
  * 5. autocommit 모드 명시적 제어
- *
- * 사용법:
- * @NamedLock(keySpEL = "#meetingId", timeout = 15)
- * @Transactional
- * public void joinMeeting(Long meetingId) { ... }
  */
 @Slf4j
 @Aspect
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE) // 트랜잭션 AOP보다 먼저 실행
 public class MeetingNamedLockAspect {
+
+    // === 락 관리 설정 상수 ===
+    private static final int MAX_LOCK_RETRY_ATTEMPTS = 3;
+    private static final long LOCK_RETRY_BACKOFF_MS = 100L;
+    private static final int LOCK_SUCCESS_RESULT = 1;
+
+    // === 타임아웃 설정 상수 ===
+    private static final int DEFAULT_LOCK_TIMEOUT_SECONDS = 10;
+    private static final int REGULAR_MEETING_TIMEOUT_SECONDS = 10;
+    private static final int FLASH_MEETING_TIMEOUT_SECONDS = 15;
+
+    // === 어노테이션 설정 상수 ===
+    private static final int DYNAMIC_TIMEOUT_SENTINEL = -1;
 
     private final DataSource dataSource;
     private final MeetingRepository meetingRepository;
@@ -143,23 +150,25 @@ public class MeetingNamedLockAspect {
             return namedLock.timeout();
         }
 
-        // -1인 경우에만 동적 타임아웃 적용
-        try {
-            MethodSignature signature = (MethodSignature) pjp.getSignature();
-            String[] paramNames = signature.getParameterNames();
-            Object[] args = pjp.getArgs();
+        // DYNAMIC_TIMEOUT_SENTINEL(-1)인 경우에만 동적 타임아웃 적용
+        if (namedLock.timeout() == DYNAMIC_TIMEOUT_SENTINEL) {
+            try {
+                MethodSignature signature = (MethodSignature) pjp.getSignature();
+                String[] paramNames = signature.getParameterNames();
+                Object[] args = pjp.getArgs();
 
-            for (int i = 0; i < paramNames.length; i++) {
-                if ("meetingId".equals(paramNames[i]) && args[i] instanceof Long) {
-                    Long meetingId = (Long) args[i];
-                    return getTimeoutByMeetingType(meetingId);
+                for (int i = 0; i < paramNames.length; i++) {
+                    if ("meetingId".equals(paramNames[i]) && args[i] instanceof Long) {
+                        Long meetingId = (Long) args[i];
+                        return getTimeoutByMeetingType(meetingId);
+                    }
                 }
+            } catch (Exception e) {
+                log.warn("동적 타임아웃 결정 실패, 기본값 사용: {}", e.getMessage());
             }
-        } catch (Exception e) {
-            log.warn("동적 타임아웃 결정 실패, 기본값 사용: {}", e.getMessage());
         }
 
-        return 10; // 기본값 (동적 결정 실패 시)
+        return DEFAULT_LOCK_TIMEOUT_SECONDS; // 기본값 (동적 결정 실패 시)
     }
 
     /**
@@ -176,39 +185,36 @@ public class MeetingNamedLockAspect {
 
             return switch (meetingType) {
                 case REGULAR -> {
-                    log.debug("정기모임 락 타임아웃: 10초 - meetingId: {}", meetingId);
-                    yield 10;
+                    log.debug("정기모임 락 타임아웃: {}초 - meetingId: {}", REGULAR_MEETING_TIMEOUT_SECONDS, meetingId);
+                    yield REGULAR_MEETING_TIMEOUT_SECONDS;
                 }
                 case FLASH -> {
-                    log.debug("번개모임 락 타임아웃: 15초 - meetingId: {}", meetingId);
-                    yield 15;
+                    log.debug("번개모임 락 타임아웃: {}초 - meetingId: {}", FLASH_MEETING_TIMEOUT_SECONDS, meetingId);
+                    yield FLASH_MEETING_TIMEOUT_SECONDS;
                 }
                 default -> {
                     log.warn("알 수 없는 일정 타입: {} - meetingId: {}", meetingType, meetingId);
-                    yield 10;
+                    yield DEFAULT_LOCK_TIMEOUT_SECONDS;
                 }
             };
         } catch (Exception e) {
             log.error("일정 타입 조회 중 오류 발생 - meetingId: {}, 기본 타임아웃 사용", meetingId, e);
-            return 10; // 기본값
+            return DEFAULT_LOCK_TIMEOUT_SECONDS;
         }
     }
 
     /**
-     * 락 획득
+     * 락 획득 (백오프 & 재시도 정책 포함)
      */
     private boolean acquireLock(Connection connection, String lockKey, int timeoutSeconds) {
-        final int maxRetries = 3;
-        final long backoffMs = 100;
-
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+        for (int attempt = 1; attempt <= MAX_LOCK_RETRY_ATTEMPTS; attempt++) {
             try (Statement statement = connection.createStatement()) {
                 String sql = String.format("SELECT GET_LOCK('%s', %d)", lockKey, timeoutSeconds);
                 var resultSet = statement.executeQuery(sql);
 
                 if (resultSet.next()) {
                     int result = resultSet.getInt(1);
-                    boolean acquired = (result == 1);
+                    boolean acquired = (result == LOCK_SUCCESS_RESULT);
 
                     if (acquired) {
                         if (attempt > 1) {
@@ -217,12 +223,12 @@ public class MeetingNamedLockAspect {
                         return true;
                     } else {
                         log.warn("MySQL Named Lock 획득 실패 (시도 {}/{}) - 키: {}, 타임아웃: {}초",
-                            attempt, maxRetries, lockKey, timeoutSeconds);
+                            attempt, MAX_LOCK_RETRY_ATTEMPTS, lockKey, timeoutSeconds);
 
                         // 마지막 시도가 아니면 백오프
-                        if (attempt < maxRetries) {
+                        if (attempt < MAX_LOCK_RETRY_ATTEMPTS) {
                             try {
-                                Thread.sleep(backoffMs);
+                                Thread.sleep(LOCK_RETRY_BACKOFF_MS);
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                                 return false;
@@ -230,15 +236,15 @@ public class MeetingNamedLockAspect {
                         }
                     }
                 } else {
-                    log.error("GET_LOCK 결과셋이 비어있음 (시도 {}/{}) - 키: {}", attempt, maxRetries, lockKey);
+                    log.error("GET_LOCK 결과셋이 비어있음 (시도 {}/{}) - 키: {}", attempt, MAX_LOCK_RETRY_ATTEMPTS, lockKey);
                 }
             } catch (SQLException e) {
-                log.error("락 획득 중 SQL 오류 (시도 {}/{}) - 키: {}", attempt, maxRetries, lockKey, e);
+                log.error("락 획득 중 SQL 오류 (시도 {}/{}) - 키: {}", attempt, MAX_LOCK_RETRY_ATTEMPTS, lockKey, e);
 
                 // 마지막 시도가 아니면 백오프
-                if (attempt < maxRetries) {
+                if (attempt < MAX_LOCK_RETRY_ATTEMPTS) {
                     try {
-                        Thread.sleep(backoffMs);
+                        Thread.sleep(LOCK_RETRY_BACKOFF_MS);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         return false;
@@ -247,7 +253,7 @@ public class MeetingNamedLockAspect {
             }
         }
 
-        log.error("MySQL Named Lock 획득 최종 실패 ({}회 시도 모두 실패) - 키: {}", maxRetries, lockKey);
+        log.error("MySQL Named Lock 획득 최종 실패 ({}회 시도 모두 실패) - 키: {}", MAX_LOCK_RETRY_ATTEMPTS, lockKey);
         return false;
     }
 
