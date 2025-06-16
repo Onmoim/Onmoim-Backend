@@ -24,16 +24,4 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long>, Queryds
 	@Query("SELECT m.type FROM Meeting m WHERE m.id = :meetingId AND m.deletedDate IS NULL")
 	MeetingType findMeetingTypeById(@Param("meetingId") Long meetingId);
 
-	// 네임드 락 관련
-	/**
-	 * MySQL 네임드 락 획득
-	 */
-	@Query(value = "SELECT GET_LOCK(:lockKey, :timeoutSeconds)", nativeQuery = true)
-	Integer getLock(@Param("lockKey") String lockKey, @Param("timeoutSeconds") int timeoutSeconds);
-
-	/**
-	 * MySQL 네임드 락 해제
-	 */
-	@Query(value = "SELECT RELEASE_LOCK(:lockKey)", nativeQuery = true)
-	Integer releaseLock(@Param("lockKey") String lockKey);
 }
