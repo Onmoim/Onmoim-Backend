@@ -38,14 +38,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 
-/**
- * Meeting Facade Service 테스트
- *
- * 테스트 목표:
- * 1. 파사드 패턴이 제대로 작동하는지
- * 2. 완벽한 Named Lock이 동시성을 제어하는지
- * 3. 락 관리 복잡성이 클라이언트에게 숨겨지는지
- */
 @SpringBootTest
 class MeetingFacadeServiceTest {
 
@@ -70,7 +62,7 @@ class MeetingFacadeServiceTest {
     private TransactionTemplate transactionTemplate;
 
     @Test
-    @DisplayName("파사드 패턴 - 일정 참석 신청 성공")
+    @DisplayName("일정 참석 신청 성공")
     @Transactional
     @Rollback
     void testJoinMeeting_Success_WithFacade() {
@@ -84,7 +76,7 @@ class MeetingFacadeServiceTest {
 
         setAuthContext(member.getId());
 
-        // when - 파사드 패턴 사용 (락 복잡성 완전 숨김)
+        // when
         meetingFacadeService.joinMeeting(meeting.getId());
 
         // then
@@ -98,7 +90,7 @@ class MeetingFacadeServiceTest {
     }
 
     @Test
-    @DisplayName("파사드 패턴 - 일정 참석 취소 성공")
+    @DisplayName("일정 참석 취소 성공")
     @Transactional
     @Rollback
     void testLeaveMeeting_Success_WithFacade() {
@@ -136,7 +128,7 @@ class MeetingFacadeServiceTest {
     }
 
     @Test
-    @DisplayName("파사드 패턴 동시성 테스트")
+    @DisplayName("동시성 테스트")
     void testConcurrentJoinMeeting_WithFacadePerfectNamedLock() throws InterruptedException {
         // given
         EntityManager em = emf.createEntityManager();
@@ -207,7 +199,6 @@ class MeetingFacadeServiceTest {
                         detail, null, null);
                     SecurityContextHolder.getContext().setAuthentication(authenticated);
 
-                    // 파사드 패턴 사용
                     meetingFacadeService.joinMeeting(finalMeetingId);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
@@ -229,24 +220,22 @@ class MeetingFacadeServiceTest {
         assertThat(successCount.get()).isEqualTo(2);  // 2명만 성공
         assertThat(failCount.get()).isEqualTo(18);    // 18명 실패
 
-        // DB 검증
         long actualParticipants = userMeetingRepository.countByMeetingId(finalMeetingId);
         assertThat(actualParticipants).isEqualTo(3);
 
-        System.out.println("🔥 극한 동시성 테스트 성공!");
+        System.out.println("동시성 테스트 성공~");
         System.out.println("   - 총 신청자: 20명");
         System.out.println("   - 정원: 3명 (극한 경쟁!)");
         System.out.println("   - 성공: " + successCount.get() + "명");
         System.out.println("   - 실패: " + failCount.get() + "명");
         System.out.println("   - 최종 참석자: " + finalMeeting.getJoinCount() + "명");
         System.out.println("   - 경쟁률: " + String.format("%.1f", 20.0/2) + ":1 (20명 중 2명만 성공!)");
-        System.out.println("   - 락 복잡성: 완전히 숨겨짐 (클라이언트는 단순한 joinMeeting() 호출만)");
 
         cleanupTestData(finalMeetingId);
     }
 
     @Test
-    @DisplayName("파사드 패턴 - 중복 참석 신청 방지")
+    @DisplayName("중복 참석 신청 방지")
     @Transactional
     @Rollback
     void testJoinMeeting_PreventDuplicate_WithFacade() {
@@ -271,7 +260,7 @@ class MeetingFacadeServiceTest {
     }
 
     @Test
-    @DisplayName("파사드 패턴 - 정원 초과 시 실패")
+    @DisplayName("정원 초과 시 실패")
     @Transactional
     @Rollback
     void testJoinMeeting_CapacityExceeded_WithFacade() {
