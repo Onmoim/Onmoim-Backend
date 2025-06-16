@@ -1,8 +1,11 @@
 package com.onmoim.server.group.service;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,10 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
+import com.onmoim.server.group.entity.GroupUserId;
 import com.onmoim.server.group.entity.Status;
+import com.onmoim.server.group.implement.GroupQueryService;
+import com.onmoim.server.group.implement.GroupUserQueryService;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.location.entity.Location;
@@ -26,6 +31,7 @@ import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.repository.UserRepository;
 
+@Transactional
 @SpringBootTest
 class GroupServiceTest {
 	@Autowired
@@ -40,6 +46,10 @@ class GroupServiceTest {
 	private LocationRepository locationRepository;
 	@Autowired
 	private CategoryRepository categoryRepository;
+	@Autowired
+	private GroupUserQueryService groupUserQueryService;
+	@Autowired
+	private GroupQueryService groupQueryService;
 
 	private void setSecurityContext(Long userId) {
 		var detail = new CustomUserDetails(
@@ -57,7 +67,6 @@ class GroupServiceTest {
 
 	@Test
 	@DisplayName("모임 좋아요: 성공")
-	@Transactional
 	void likeGroupSuccessTest() {
 		// given
 		User user = User.builder()
@@ -86,7 +95,6 @@ class GroupServiceTest {
 
 	@Test
 	@DisplayName("모임 좋아요 성공: PENDING -> BOOKMARK ")
-	@Transactional
 	void likeGroupSuccessTest2() {
 		// given
 		User user = User.builder()
@@ -116,7 +124,6 @@ class GroupServiceTest {
 
 	@Test
 	@DisplayName("모임 좋아요 실패: 이미 가입")
-	@Transactional
 	void likeGroupFailureTest() {
 		// given
 		User user = User.builder()
@@ -136,14 +143,13 @@ class GroupServiceTest {
 
 		assertThatThrownBy(() -> groupService.likeGroup(group.getId()))
 			.isInstanceOf(CustomException.class)
-			.hasMessage(ErrorCode.GROUP_ALREADY_JOINED.getDetail());
+			.hasMessage(GROUP_ALREADY_JOINED.getDetail());
 
 		SecurityContextHolder.clearContext();
 	}
 
 	@Test
 	@DisplayName("모임 좋아요 취소 성공: BOOKMARK -> PENDING")
-	@Transactional
 	void likeCancelGroupSuccessTest() {
 		// given
 		User user = User.builder()
@@ -173,7 +179,6 @@ class GroupServiceTest {
 
 	@Test
 	@DisplayName("모임 회원 조회")
-	@Transactional
 	void selectGroupMembers() {
 		// given
 		Group group = Group.builder()
@@ -253,7 +258,6 @@ class GroupServiceTest {
 
 	@Test
 	@DisplayName("모임 생성 성공")
-	@Transactional
 	void createGroupSuccess() {
 		// given
 		Location location = Location.create("1234", "서울특별시", "종로구", "청운동", null);
@@ -288,5 +292,430 @@ class GroupServiceTest {
 		GroupUser groupUser = groupUserRepository.findGroupUser(groupId, user.getId()).get();
 		assertThat(groupUser).isNotNull();
 		assertThat(groupUser.getStatus()).isEqualTo(Status.OWNER);
+	}
+
+	@Test
+	@DisplayName("모임 수정 성공")
+	void updateGroupSuccess() {
+		// given
+		User user = User.builder().name("owner").build();
+		userRepository.save(user);
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(100)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, user, Status.OWNER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(user.getId());
+
+		// when
+		groupService.updateGroup(groupId, "after", 20, null);
+
+		// then
+		Group updated = groupQueryService.getById(groupId);
+		assertThat(updated.getDescription()).isEqualTo("after");
+		assertThat(updated.getCapacity()).isEqualTo(20);
+	}
+
+	@Test
+	@DisplayName("모임 수정 실패: 모임장 X")
+	void updateGroupFailure1() {
+		// given
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(100)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(member.getId());
+
+		// expected
+		assertThatThrownBy(() -> groupService.updateGroup(groupId, "after", 20, null))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(GROUP_FORBIDDEN.getDetail());
+	}
+
+	@Test
+	@DisplayName("모임 수정 실패: 정원 설정 문제")
+	void updateGroupFailure2() {
+		// given
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(owner.getId());
+
+		// expected
+		assertThatThrownBy(() -> groupService.updateGroup(groupId, "after", 1, null))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(CAPACITY_MUST_BE_GREATER_THAN_CURRENT.getDetail());
+	}
+
+	@Test
+	@DisplayName("모임원 강퇴 성공")
+	void banSuccess() {
+		// given
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
+
+		final Long groupId = group.getId();
+		final Long memberId = member.getId();
+		setSecurityContext(owner.getId());
+
+		// when
+		groupService.banMember(groupId, memberId);
+
+		// then
+		Optional<GroupUser> banMember = groupUserRepository.findGroupUser(groupId, memberId);
+		assertThat(banMember.isPresent()).isTrue();
+		assertThat(banMember.get().getStatus()).isEqualTo(Status.BAN);
+	}
+
+	@Test
+	@DisplayName("모임원 강퇴 실패: 모임장 X")
+	void banFailure1() {
+		// given
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(member.getId());
+
+		// expected
+		assertThatThrownBy(() -> groupService.banMember(groupId, owner.getId()))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(GROUP_FORBIDDEN.getDetail());
+	}
+
+	@Test
+	@DisplayName("모임원 강퇴 실패: 모임장 자신 강퇴 시도")
+	void banFailure2() {
+		// given
+		User owner = User.builder().name("owner").build();
+		userRepository.save(owner);
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(owner.getId());
+
+		// expected
+		assertThatThrownBy(() -> groupService.banMember(groupId, owner.getId()))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(MEMBER_NOT_FOUND_IN_GROUP.getDetail());
+	}
+
+	@Test
+	@DisplayName("모임 삭제 성공")
+	void deleteGroupSuccess() {
+		// given
+		User owner = User.builder().name("owner").build();
+		userRepository.save(owner);
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(owner.getId());
+
+		// when
+		groupService.deleteGroup(groupId);
+
+		// then
+		Optional<Group> deletedGroup = groupRepository.findById(groupId);
+		assertThat(deletedGroup.isPresent()).isTrue();
+		assertThat(deletedGroup.get().isDeleted()).isTrue();
+	}
+
+	@Test
+	@DisplayName("모임 삭제 실패: 모임장 X")
+	void deleteGroupFailure1() {
+		// given
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(member.getId());
+
+		// expected
+		assertThatThrownBy(() -> groupService.deleteGroup(groupId))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(GROUP_FORBIDDEN.getDetail());
+	}
+
+	@Test
+	@DisplayName("모임 삭제 실패: 모임 멤버 X")
+	void deleteGroupFailure2() {
+		// given
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(member.getId());
+
+		// expected
+		assertThatThrownBy(() -> groupService.deleteGroup(groupId))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(GROUP_FORBIDDEN.getDetail());
+	}
+
+	@Test
+	@DisplayName("모임 탈퇴 성공: 모임원 (MEMBER -> PENDING)")
+	void leaveGroupSuccess1() {
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(member.getId());
+
+		// when
+		groupService.leaveGroup(groupId);
+
+		// then
+		assertThat(groupUserQueryService.countMembers(groupId)).isEqualTo(1L);
+		Optional<GroupUser> optionalGroupUser = groupUserRepository.findById(new GroupUserId(groupId, member.getId()));
+		assertThat(optionalGroupUser.isPresent()).isTrue();
+		assertThat(optionalGroupUser.get().getStatus()).isEqualTo(Status.PENDING);
+	}
+
+	@Test
+	@DisplayName("모임 탈퇴 성공 + 모임 삭제: 모임장 + 모임원 = 1명")
+	void leaveGroupSuccess2() {
+		User owner = User.builder().name("owner").build();
+		userRepository.save(owner);
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(owner.getId());
+
+		// when
+		groupService.leaveGroup(groupId);
+
+		// then
+		Optional<Group> optionalGroup = groupRepository.findById(groupId);
+		assertThat(optionalGroup.isPresent()).isTrue();
+		assertThat(optionalGroup.get().isDeleted()).isTrue();
+	}
+
+	@Test
+	@DisplayName("모임 탈퇴 실패: 모임장 + 모임원 = 2명")
+	void leaveGroupFailure1() {
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(owner.getId());
+
+		// expected
+		assertThatThrownBy(() -> groupService.leaveGroup(groupId))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(GROUP_OWNER_TRANSFER_REQUIRED.getDetail());
+	}
+
+	@Test
+	@DisplayName("모임 탈퇴 실패: 모임원 아닌 사용자 탈퇴 시도")
+	void leaveGroupFailure2() {
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+		final Long groupId = group.getId();
+		setSecurityContext(member.getId());
+
+		// expected
+		assertThatThrownBy(() -> groupService.leaveGroup(groupId))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(NOT_GROUP_MEMBER.getDetail());
+	}
+
+	@Test
+	@DisplayName("모임장 권한 위임 성공")
+	void transferOwnerSuccess() {
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(owner.getId());
+
+		// when
+		groupService.transferOwnership(groupId, member.getId());
+
+		// then
+		Optional<GroupUser> member_to_owner =
+			groupUserRepository.findById(new GroupUserId(groupId, member.getId()));
+
+		assertThat(member_to_owner.isPresent()).isTrue();
+		assertThat(member_to_owner.get().getStatus()).isEqualTo(Status.OWNER);
+
+		Optional<GroupUser> owner_to_member =
+			groupUserRepository.findById(new GroupUserId(groupId, owner.getId()));
+
+		assertThat(owner_to_member.isPresent()).isTrue();
+		assertThat(owner_to_member.get().getStatus()).isEqualTo(Status.MEMBER);
+	}
+
+	@Test
+	@DisplayName("모임장 권한 위임 실패: 모임장 X")
+	void transferOwnerFailure1() {
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(member.getId());
+
+		// expected
+		assertThatThrownBy(() -> groupService.transferOwnership(groupId, member.getId()))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(GROUP_FORBIDDEN.getDetail());
+	}
+
+	@Test
+	@DisplayName("모임장 권한 위임 실패: 모임에 없는 사용자")
+	void transferOwnerFailure2() {
+		User owner = User.builder().name("owner").build();
+		User member = User.builder().name("member").build();
+		userRepository.saveAll(List.of(owner, member));
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트 모임")
+			.description("before")
+			.capacity(20)
+			.build());
+
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+
+		final Long groupId = group.getId();
+		setSecurityContext(owner.getId());
+
+		// expected
+		assertThatThrownBy(() -> groupService.transferOwnership(groupId, member.getId()))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(MEMBER_NOT_FOUND_IN_GROUP.getDetail());
 	}
 }
