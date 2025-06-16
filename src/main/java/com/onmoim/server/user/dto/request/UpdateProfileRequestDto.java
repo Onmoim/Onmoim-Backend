@@ -3,6 +3,8 @@ package com.onmoim.server.user.dto.request;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -37,7 +39,7 @@ public class UpdateProfileRequestDto {
 	@Schema(description = "관심사(카테고리) id 리스트")
 	private List<Long> categoryIdList;
 
-	@Schema(description = "프로필 사진 url")
+	@Schema(description = "프로필 사진 url(기존 사진 교체 없는 경우)")
 	private String profileImgUrl;
 
 }

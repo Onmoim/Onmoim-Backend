@@ -1,5 +1,7 @@
 package com.onmoim.server.user.service;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
 import com.onmoim.server.user.dto.request.SignupRequestDto;
 import com.onmoim.server.user.dto.request.UpdateProfileRequestDto;
@@ -13,7 +15,7 @@ public interface UserService {
 
 	public ProfileResponseDto getProfile();
 
-	public void updateUserProfile(Long userId, UpdateProfileRequestDto request);
+	public void updateUserProfile(Long userId, UpdateProfileRequestDto request, MultipartFile profileImgFile);
 
 	public void leaveUser(Long id);
 

@@ -9,11 +9,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
+import com.onmoim.server.common.s3.service.FileStorageService;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupUserRepository;
@@ -43,6 +46,7 @@ public class UserServiceImpl implements UserService {
 	private final UserMapperCustom userMapperCustom;
 	private final GroupUserRepository groupUserRepository;
 	private final RefreshTokenService refreshTokenService;
+	private final FileStorageService fileStorageService;
 
 	public Long getCurrentUserId() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -116,19 +120,38 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updateUserProfile(Long userId, UpdateProfileRequestDto request) {
+	@Transactional
+	public void updateUserProfile(Long userId, UpdateProfileRequestDto request, MultipartFile profileImgFile) {
 		User user = userRepository.findById(getCurrentUserId())
 			.orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
-		// 1. user 테이블 update
-		user.updateProfile(
-			request.getName(),
-			request.getGender(),
-			request.getBirth(),
-			request.getAddressId(),
-			request.getIntroduction(),
-			request.getProfileImgUrl()
-		);
+		// 0. 프로필 사진 첨부파일 있을 경우 먼저 S3에 업로드
+		FileUploadResponseDto fileUploadResponse = null;
+		if (profileImgFile != null) {
+			String directory = "images/profile";
+			fileUploadResponse = fileStorageService.uploadFile(profileImgFile, directory);
+			log.info("fileUrl = {}", fileUploadResponse.getFileUrl());
+
+			// 1. user 테이블 update(사진 등록/교체하는 경우)
+			user.updateProfile(
+				request.getName(),
+				request.getGender(),
+				request.getBirth(),
+				request.getAddressId(),
+				request.getIntroduction(),
+				fileUploadResponse.getFileUrl()
+			);
+		} else {
+			// 1. user 테이블 update(기존 사진 교체 없는 경우)
+			user.updateProfile(
+				request.getName(),
+				request.getGender(),
+				request.getBirth(),
+				request.getAddressId(),
+				request.getIntroduction(),
+				request.getProfileImgUrl()
+			);
+		}
 
 		// 2. user_category 테이블 delete
 		List<UserCategory> userCategoryList = userCategoryRepository.findUserCategoriesByUser(user);

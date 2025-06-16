@@ -1,5 +1,6 @@
 package com.onmoim.server.user.controller;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -8,7 +9,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.common.response.ResponseHandler;
 import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
@@ -18,6 +21,7 @@ import com.onmoim.server.user.dto.response.ProfileResponseDto;
 import com.onmoim.server.user.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -58,6 +62,32 @@ public class UserController {
 	public ResponseEntity<ResponseHandler<Long>> signup(@RequestBody @Valid SignupRequestDto request) {
 		Long userId = userService.signup(request);
 		return ResponseEntity.ok(ResponseHandler.response(userId));
+	}
+
+	@PutMapping(value = "/profile/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@Operation(
+		summary = "프로필 수정",
+		description = "로그인한 유저의 프로필을 편집합니다."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "프로필 수정 성공",
+			content = @Content(
+				mediaType = "application/json",
+				schema = @Schema(implementation = ResponseHandler.class)
+			)
+		),
+		@ApiResponse(
+			responseCode = "400",
+			description = "BAD REQUEST - 요청값 오류 발생"
+		)
+	})
+	public ResponseEntity<ResponseHandler<String>> updateUserProfile(@PathVariable Long id,
+		@Valid @RequestPart("request") UpdateProfileRequestDto request,
+		@RequestPart(value = "image", required = false) MultipartFile profileImgFile) {
+		userService.updateUserProfile(id, request, profileImgFile);
+		return ResponseEntity.ok(ResponseHandler.response("프로필 수정이 완료되었습니다."));
 	}
 
 	@PostMapping("/category")
@@ -106,30 +136,6 @@ public class UserController {
 	public ResponseEntity<ResponseHandler<ProfileResponseDto>> getProfile() {
 		ProfileResponseDto response = userService.getProfile();
 		return ResponseEntity.ok(ResponseHandler.response(response));
-	}
-
-	@PutMapping("/profile/{id}")
-	@Operation(
-		summary = "프로필 수정",
-		description = "로그인한 유저의 프로필을 편집합니다."
-	)
-	@ApiResponses(value = {
-		@ApiResponse(
-			responseCode = "200",
-			description = "프로필 수정 성공",
-			content = @Content(
-				mediaType = "application/json",
-				schema = @Schema(implementation = ResponseHandler.class)
-			)
-		),
-		@ApiResponse(
-			responseCode = "400",
-			description = "BAD REQUEST - 요청값 오류 발생"
-		)
-	})
-	public ResponseEntity<ResponseHandler<String>> updateUserProfile(@PathVariable Long id, @RequestBody @Valid UpdateProfileRequestDto request) {
-		userService.updateUserProfile(id, request);
-		return ResponseEntity.ok(ResponseHandler.response("프로필 수정이 완료되었습니다."));
 	}
 
 	@DeleteMapping("/{id}")
