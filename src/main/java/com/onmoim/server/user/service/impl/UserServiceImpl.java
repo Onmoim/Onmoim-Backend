@@ -1,6 +1,7 @@
 package com.onmoim.server.user.service.impl;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
+import static org.springframework.data.jpa.domain.AbstractPersistable_.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -123,7 +124,14 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	@Transactional
-	public void updateUserProfile(Long userId, UpdateProfileRequestDto request, MultipartFile profileImgFile) {
+	public void updateUserProfile(Long id, UpdateProfileRequestDto request, MultipartFile profileImgFile) {
+
+		Long userId = getCurrentUserId();
+
+		if (!userId.equals(id)) {
+			throw new CustomException(FORBIDDEN_USER_ACCESS);
+		}
+
 		User user = userRepository.findById(getCurrentUserId())
 			.orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 

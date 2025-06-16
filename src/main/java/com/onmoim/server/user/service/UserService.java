@@ -17,7 +17,7 @@ public interface UserService {
 
 	public ProfileResponseDto getProfile();
 
-	public void updateUserProfile(Long userId, UpdateProfileRequestDto request, MultipartFile profileImgFile);
+	public void updateUserProfile(Long id, UpdateProfileRequestDto request, MultipartFile profileImgFile);
 
 	public void leaveUser(Long id);
 

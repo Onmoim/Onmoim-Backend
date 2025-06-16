@@ -82,9 +82,11 @@ public class UserController {
 			description = "BAD REQUEST - 요청값 오류 발생"
 		)
 	})
-	public ResponseEntity<ResponseHandler<String>> updateUserProfile(@PathVariable Long id,
+	public ResponseEntity<ResponseHandler<String>> updateUserProfile(
+		@PathVariable Long id,
 		@Valid @RequestPart("request") UpdateProfileRequestDto request,
-		@RequestPart(value = "image", required = false) MultipartFile profileImgFile) {
+		@RequestPart(value = "image", required = false) MultipartFile profileImgFile
+	) {
 		userService.updateUserProfile(id, request, profileImgFile);
 		return ResponseEntity.ok(ResponseHandler.response("프로필 수정이 완료되었습니다."));
 	}
