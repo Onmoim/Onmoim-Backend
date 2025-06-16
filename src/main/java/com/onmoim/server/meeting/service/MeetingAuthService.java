@@ -1,11 +1,12 @@
 package com.onmoim.server.meeting.service;
 
+import com.onmoim.server.group.implement.GroupUserQueryService;
 import org.springframework.stereotype.Service;
 
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.entity.GroupUser;
-import com.onmoim.server.group.service.GroupUserQueryService;
+
 import com.onmoim.server.meeting.entity.Meeting;
 
 import lombok.RequiredArgsConstructor;

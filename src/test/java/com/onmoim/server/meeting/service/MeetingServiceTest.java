@@ -458,7 +458,7 @@ class MeetingServiceTest {
 			User owner = User.builder().name("모임장_" + UUID.randomUUID().toString().substring(0, 8)).build();
 			em.persist(owner);
 
-			Group group = Group.groupCreateBuilder()
+			Group group = Group.builder()
 				.name("테스트모임_" + UUID.randomUUID().toString().substring(0, 8))
 				.capacity(100)
 				.build();
@@ -561,7 +561,7 @@ class MeetingServiceTest {
 	}
 
 	private Group createGroup(String name, User owner) {
-		Group group = Group.groupCreateBuilder()
+		Group group = Group.builder()
 			.name(name)
 			.capacity(100)
 			.build();

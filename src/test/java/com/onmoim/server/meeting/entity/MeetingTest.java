@@ -561,7 +561,7 @@ class MeetingTest {
 
 	private GroupUser createGroupUser(User user, Status status) {
 		// Dummy Group 객체 생성 (테스트용)
-		Group dummyGroup = Group.groupCreateBuilder()
+		Group dummyGroup = Group.builder()
 			.name("테스트 그룹")
 			.capacity(100)
 			.build();

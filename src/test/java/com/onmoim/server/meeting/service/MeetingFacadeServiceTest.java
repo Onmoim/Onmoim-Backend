@@ -326,7 +326,7 @@ class MeetingFacadeServiceTest {
 	}
 
 	private Group createGroup(String name, User owner) {
-		Group group = Group.groupCreateBuilder()
+		Group group = Group.builder()
 			.name(name + "_" + UUID.randomUUID().toString().substring(0, 4))
 			.capacity(100)
 			.build();

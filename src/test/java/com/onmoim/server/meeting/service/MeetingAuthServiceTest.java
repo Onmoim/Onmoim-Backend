@@ -47,7 +47,7 @@ class MeetingAuthServiceTest {
 		Meeting meeting = createRegularMeeting(group.getId(), owner.getId());
 
 		// when & then
-		assertThatCode(() -> 
+		assertThatCode(() ->
 			meetingAuthService.validateCreatePermission(group.getId(), owner.getId(), meeting)
 		).doesNotThrowAnyException();
 	}
@@ -284,15 +284,15 @@ class MeetingAuthServiceTest {
 	}
 
 	private Group createGroup(String name, User owner) {
-		Group group = Group.groupCreateBuilder()
+		Group group = Group.builder()
 			.name(name)
 			.capacity(100)
 			.build();
 		group = groupRepository.save(group);
-		
+
 		GroupUser groupUser = GroupUser.create(group, owner, Status.OWNER);
 		groupUserRepository.save(groupUser);
-		
+
 		return group;
 	}
 
@@ -330,4 +330,4 @@ class MeetingAuthServiceTest {
 	private Meeting saveMeeting(Meeting meeting) {
 		return meetingRepository.save(meeting);
 	}
-} 
+}

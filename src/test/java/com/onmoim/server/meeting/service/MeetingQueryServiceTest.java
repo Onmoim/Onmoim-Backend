@@ -47,7 +47,7 @@ class MeetingQueryServiceTest {
 	void setUp() {
 		leader = userRepository.save(User.builder().name("모임장").build());
 		member = userRepository.save(User.builder().name("멤버").build());
-		group = groupRepository.save(Group.groupCreateBuilder().name("테스트 그룹").capacity(100).build());
+		group = groupRepository.save(Group.builder().name("테스트 그룹").capacity(100).build());
 		groupUserRepository.save(GroupUser.create(group, leader, Status.OWNER));
 		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
 	}
