@@ -42,11 +42,6 @@ public class SecurityConfig {
 			)
 			.exceptionHandling(exception -> exception
 				.authenticationEntryPoint(customAuthenticationEntryPoint)
-				.accessDeniedHandler((request, response, accessDeniedException) -> {
-					response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-					response.setContentType("application/json;charset=UTF-8");
-					response.getWriter().write("{\"message\": \"접근 권한이 없습니다.\"}");
-				})
 			)
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
