@@ -2,7 +2,6 @@ package com.onmoim.server.meeting.service;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -112,7 +111,6 @@ public class MeetingService {
 	/**
 	 * 일정 참석 신청
 	 */
-	@Transactional
 	public void joinMeeting(Long meetingId) {
 		Long userId = getCurrentUserId();
 		User user = userQueryService.findById(userId);
@@ -131,14 +129,13 @@ public class MeetingService {
 		UserMeeting userMeeting = UserMeeting.create(meeting, user);
 		userMeetingRepository.save(userMeeting);
 
-		log.info("사용자 {}가 일정 {}에 참석 신청했습니다. (Facade Named Lock 보장, 타입: {}, 참석: {}/{})",
+		log.info("사용자 {}가 일정 {}에 참석 신청했습니다. (AOP Named Lock 보장, 타입: {}, 참석: {}/{})",
 			userId, meetingId, meeting.getType(), meeting.getJoinCount(), meeting.getCapacity());
 	}
 
 	/**
 	 * 일정 참석 취소
 	 */
-	@Transactional
 	public void leaveMeeting(Long meetingId) {
 		Long userId = getCurrentUserId();
 
@@ -155,7 +152,7 @@ public class MeetingService {
 			autoDeleteMeetingWithResources(meeting);
 			log.info("일정 {} 자동 삭제 완료 (참석자 {}명 이하)", meetingId, meeting.getJoinCount());
 		} else {
-			log.info("사용자 {}가 일정 {}에서 참석 취소했습니다. (Facade Named Lock 보장, 타입: {}, 참석: {}/{})",
+			log.info("사용자 {}가 일정 {}에서 참석 취소했습니다. (AOP Named Lock 보장, 타입: {}, 참석: {}/{})",
 				userId, meetingId, meeting.getType(), meeting.getJoinCount(), meeting.getCapacity());
 		}
 	}

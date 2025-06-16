@@ -329,7 +329,7 @@ class MeetingServiceTest {
 	}
 
 	@Test
-	@DisplayName("09.동시성 테스트 - 20명이 3명 정원에 동시 참석 신청 (파사드 패턴 극한 상황)")
+	@DisplayName("09.동시성 테스트 - 20명이 3명 정원에 동시 참석 신청")
 	void test09_concurrentJoinMeeting_WithFacade() throws InterruptedException {
 		// given
 		EntityManager em = emf.createEntityManager();
@@ -381,7 +381,7 @@ class MeetingServiceTest {
 
 		final Long finalMeetingId = meetingId;
 
-		// when - 20명이 동시에 3명 정원에 참석 신청 (파사드 패턴 사용)
+		// when - 20명이 동시에 3명 정원에 참석 신청
 		int taskCount = 20;
 		ExecutorService executorService = Executors.newFixedThreadPool(20);
 		CountDownLatch latch = new CountDownLatch(taskCount);
