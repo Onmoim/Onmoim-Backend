@@ -23,7 +23,7 @@ import com.onmoim.server.TestSecurityConfig;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.response.Message;
-import com.onmoim.server.group.dto.request.CreateGroupRequestDto;
+import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.service.GroupService;
 import com.onmoim.server.security.JwtAuthenticationFilter;
 
@@ -46,10 +46,17 @@ class GroupControllerTest {
 
 	@Test
 	@WithMockUser(roles = "USER")
+	@DisplayName("모임 생성 성공")
 	void createGroupSuccess() throws Exception {
 		// given
-		given(groupService.createGroup(any())).willReturn(1L);
-		var request = CreateGroupRequestDto.builder()
+		given(groupService.createGroup(
+			anyLong(),
+			anyLong(),
+			anyString(),
+			anyString(),
+			anyInt())).willReturn(1L);
+
+		var request = GroupCreateRequestDto.builder()
 			.name("name")
 			.description("description")
 			.capacity(10)
@@ -63,30 +70,36 @@ class GroupControllerTest {
 		mvc.perform(post("/api/v1/groups")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(json))
-			.andExpect(status().isOk())
+			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.message").value(Message.SUCCESS.getDescription()))
 			.andExpect(jsonPath("$.data").value(1L))
 			.andDo(print());
 
 		// then
-		verify(groupService, times(1)).createGroup(any());
+		verify(groupService, times(1))
+			.createGroup(
+			anyLong(),
+			anyLong(),
+			anyString(),
+			anyString(),
+			anyInt());
 	}
 
 	@Test
-	@DisplayName("그룹 생성 실패 권한 부족")
+	@DisplayName("모임 생성 실패 권한 부족")
 	void createGroupFail1() throws Exception {
 		// given
-		given(groupService.createGroup(any())).willReturn(1L);
-		var request = CreateGroupRequestDto.builder()
+		var request = GroupCreateRequestDto.builder()
 			.name("name")
 			.description("description")
 			.capacity(10)
 			.categoryId(1L)
 			.locationId(1L)
 			.build();
+
 		var json = mapper.writeValueAsString(request);
 
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(json))
@@ -95,12 +108,18 @@ class GroupControllerTest {
 	}
 
 	@Test
-	@DisplayName("그룹 생성 카테고리 X")
+	@DisplayName("모임 생성 카테고리 X")
 	@WithMockUser(roles = "USER")
 	void createGroupFail2() throws Exception {
 		// given
-		given(groupService.createGroup(any())).willReturn(1L);
-		var request = CreateGroupRequestDto.builder()
+		given(groupService.createGroup(
+			anyLong(),
+			anyLong(),
+			anyString(),
+			anyString(),
+			anyInt())).willReturn(1L);
+
+		var request = GroupCreateRequestDto.builder()
 			.name("name")
 			.description("description")
 			.capacity(10)
@@ -108,7 +127,7 @@ class GroupControllerTest {
 			.build();
 		var json = mapper.writeValueAsString(request);
 
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(json))
@@ -123,20 +142,27 @@ class GroupControllerTest {
 	}
 
 	@Test
-	@DisplayName("그룹 생성 카테고리 X, 정원 미달: 최소 정원 요건을 충족 X")
+	@DisplayName("모임 생성 카테고리 X, 정원 미달: 최소 정원 요건을 충족 X")
 	@WithMockUser(roles = "USER")
 	void createGroupFail3() throws Exception {
 		// given
-		given(groupService.createGroup(any())).willReturn(1L);
-		var request = CreateGroupRequestDto.builder()
+		given(groupService.createGroup(
+			anyLong(),
+			anyLong(),
+			anyString(),
+			anyString(),
+			anyInt())).willReturn(1L);
+
+		var request = GroupCreateRequestDto.builder()
 			.name("name")
 			.description("description")
 			.capacity(4)
 			.locationId(1L)
 			.build();
+
 		var json = mapper.writeValueAsString(request);
 
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(json))
@@ -147,38 +173,38 @@ class GroupControllerTest {
 	}
 
 	@Test
-	@DisplayName("그룹 가입 성공")
+	@DisplayName("모임 가입 성공")
 	@WithMockUser(roles = "USER")
 	void joinGroupSuccess() throws Exception {
 		// given
 		doNothing().when(groupService).joinGroup(anyLong());
 
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups/{groupId}/join", 1L))
-			.andExpect(status().isOk())
+			.andExpect(status().is2xxSuccessful())
 			.andExpect(jsonPath("$.message").value(Message.SUCCESS.getDescription()))
 			.andExpect(jsonPath("$.data").value("모임 가입 성공"))
 			.andDo(print());
 	}
 
 	@Test
-	@DisplayName("그룹 가입 실패: 권한 부족")
+	@DisplayName("모임 가입 실패: 권한 부족")
 	void joinGroupFailure1() throws Exception {
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups/{groupId}/join", 1L))
 			.andExpect(status().isForbidden())
 			.andDo(print());
 	}
 
 	@Test
-	@DisplayName("그룹 가입 실패: 잘못된 요청(이미 가입(Member, Owner))")
+	@DisplayName("모임 가입 실패: 잘못된 요청(이미 가입(Member, Owner))")
 	@WithMockUser(roles = "USER")
 	void joinGroupFailure2() throws Exception {
 		// given
 		doThrow(new CustomException(ErrorCode.GROUP_ALREADY_JOINED))
 			.when(groupService).joinGroup(anyLong());
 
-		// when
+		// expected
 		mvc.perform(post("/api/v1/groups/{groupId}/join", 1L))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.message").value(ErrorCode.GROUP_ALREADY_JOINED.toString()))
