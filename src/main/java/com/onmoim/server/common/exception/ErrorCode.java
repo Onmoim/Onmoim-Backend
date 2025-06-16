@@ -64,7 +64,6 @@ public enum ErrorCode {
 	UNAUTHORIZED_ACCESS(UNAUTHORIZED, "인증되지 않은 사용자입니다.");
 
 
-
 	private final HttpStatus httpStatus;
 	private final String detail;
 }

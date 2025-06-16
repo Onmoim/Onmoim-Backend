@@ -9,6 +9,8 @@ import com.onmoim.server.user.dto.response.ProfileResponseDto;
 
 public interface UserService {
 
+	public Long getCurrentUserId();
+
 	public Long signup(SignupRequestDto request);
 
 	public void createUserCategory(CreateUserCategoryRequestDto request);

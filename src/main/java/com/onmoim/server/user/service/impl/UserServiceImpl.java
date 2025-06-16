@@ -21,6 +21,7 @@ import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.oauth.service.RefreshTokenService;
+import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
 import com.onmoim.server.user.dto.request.SignupRequestDto;
 import com.onmoim.server.user.dto.request.UpdateProfileRequestDto;
@@ -48,10 +49,11 @@ public class UserServiceImpl implements UserService {
 	private final RefreshTokenService refreshTokenService;
 	private final FileStorageService fileStorageService;
 
+	@Override
 	public Long getCurrentUserId() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-		if (auth == null || !auth.isAuthenticated()) {
+		if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
 			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
 		}
 
