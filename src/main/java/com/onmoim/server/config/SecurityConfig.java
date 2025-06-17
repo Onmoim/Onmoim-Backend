@@ -31,6 +31,8 @@ public class SecurityConfig {
 				.requestMatchers("/api/v1/auth/**", "/api/v1/user/signup", "/api/v1/user/category").permitAll()
 				.requestMatchers("/api/v1/location", "api/v1/category").permitAll() // 가입 시 필요하므로 제외
 				.requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
+				.requestMatchers("/ws-chat").permitAll()
+				.requestMatchers("/api/**").permitAll()
 				.anyRequest().authenticated()
 			)
 

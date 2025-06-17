@@ -98,6 +98,8 @@ public class GroupService {
 		group.join(current);
 		// 모임 검사
 		groupUserQueryService.joinGroup(groupUser);
+		// 모임 가입 안내 메시지
+		chatMessageService.sendSystemMessage(groupId, "'"+user.getName()+"'님이 가입했습니다.");
 	}
 
 	// 모임 찜 또는 찜 취소

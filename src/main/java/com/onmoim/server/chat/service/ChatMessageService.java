@@ -34,9 +34,8 @@ public class ChatMessageService {
 	 */
 	@Transactional
 	public ChatRoomMessageId sendSystemMessage(Long roomId, String content) {
-		ChatRoomMessage systemMessage = ChatRoomMessage.create(
+		ChatRoomMessage systemMessage = ChatRoomMessage.systemMessageCreate(
 			ChatRoomMessageId.create(roomId, roomChatMessageIdGenerator.getSequence(roomId)),
-			null,
 			content,
 			LocalDateTime.now(),
 			MessageType.SYSTEM,
