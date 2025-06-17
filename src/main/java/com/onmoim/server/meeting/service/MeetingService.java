@@ -2,6 +2,8 @@ package com.onmoim.server.meeting.service;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
+
 import javax.sql.DataSource;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
@@ -13,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.s3.service.FileStorageService;
+import com.onmoim.server.meeting.dto.MeetingDetail;
 import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
 import com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto;
 import com.onmoim.server.meeting.entity.Meeting;
@@ -327,6 +330,11 @@ public class MeetingService {
 		}
 
 		meeting.softDelete();
+	}
+
+	// todo: 일정 상세 조회 용도
+	public List<MeetingDetail> find(Long groupId){
+		return null;
 	}
 
 	private void tryDeleteFileFromS3(String fileUrl) {

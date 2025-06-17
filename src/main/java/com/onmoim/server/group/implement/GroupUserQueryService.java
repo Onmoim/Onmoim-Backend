@@ -4,6 +4,8 @@ import static com.onmoim.server.common.exception.ErrorCode.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -37,41 +39,90 @@ public class GroupUserQueryService {
 		return groupUserRepository.findGroupUser(groupId, userId);
 	}
 
-	public GroupUser findOrCreate(Group group, User user, Status status) {
+	public GroupUser findOrCreate(
+		Group group,
+		User user,
+		Status status
+	) {
 		return findById(group.getId(), user.getId())
 			.orElseGet(() -> GroupUser.create(group, user, status));
 	}
 
-	public GroupUser checkAndGetOwner(Long groupId, Long userId) {
+	public GroupUser checkAndGetOwner(
+		Long groupId,
+		Long userId
+	)
+	{
 		return validateOwner(groupId, userId);
 	}
 
-	public void checkOwner(Long groupId, Long userId) {
+	public void checkOwner(
+		Long groupId,
+		Long userId
+	)
+	{
 		validateOwner(groupId, userId);
 	}
 
 	private GroupUser validateOwner(Long groupId, Long userId) {
-		return findById(groupId, userId)
-			.filter(GroupUser::isOwner)
-			.orElseThrow(() -> new CustomException(GROUP_FORBIDDEN));
+		return findAndValidate(
+			groupId,
+			userId,
+			GroupUser::isOwner,
+			() -> new CustomException(GROUP_FORBIDDEN)
+			);
 	}
 
-	public GroupUser checkAndGetMember(Long groupId, Long userId) {
-		return findById(groupId, userId)
-			.filter(GroupUser::isMember)
-			.orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND_IN_GROUP));
+	public void checkJoined(Long groupId, Long userId){
+		 findAndValidate(
+			 groupId,
+			 userId,
+			 GroupUser::isJoined,
+			 () -> new CustomException(GROUP_FORBIDDEN)
+		 );
 	}
 
-	public GroupUser checkCanLeave(Long groupId, Long userId) {
-		GroupUser groupUser = findById(groupId, userId)
-			.filter(GroupUser::isJoined)
-			.orElseThrow(() -> new CustomException(NOT_GROUP_MEMBER));
+	public GroupUser checkAndGetMember(
+		Long groupId,
+		Long userId
+	)
+	{
+		return findAndValidate(
+			groupId,
+			userId,
+			GroupUser::isMember,
+			() -> new CustomException(MEMBER_NOT_FOUND_IN_GROUP)
+		);
+	}
+
+	public GroupUser checkCanLeave(
+		Long groupId,
+		Long userId
+	)
+	{
+		GroupUser groupUser = findAndValidate(
+			groupId,
+			userId,
+			GroupUser::isJoined,
+			() -> new CustomException(NOT_GROUP_MEMBER));
 
 		// 현재 사용자 모임장 + 모임 회원 2명 이상
 		if (groupUser.isOwner() && countMembers(groupId) > 1) {
 			throw new CustomException(GROUP_OWNER_TRANSFER_REQUIRED);
 		}
 		return groupUser;
+	}
+
+	private GroupUser findAndValidate(
+		Long groupId,
+		Long userId,
+		Predicate<GroupUser> predicate,
+		Supplier<CustomException> exceptionSupplier
+	)
+	{
+		return findById(groupId, userId)
+			.filter(predicate)
+			.orElseThrow(exceptionSupplier);
 	}
 
 	public void leave(GroupUser groupUser) {
@@ -83,7 +134,11 @@ public class GroupUserQueryService {
 		groupUser.updateStatus(Status.PENDING);
 	}
 
-	public void transferOwnership(GroupUser owner, GroupUser member) {
+	public void transferOwnership(
+		GroupUser owner,
+		GroupUser member
+	)
+	{
 		owner.updateStatus(Status.MEMBER);
 		member.updateStatus(Status.OWNER);
 	}
@@ -112,7 +167,12 @@ public class GroupUserQueryService {
 	}
 
 	// fetch join 사용해서 모임 멤버 조회
-	public List<GroupMember> findGroupUserAndMembers(Long groupId, Long cursorId, int size) {
+	public List<GroupMember> findGroupUserAndMembers(
+		Long groupId,
+		Long cursorId,
+		int size
+	)
+	{
 		List<GroupUser> groupUsers = groupUserRepository.findGroupUsers(groupId, cursorId, size);
 		return groupUsers.stream().map(GroupMember::of).toList();
 	}
