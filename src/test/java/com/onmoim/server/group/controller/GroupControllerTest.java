@@ -69,7 +69,7 @@ class GroupControllerTest {
 				1L,
 				1,
 				SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination())
-			);
+		);
 
 		var request = GroupCreateRequestDto.builder()
 			.name("name")
@@ -140,7 +140,7 @@ class GroupControllerTest {
 				1L,
 				1,
 				SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination())
-			);
+		);
 
 		var request = GroupCreateRequestDto.builder()
 			.name("name")
