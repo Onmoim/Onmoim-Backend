@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.common.response.ResponseHandler;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
@@ -64,18 +65,18 @@ public class GroupController {
 			description = "이미 존재하는 모임 이름")
 	})
 	@PostMapping("/v1/groups")
-	public ResponseEntity<ResponseHandler<Long>> createGroup(
+	public ResponseEntity<ResponseHandler<ChatRoomResponse>> createGroup(
 		@RequestBody @Valid GroupCreateRequestDto request
 	)
 	{
-		Long groupId = groupService.createGroup(
+		ChatRoomResponse response = groupService.createGroup(
 			request.categoryId(),
 			request.locationId(),
 			request.name(),
 			request.description(),
 			request.capacity()
 		);
-		return ResponseEntity.status(CREATED).body(ResponseHandler.response(groupId));
+		return ResponseEntity.status(CREATED).body(ResponseHandler.response(response));
 	}
 
 	@Operation(
@@ -148,8 +149,8 @@ public class GroupController {
 	{
 		groupService.joinGroup(groupId);
 		return ResponseEntity
-			 .status(CREATED)
-			 .body(ResponseHandler.response("모임 가입 성공"));
+			.status(CREATED)
+			.body(ResponseHandler.response("모임 가입 성공"));
 	}
 
 	@Operation(

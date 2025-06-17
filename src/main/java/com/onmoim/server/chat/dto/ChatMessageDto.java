@@ -25,6 +25,8 @@ public class ChatMessageDto {
     
     /** 채팅방 ID */
     private Long roomId;
+
+    private Long groupId;
     
     /** 메시지 타입 */
     private MessageType type;
@@ -36,13 +38,13 @@ public class ChatMessageDto {
     private Long senderId;
     
     /** 발신자 이름 (UI 표시용) */
-    private String senderName;
+    private ChatUserDto chatUserDto;
     
     /** 발송 시간 */
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    public static ChatMessageDto of(ChatRoomMessage entity, String senderName) {
+    public static ChatMessageDto of(ChatRoomMessage entity, ChatUserDto chatUserDto) {
         return ChatMessageDto.builder()
             .messageSequence(entity.getId().getMessageSequence())
             .roomId(entity.getId().getRoomId())
@@ -50,7 +52,7 @@ public class ChatMessageDto {
             .content(entity.getContent())
             .senderId(entity.getSenderId())
             .timestamp(entity.getTimestamp())
-            .senderName(senderName)
+            .chatUserDto(chatUserDto)
             .build();
     }
 }
