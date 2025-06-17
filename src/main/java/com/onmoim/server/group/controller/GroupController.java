@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.common.response.ResponseHandler;
+import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.dto.request.MemberIdRequestDto;
@@ -205,7 +206,7 @@ public class GroupController {
 		@RequestParam(required = false, defaultValue = "10") int size
 	)
 	{
-		List<GroupUser> groupMembers = groupService.getGroupMembers(groupId, cursorId, size);
+		List<GroupMember> groupMembers = groupService.getGroupMembers(groupId, cursorId, size);
 		Long totalCount = groupService.groupMemberCount(groupId);
 		return ResponseEntity.ok(ResponseHandler.response(CursorPageResponseDto.of(
 			groupMembers,
@@ -342,5 +343,14 @@ public class GroupController {
 		return ResponseEntity.ok(ResponseHandler.response("모임원 강퇴 성공"));
 	}
 
-	// todo: 모임 상세 조회 after 일정 생성, 조회
+	// todo: 모임 상세 조회
+	@GetMapping("/v1/groups/{groupId}")
+	public ResponseEntity<ResponseHandler<String>> getGroupDetail(
+		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
+		@PathVariable Long groupId
+	)
+	{
+		return null;
+	}
+
 }

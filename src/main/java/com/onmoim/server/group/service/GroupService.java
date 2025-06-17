@@ -17,6 +17,7 @@ import com.onmoim.server.chat.service.ChatMessageService;
 import com.onmoim.server.chat.service.ChatRoomService;
 import com.onmoim.server.group.aop.NamedLock;
 import com.onmoim.server.group.aop.Retry;
+import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -116,7 +117,7 @@ public class GroupService {
 
 	// 모임 회원 조회
 	@Transactional(readOnly = true)
-	public List<GroupUser> getGroupMembers(
+	public List<GroupMember> getGroupMembers(
 		Long groupId,
 		Long cursorId,
 		int size

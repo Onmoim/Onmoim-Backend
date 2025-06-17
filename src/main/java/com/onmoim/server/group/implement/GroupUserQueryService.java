@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -111,7 +112,8 @@ public class GroupUserQueryService {
 	}
 
 	// fetch join 사용해서 모임 멤버 조회
-	public List<GroupUser> findGroupUserAndMembers(Long groupId, Long cursorId, int size) {
-		return groupUserRepository.findGroupUsers(groupId, cursorId, size);
+	public List<GroupMember> findGroupUserAndMembers(Long groupId, Long cursorId, int size) {
+		List<GroupUser> groupUsers = groupUserRepository.findGroupUsers(groupId, cursorId, size);
+		return groupUsers.stream().map(GroupMember::of).toList();
 	}
 }
