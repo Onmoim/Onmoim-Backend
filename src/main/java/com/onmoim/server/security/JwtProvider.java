@@ -1,6 +1,7 @@
 package com.onmoim.server.security;
 
 import java.security.Key;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Date;
 
@@ -36,6 +37,23 @@ public class JwtProvider {
 		key = Keys.hmacShaKeyFor(keyBytes);
 	}
 
+	// 회원가입용 Token 생성
+	public String createSignupToken(String provider, String oauthId, String email) {
+		Date now = new Date();
+		Date expiryDate = new Date(now.getTime() + Duration.ofMinutes(10).toMillis()); // 10분 유효
+
+		return Jwts.builder()
+			.setSubject("signup")
+			.claim("provider", provider)
+			.claim("oauthId", oauthId)
+			.claim("email", email)
+			.claim("tokenType", "signup")
+			.setIssuedAt(now)
+			.setExpiration(expiryDate)
+			.signWith(key, SignatureAlgorithm.HS256)
+			.compact();
+	}
+
 	// Access Token 생성
 	public String createAccessToken(Authentication authentication) {
 		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -46,6 +64,7 @@ public class JwtProvider {
 
 		return Jwts.builder()
 			.setClaims(claims)
+			.claim("tokenType", "access")
 			.setIssuedAt(now)
 			.setExpiration(expireDate)
 			.signWith(key, SignatureAlgorithm.HS256)

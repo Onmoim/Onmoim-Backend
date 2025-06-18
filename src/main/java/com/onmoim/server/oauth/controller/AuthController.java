@@ -1,9 +1,11 @@
 package com.onmoim.server.oauth.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.onmoim.server.common.response.ResponseHandler;
@@ -12,6 +14,7 @@ import com.onmoim.server.oauth.dto.OAuthResponseDto;
 import com.onmoim.server.oauth.dto.ReissueTokenRequestDto;
 import com.onmoim.server.oauth.service.OAuthService;
 import com.onmoim.server.oauth.service.RefreshTokenService;
+import com.onmoim.server.oauth.service.provider.OAuthProvider;
 import com.onmoim.server.user.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +38,11 @@ public class AuthController {
 	private final UserService userService;
 	private final RefreshTokenService refreshTokenService;
 
+	@GetMapping("/oauth/callback")
+	public ResponseEntity<String> testCallback(@RequestParam String code) {
+		return ResponseEntity.ok("받은 code: " + code);
+	}
+
 	@PostMapping("/oauth")
 	@Operation(
 		summary = "소셜 로그인",
@@ -55,8 +63,18 @@ public class AuthController {
 			)
 	})
 	public ResponseEntity<ResponseHandler<OAuthResponseDto>> login(
-				@Valid @RequestBody OAuthRequestDto oAuthRequestDto) {
-		OAuthResponseDto response = oAuthService.login(oAuthRequestDto.getProvider(), oAuthRequestDto.getToken());
+				@Valid @RequestBody OAuthRequestDto request) {
+
+		OAuthResponseDto response = new OAuthResponseDto();
+
+		String provider = request.getProvider();
+		String code = request.getAuthorizationCode();
+
+		if (provider.equals("google")) {
+			response = oAuthService.handleGoogleLogin(provider, code);
+		} else {
+			response = oAuthService.handleKakaoLogin(provider, code);
+		}
 
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
