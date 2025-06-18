@@ -145,10 +145,10 @@ public class Meeting extends BaseEntity {
 	}
 
 	/**
-	 * 일정 수정 가능 여부 확인 (24시간 전까지)
+	 * 일정 수정 가능 여부 확인 (시작 전까지)
 	 */
 	public boolean canBeUpdated() {
-		return LocalDateTime.now().isBefore(this.startAt.minusHours(24));
+		return !isStarted();
 	}
 
 	// 상태 변경 메서드
