@@ -152,6 +152,46 @@ class MeetingQueryServiceTest {
 		assertThat(secondPage.isHasNext()).isFalse();
 	}
 
+	@Test
+	@DisplayName("D-day가 가까운 일정 조회")
+	void getUpcomingMeetingsByDday() {
+		// Given: 다양한 시작 시간을 가진 10개의 모임 생성
+		LocalDateTime now = LocalDateTime.now();
+		List<Meeting> meetings = new ArrayList<>();
+
+		// 과거 모임 1개 (조회되지 않아야 함)
+		meetings.add(meetingRepository.save(Meeting.meetingCreateBuilder()
+			.title("과거 모임")
+			.groupId(group.getId())
+			.creatorId(leader.getId())
+			.startAt(now.minusDays(1))
+			.placeName("테스트 장소")
+			.capacity(10)
+			.type(MeetingType.REGULAR)
+			.build()));
+
+		// 미래 모임 10개 (다양한 시작 시간)
+		for (int i = 0; i < 10; i++) {
+			meetings.add(meetingRepository.save(Meeting.meetingCreateBuilder()
+				.title("테스트 모임 " + (i + 1))
+				.groupId(group.getId())
+				.creatorId(leader.getId())
+				.startAt(now.plusDays(i + 1)) // 1일 후부터 10일 후까지
+				.placeName("테스트 장소")
+				.capacity(10)
+				.type(MeetingType.REGULAR)
+				.build()));
+		}
+
+		// When: D-day가 가까운 일정 2개 조회
+		List<Meeting> result = meetingQueryService.getUpcomingMeetingsByDday(2);
+
+		// Then: 가장 가까운 미래 일정 2개만 조회되어야 함
+		assertThat(result).hasSize(2);
+		assertThat(result.get(0).getStartAt()).isEqualTo(now.plusDays(1));
+		assertThat(result.get(1).getStartAt()).isEqualTo(now.plusDays(2));
+	}
+
 	//테스트 헬퍼 메서드
 
 	private List<Meeting> createTestMeetings(int count) {
