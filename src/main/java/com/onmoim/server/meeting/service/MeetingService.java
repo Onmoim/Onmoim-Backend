@@ -168,7 +168,7 @@ public class MeetingService {
 			});
 
 		} catch (SQLException e) {
-			throw new RuntimeException("데이터베이스 연결 또는 락 처리 중 오류가 발생했습니다.", e);
+			throw new CustomException(ErrorCode.LOCK_SYSTEM_ERROR, "데이터베이스 연결 또는 락 처리 중 오류가 발생했습니다: " + e.getMessage());
 		} finally {
 			try {
 				if (conn != null) {
@@ -217,7 +217,7 @@ public class MeetingService {
 				}
 			});
 		} catch (SQLException e) {
-			throw new RuntimeException("데이터베이스 연결 또는 락 처리 중 오류가 발생했습니다.", e);
+			throw new CustomException(ErrorCode.LOCK_SYSTEM_ERROR, "데이터베이스 연결 또는 락 처리 중 오류가 발생했습니다: " + e.getMessage());
 		} finally {
 			try {
 				if (conn != null) {
@@ -261,7 +261,7 @@ public class MeetingService {
 				);
 			});
 		} catch (SQLException e) {
-			throw new RuntimeException("데이터베이스 연결 또는 락 처리 중 오류가 발생했습니다.", e);
+			throw new CustomException(ErrorCode.LOCK_SYSTEM_ERROR, "데이터베이스 연결 또는 락 처리 중 오류가 발생했습니다: " + e.getMessage());
 		} finally {
 			try {
 				if (conn != null) {
@@ -355,4 +355,3 @@ public class MeetingService {
 		return principal.getUserId();
 	}
 }
-
