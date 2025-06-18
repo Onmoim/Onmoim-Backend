@@ -15,9 +15,9 @@ public record GroupDetailResponseDto(
 	String title,
 	@Schema(description = "모임 설명")
 	String description,
-	@Schema(description = "모임 주소")
-	String address,     // todo: <full address>
-	@Schema(description = "모임 카테고리")
+	@Schema(description = "모임 주소", example = "연남동")
+	String address,
+	@Schema(description = "모임 카테고리", example = "인문학/책/글")
 	String category,
 	@Schema(description = "모임 회원 수")
 	Long memberCount,

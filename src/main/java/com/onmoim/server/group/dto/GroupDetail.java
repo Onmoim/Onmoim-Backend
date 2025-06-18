@@ -5,15 +5,15 @@ import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.location.entity.Location;
 
 /*
-Group
-Category
-Location
+Group - 모임
+Category - 카테고리
+Location- 위치
  */
 public record GroupDetail(
 	Long groupId,
 	String title,
 	String description,
-	String address, // todo: <full address>
+	String address,
 	String category
 )
 {
@@ -24,7 +24,7 @@ public record GroupDetail(
 			group.getId(),
 			group.getName(),
 			group.getDescription(),
-			location.getFullAddress(),
+			location.getDong(),
 			category.getName()
 		);
 	}
