@@ -5,10 +5,12 @@ import static com.onmoim.server.meeting.entity.QMeeting.meeting;
 import com.onmoim.server.meeting.dto.response.PageResponseDto;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.ScrollPosition;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Window;
+import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -169,5 +171,24 @@ public class MeetingQueryService {
 	@Transactional
 	public Meeting save(Meeting meeting) {
 		return meetingRepository.save(meeting);
+	}
+
+	/**
+	 * D-day가 가까운 일정 조회
+	 *
+	 * @param limit 조회할 일정 수
+	 * @return D-day가 가까운 일정 목록
+	 */
+	public List<Meeting> getUpcomingMeetingsByDday(int limit) {
+		LocalDateTime now = LocalDateTime.now();
+
+		BooleanBuilder predicate = new BooleanBuilder()
+			.and(meeting.startAt.gt(now))
+			.and(meeting.deletedDate.isNull());
+
+		return Streamable.of(meetingRepository.findAll(predicate, Sort.by("startAt").ascending()))
+			.stream()
+			.limit(limit)
+			.toList();
 	}
 }
