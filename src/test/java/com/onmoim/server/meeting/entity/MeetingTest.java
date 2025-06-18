@@ -394,14 +394,14 @@ class MeetingTest {
 	}
 
 	@Test
-	@DisplayName("일정 수정 가능 여부 확인 - 24시간 전")
+	@DisplayName("일정 수정 가능 여부 확인 - 시작 전")
 	void canBeUpdated_Success() {
 		// given
 		Meeting meeting = Meeting.meetingCreateBuilder()
 			.groupId(1L)
 			.type(MeetingType.REGULAR)
 			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(2)) // 48시간 후
+			.startAt(LocalDateTime.now().plusHours(1)) // 1시간 후 (시작 전)
 			.placeName("테스트 장소")
 			.capacity(10)
 			.cost(0)
@@ -413,14 +413,14 @@ class MeetingTest {
 	}
 
 	@Test
-	@DisplayName("일정 수정 불가 - 24시간 이내")
-	void canBeUpdated_Fail_TooLate() {
+	@DisplayName("일정 수정 불가 - 이미 시작됨")
+	void canBeUpdated_Fail_AlreadyStarted() {
 		// given
 		Meeting meeting = Meeting.meetingCreateBuilder()
 			.groupId(1L)
 			.type(MeetingType.REGULAR)
 			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusHours(12)) // 12시간 후
+			.startAt(LocalDateTime.now().minusHours(1)) // 1시간 전 (이미 시작됨)
 			.placeName("테스트 장소")
 			.capacity(10)
 			.cost(0)
