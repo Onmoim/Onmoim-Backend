@@ -26,11 +26,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.onmoim.server.TestSecurityConfig;
 import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.response.Message;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.service.GroupService;
+import com.onmoim.server.meeting.service.MeetingService;
 import com.onmoim.server.security.JwtAuthenticationFilter;
 
 
@@ -47,6 +47,9 @@ class GroupControllerTest {
 
 	@MockBean
 	private GroupService groupService;
+
+	@MockBean
+	private MeetingService meetingService;
 
 	private final ObjectMapper mapper = new ObjectMapper();
 

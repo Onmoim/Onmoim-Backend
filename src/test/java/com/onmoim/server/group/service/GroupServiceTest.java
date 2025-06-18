@@ -204,6 +204,9 @@ class GroupServiceTest {
 				groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
 			}
 		}
+
+		setSecurityContext(owner.getId());
+
 		// expected
 		List<GroupMember> groupMembers1 = groupService.getGroupMembers(group.getId(), null, 10);
 		assertThat(groupMembers1.size()).isEqualTo(11);
