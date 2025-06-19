@@ -105,7 +105,7 @@ public class UserServiceImpl implements UserService {
 			.email(email)
 			.name(request.getName())
 			.gender(request.getGender())
-			.birth(request.getBirth())
+			.birth(request.getBirth().atStartOfDay())
 			.addressId(request.getAddressId())
 			.build();
 
