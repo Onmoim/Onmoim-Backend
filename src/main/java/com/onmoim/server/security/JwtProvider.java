@@ -1,5 +1,7 @@
 package com.onmoim.server.security;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
+
 import java.security.Key;
 import java.time.Duration;
 import java.util.Collections;
@@ -10,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.oauth.token.TokenProperties;
 
 import io.jsonwebtoken.Claims;
@@ -42,12 +45,14 @@ public class JwtProvider {
 		Date now = new Date();
 		Date expiryDate = new Date(now.getTime() + Duration.ofMinutes(10).toMillis()); // 10분 유효
 
+		Claims claims = Jwts.claims();
+		claims.put("provider", provider);
+		claims.put("oauthId", oauthId);
+		claims.put("email", email);
+		claims.put("tokenType", "signup");
+
 		return Jwts.builder()
-			.setSubject("signup")
-			.claim("provider", provider)
-			.claim("oauthId", oauthId)
-			.claim("email", email)
-			.claim("tokenType", "signup")
+			.setClaims(claims)
 			.setIssuedAt(now)
 			.setExpiration(expiryDate)
 			.signWith(key, SignatureAlgorithm.HS256)
@@ -62,9 +67,10 @@ public class JwtProvider {
 
 		Claims claims = Jwts.claims().setSubject(userDetails.getUserId().toString());
 
+		claims.put("tokenType", "access"); // signup 토큰 발급과 분리
+
 		return Jwts.builder()
 			.setClaims(claims)
-			.claim("tokenType", "access")
 			.setIssuedAt(now)
 			.setExpiration(expireDate)
 			.signWith(key, SignatureAlgorithm.HS256)
@@ -111,7 +117,32 @@ public class JwtProvider {
 	}
 
 	public Authentication getAuthentication(String token) {
+
+		Claims claims = getAllClaims(token);
+		String tokenType = claims.get("tokenType", String.class);
+
+		// accessToken이 아닐 때 exception
+		if (!"access".equals(tokenType)) {
+			throw new CustomException(INVALID_ACCESS_TOKEN);
+		}
+
 		String subject = getSubject(token);
 		return new UsernamePasswordAuthenticationToken(subject, null, Collections.emptyList());
+	}
+
+	public Claims parseSignupToken(String token) {
+		return Jwts.parser()
+			.setSigningKey(secretKey)
+			.parseClaimsJws(token)
+			.getBody();
+	}
+
+	public String getTokenType(String token) {
+		try {
+			Claims claims = getAllClaims(token);
+			return claims.get("tokenType", String.class);
+		} catch (Exception e) {
+			return null;
+		}
 	}
 }

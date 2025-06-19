@@ -21,8 +21,11 @@ import com.onmoim.server.common.s3.service.FileStorageService;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupUserRepository;
+import com.onmoim.server.oauth.dto.OAuthUserDto;
 import com.onmoim.server.oauth.service.RefreshTokenService;
 import com.onmoim.server.security.CustomUserDetails;
+import com.onmoim.server.security.JwtHolder;
+import com.onmoim.server.security.JwtProvider;
 import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
 import com.onmoim.server.user.dto.request.SignupRequestDto;
 import com.onmoim.server.user.dto.request.UpdateProfileRequestDto;
@@ -34,6 +37,7 @@ import com.onmoim.server.user.repository.UserCategoryRepository;
 import com.onmoim.server.user.repository.UserRepository;
 import com.onmoim.server.user.service.UserService;
 
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,6 +53,7 @@ public class UserServiceImpl implements UserService {
 	private final GroupUserRepository groupUserRepository;
 	private final RefreshTokenService refreshTokenService;
 	private final FileStorageService fileStorageService;
+	private final JwtProvider jwtProvider;
 
 	@Override
 	public Long getCurrentUserId() {
@@ -63,11 +68,31 @@ public class UserServiceImpl implements UserService {
 		return Long.parseLong(auth.getName());
 	}
 
+	public OAuthUserDto extractSignupClaims() {
+		String token = JwtHolder.get();
+		if (token == null) {
+			 throw new CustomException(ErrorCode.SIGNUP_TOKEN_REQUIRED);
+		}
+
+		Claims claims = jwtProvider.parseSignupToken(token);
+
+		String provider = claims.get("provider", String.class);
+		String oauthId = claims.get("oauthId", String.class);
+		String email = claims.get("email", String.class);
+
+		return new OAuthUserDto(provider, oauthId, email);
+	}
+
 	@Override
 	public Long signup(SignupRequestDto request) {
+		OAuthUserDto claims = extractSignupClaims();
+
+		String provider = claims.getProvider();
+		String oauthId = claims.getOauthId();
+		String email = claims.getEmail();
 
 		Optional<User> existingUser = userRepository.findByOauthIdAndProvider(
-			request.getOauthId(), request.getProvider()
+			oauthId, provider
 		);
 
 		if (existingUser.isPresent()) {
@@ -75,9 +100,9 @@ public class UserServiceImpl implements UserService {
 		}
 
 		User user = User.builder()
-			.oauthId(request.getOauthId())
-			.provider(request.getProvider())
-			.email(request.getEmail())
+			.oauthId(oauthId)
+			.provider(provider)
+			.email(email)
 			.name(request.getName())
 			.gender(request.getGender())
 			.birth(request.getBirth())

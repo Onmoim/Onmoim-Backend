@@ -31,6 +31,7 @@ public enum ErrorCode {
 
 	/* ------------------ 400 BAD_REQUEST : 유저 관련 오류 ------------------ */
 	ALREADY_EXISTS_USER(BAD_REQUEST, "이미 가입된 사용자입니다."),
+	SIGNUP_TOKEN_REQUIRED(BAD_REQUEST, "회원가입용 토큰이 없습니다."),
 
 	/* ------------------ 400 BAD_REQUEST : 모임 관련 오류 ------------------ */
 	NOT_EXISTS_GROUP(BAD_REQUEST, "존재하지 않는 모임입니다."),
@@ -58,6 +59,7 @@ public enum ErrorCode {
 	FORBIDDEN_USER_ACCESS(FORBIDDEN, "다른 사용자의 계정에 접근할 수 없습니다"),
 
 	/* ------------------ 401 UNAUTHORIZED : Auth 관련 오류 ------------------ */
+	INVALID_ACCESS_TOKEN(UNAUTHORIZED, "유효하지 않은 access token입니다."),
 	INVALID_REFRESH_TOKEN(UNAUTHORIZED, "유효하지 않은 refresh token입니다."),
 	REFRESH_TOKEN_MISMATCH(UNAUTHORIZED, "저장된 refresh token과 일치하지 않습니다."),
 	USER_NOT_FOUND(UNAUTHORIZED, "존재하지 않는 사용자입니다."),

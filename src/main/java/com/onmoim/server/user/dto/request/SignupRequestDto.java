@@ -14,18 +14,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "유저 회원가입 요청 Request")
 public class SignupRequestDto {
 
-	@NotNull(message = "소셜 고유 id는 필수입니다.")
-	@Schema(description = "소셜 고유 id(google: sub, kakao: id)")
-	private String oauthId;
-
-	@NotNull(message = "소셜 프로바이더는 필수입니다.")
-	@Schema(description = "소셜 프로바이더(google/kakao)")
-	private String provider;    // google, kakao 등
-
-	@NotNull(message = "이메일은 필수입니다.")
-	@Schema(description = "이메일")
-	private String email;
-
 	@NotNull(message = "이름은 필수입니다.")
 	@Schema(description = "이름")
 	private String name;
