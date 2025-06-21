@@ -67,6 +67,6 @@ class GeoPointUpdateHandlerTest {
 				System.out.println("geoPoint = " + findGroup.getGeoPoint());
 			});
 
-		groupRepository.deleteById(groupId);
+		groupRepository.deleteAll();
 	}
 }
