@@ -51,7 +51,7 @@ public enum ErrorCode {
 	/* ------------------ 400 BAD_REQUEST : 일정 관련 오류 ------------------ */
 	MEETING_NOT_FOUND(BAD_REQUEST, "존재하지 않는 일정입니다."),
 	MEETING_UPDATE_FORBIDDEN(FORBIDDEN, "일정 수정 권한이 없습니다."),
-	MEETING_UPDATE_TIME_EXCEEDED(BAD_REQUEST, "일정 시작 24시간 전까지만 수정 가능합니다."),
+	MEETING_UPDATE_TIME_EXCEEDED(BAD_REQUEST, "일정 시작 전까지만 수정 가능합니다."),
 	MEETING_CAPACITY_EXCEEDED(CONFLICT, "일정 정원이 가득 찼습니다."),
 	MEETING_ALREADY_JOINED(BAD_REQUEST, "이미 참석 신청한 일정입니다."),
 	MEETING_NOT_JOINED(BAD_REQUEST, "참석하지 않은 일정입니다."),
