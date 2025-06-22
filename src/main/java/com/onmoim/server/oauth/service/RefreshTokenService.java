@@ -6,4 +6,6 @@ public interface RefreshTokenService {
 
 	String getRefreshToken(Long userId);
 
+	void deleteRefreshToken(Long userId);
+
 }

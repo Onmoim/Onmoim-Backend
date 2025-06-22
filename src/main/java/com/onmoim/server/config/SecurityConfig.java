@@ -1,5 +1,6 @@
 package com.onmoim.server.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -12,7 +13,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.onmoim.server.security.CustomAuthenticationEntryPoint;
 import com.onmoim.server.security.JwtAuthenticationFilter;
+
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Profile("!test")
@@ -23,17 +27,22 @@ public class SecurityConfig {
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+	@Autowired
+	private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
 			.authorizeHttpRequests(authorizeRequests -> authorizeRequests
-				.requestMatchers("/test-google-login.html", "/test-kakao-login.html", "/css/**", "/js/**", "/images/**", "/favicon.ico", "test/**").permitAll()
-				.requestMatchers("/api/v1/auth/**", "/api/v1/user/signup", "/api/v1/user/category").permitAll()
+				.requestMatchers("/test-google-login.html", "/test-kakao-login.html", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+				.requestMatchers("/api/v1/auth/oauth", "/api/v1/auth/oauth/callback", "/api/v1/auth/reissue-tkn", "/api/v1/user/signup", "/api/v1/user/category").permitAll()
 				.requestMatchers("/api/v1/location", "api/v1/category").permitAll() // 가입 시 필요하므로 제외
 				.requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-resources/**").permitAll()
 				.anyRequest().authenticated()
 			)
-
+			.exceptionHandling(exception -> exception
+				.authenticationEntryPoint(customAuthenticationEntryPoint)
+			)
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 			.csrf(csrf -> csrf.disable())

@@ -2,6 +2,7 @@ package com.onmoim.server.user.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,6 +19,8 @@ import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.repository.LocationRepository;
+import com.onmoim.server.security.JwtHolder;
+import com.onmoim.server.security.JwtProvider;
 import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
 import com.onmoim.server.user.dto.request.SignupRequestDto;
 import com.onmoim.server.user.dto.response.ProfileResponseDto;
@@ -30,6 +33,9 @@ import com.onmoim.server.user.service.impl.UserServiceImpl;
 @SpringBootTest
 @Transactional
 public class UserServiceTest {
+
+	@Autowired
+	private JwtProvider jwtProvider;
 
 	@Autowired
 	private UserServiceImpl userService;
@@ -50,15 +56,22 @@ public class UserServiceTest {
 	@DisplayName("회원가입 성공")
 	void signupSuccess() {
 		// given
-		SignupRequestDto request = new SignupRequestDto("1234567890", "google", "test@test.com", "홍길동", "M", LocalDateTime.now(), 1L);
+		SignupRequestDto request = new SignupRequestDto("홍길동", "M", LocalDate.now(), 1L);
+		String signupToken = jwtProvider.createSignupToken("google", "1234567890", "test@test.com"); // signupToken 생성
+		JwtHolder.set(signupToken);
 
-		// when
-		Long userId = userService.signup(request);
+		try {
+			// when
+			Long userId = userService.signup(request);
 
-		// then
-		User savedUser = userRepository.findById(userId).orElseThrow();
-		assertEquals("홍길동", savedUser.getName());
-		assertEquals("test@test.com", savedUser.getEmail());
+			// then
+			User savedUser = userRepository.findById(userId).orElseThrow();
+			assertEquals("홍길동", savedUser.getName());
+			assertEquals("test@test.com", savedUser.getEmail());
+		} finally {
+			JwtHolder.clear();
+		}
+
 	}
 
 	@Test

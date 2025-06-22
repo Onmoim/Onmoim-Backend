@@ -6,6 +6,6 @@ public interface OAuthProvider {
 
 	String getProviderName();
 
-	OAuthUserDto getUserInfo(String token);
+	OAuthUserDto getUserInfoByAuthorizationCode(String code);
 
 }

@@ -1,6 +1,7 @@
 package com.onmoim.server.oauth.service.impl;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
+import static com.onmoim.server.oauth.enumeration.SignupStatus.*;
 
 import java.util.Optional;
 
@@ -15,7 +16,6 @@ import com.onmoim.server.oauth.dto.OAuthUserDto;
 import com.onmoim.server.oauth.service.OAuthService;
 import com.onmoim.server.oauth.service.RefreshTokenService;
 import com.onmoim.server.oauth.service.provider.GoogleOAuthProvider;
-import com.onmoim.server.oauth.service.provider.KakaoOAuthProvider;
 import com.onmoim.server.oauth.service.provider.OAuthProvider;
 import com.onmoim.server.oauth.service.provider.OAuthProviderFactory;
 import com.onmoim.server.security.CustomUserDetails;
@@ -38,20 +38,29 @@ public class OAuthServiceImpl implements OAuthService {
 	private final JwtProvider jwtProvider;
 	private final RefreshTokenService refreshTokenService;
 
+	@Override
+	public OAuthResponseDto handleGoogleLogin(String providerName, String authorizationCode) {
+		OAuthProvider provider = oauthProviderFactory.getProvider(providerName);
+		OAuthUserDto oAuthUserDto = provider.getUserInfoByAuthorizationCode(authorizationCode);
+
+		return processUserLogin(oAuthUserDto, providerName);
+	}
 
 	@Override
-	public OAuthResponseDto login(String providerName, String token) {
+	public OAuthResponseDto handleKakaoLogin(String providerName, String authorizationCode) {
 		OAuthProvider provider = oauthProviderFactory.getProvider(providerName);
-		OAuthUserDto oAuthUserDto = provider.getUserInfo(token);
+		OAuthUserDto oAuthUserDto = provider.getUserInfoByAuthorizationCode(authorizationCode);
 
 		return processUserLogin(oAuthUserDto, providerName);
 	}
 
 	private OAuthResponseDto processUserLogin(OAuthUserDto oAuthUserDto, String providerName) {
-		Optional<User> optionalUser = userRepository.findByOauthIdAndProvider(oAuthUserDto.oauthId(), providerName);
+		Optional<User> optionalUser = userRepository.findByOauthIdAndProvider(oAuthUserDto.getOauthId(), providerName);
 
 		if (optionalUser.isEmpty()) {
-			return new OAuthResponseDto(null, null, "NOT_EXISTS");
+			String signupToken = jwtProvider.createSignupToken(oAuthUserDto.getProvider(), oAuthUserDto.getOauthId(),
+				oAuthUserDto.getEmail());
+			return new OAuthResponseDto(signupToken, null, NOT_EXISTS);
 		}
 
 		User user = optionalUser.get();
@@ -62,7 +71,7 @@ public class OAuthServiceImpl implements OAuthService {
 		String refreshToken = jwtProvider.createRefreshToken(authentication);
 		refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
 
-		return new OAuthResponseDto(accessToken, refreshToken, "EXISTS");
+		return new OAuthResponseDto(accessToken, refreshToken, EXISTS);
 	}
 
 	private Authentication createAuthentication(User user) {
@@ -94,7 +103,7 @@ public class OAuthServiceImpl implements OAuthService {
 		Authentication authentication = createAuthentication(user);
 		String newAccessToken = jwtProvider.createAccessToken(authentication);
 
-		return new OAuthResponseDto(newAccessToken, refreshToken, "EXISTS");
+		return new OAuthResponseDto(newAccessToken, refreshToken, EXISTS);
 	}
 
 

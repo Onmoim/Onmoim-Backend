@@ -11,7 +11,7 @@ public class OAuthRequestDto {
 	@Pattern(regexp = "^(google|kakao)$", message = "provider는 google 또는 kakao만 가능합니다.")
 	private String provider;
 
-	@Schema(description = "토큰")
-	private String token;
+	@Schema(description = "authorization code")
+	private String authorizationCode;
 
 }
