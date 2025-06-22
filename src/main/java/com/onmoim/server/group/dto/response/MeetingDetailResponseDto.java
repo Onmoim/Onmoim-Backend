@@ -8,6 +8,8 @@ public record MeetingDetailResponseDto(
 	String imgUrl,
 	@Schema(description = "일정 제목")
 	String title,
+	@Schema(description = "일정 타입", example = "번개모임")
+	String type,
 	@Schema(description = "참가 비용")
 	int cost,
 	@Schema(description = "최대 참석 인원")
@@ -30,6 +32,7 @@ public record MeetingDetailResponseDto(
 		return new MeetingDetailResponseDto(
 			meetingDetail.imgUrl(),
 			meetingDetail.title(),
+			meetingDetail.type(),
 			meetingDetail.cost(),
 			meetingDetail.capacity(),
 			meetingDetail.joinCount(),

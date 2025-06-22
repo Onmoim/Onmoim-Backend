@@ -374,12 +374,15 @@ public class GroupController {
 	{
 		GroupDetail detail = groupService.readGroup(groupId);
 		Long count = groupService.groupMemberCount(groupId);
-		List<MeetingDetail> meetingDetails = meetingService.find(groupId);
-		return ResponseEntity.ok(ResponseHandler.response(GroupDetailResponseDto.of(
-			detail,
-			count,
-			meetingDetails
-		)));
+		List<MeetingDetail> meetingDetails = meetingService.getUpcomingMeetings(2, groupId);
+
+		return ResponseEntity.ok(ResponseHandler.response(
+			GroupDetailResponseDto.of(
+					detail,
+					count,
+					meetingDetails
+			)
+		));
 	}
 
 }

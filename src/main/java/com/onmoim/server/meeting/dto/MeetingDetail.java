@@ -10,6 +10,8 @@ public record MeetingDetail(
 	String imgUrl,
 	// 일정 제목
 	String title,
+	// 일정 타입(정기모임, 번개모임)
+	String type,
 	// 참석 비용
 	int cost,
 	// 최대 참석 인원
@@ -26,14 +28,11 @@ public record MeetingDetail(
 	boolean attendance
 )
 {
-	public static MeetingDetail of(
-		Meeting meeting,
-		boolean attendance
-	)
-	{
+	public static MeetingDetail of(Meeting meeting, Boolean attendance) {
 		return new MeetingDetail(
 			meeting.getImgUrl(),
 			meeting.getTitle(),
+			meeting.getType().getDescription(),
 			meeting.getCost(),
 			meeting.getCapacity(),
 			meeting.getJoinCount(),
