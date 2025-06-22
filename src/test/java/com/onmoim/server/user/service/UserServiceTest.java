@@ -2,6 +2,7 @@ package com.onmoim.server.user.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -55,7 +56,7 @@ public class UserServiceTest {
 	@DisplayName("회원가입 성공")
 	void signupSuccess() {
 		// given
-		SignupRequestDto request = new SignupRequestDto("홍길동", "M", LocalDateTime.now(), 1L);
+		SignupRequestDto request = new SignupRequestDto("홍길동", "M", LocalDate.now(), 1L);
 
 		String signupToken = jwtProvider.createSignupToken("google", "1234567890", "test@test.com"); // signupToken 생성
 		JwtHolder.set(signupToken);
