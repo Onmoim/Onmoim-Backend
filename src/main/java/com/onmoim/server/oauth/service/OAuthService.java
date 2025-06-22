@@ -4,7 +4,9 @@ import com.onmoim.server.oauth.dto.OAuthResponseDto;
 
 public interface OAuthService {
 
-	OAuthResponseDto login(String provider, String token);
+	OAuthResponseDto handleGoogleLogin(String providerName, String authorizationCode);
+
+	OAuthResponseDto handleKakaoLogin(String providerName, String authorizationCode);
 
 	OAuthResponseDto reissueAccessToken(String refreshToken);
 

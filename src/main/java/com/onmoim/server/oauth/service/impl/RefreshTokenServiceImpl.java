@@ -42,4 +42,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 		return redisTemplate.opsForValue().get(getKey(userId));
 	}
 
+	public void deleteRefreshToken(Long userId) {
+		redisTemplate.delete("refresh:" + userId);
+	}
+
 }

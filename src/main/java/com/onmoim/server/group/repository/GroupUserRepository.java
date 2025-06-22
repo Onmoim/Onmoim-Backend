@@ -17,4 +17,9 @@ public interface GroupUserRepository extends JpaRepository<GroupUser, GroupUserI
 
 	@Query("select count(gu) from GroupUser gu where gu.id.groupId = :groupId and gu.status in (:statuses)")
 	Long countByGroupAndStatuses(@Param("groupId") Long groupId, @Param("statuses") List<Status> statuses);
+
+	boolean existsByUserIdAndStatus(Long userId, Status status);
+
+	List<GroupUser> findGroupUserByUserId(Long userId);
+
 }

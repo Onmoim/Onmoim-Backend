@@ -27,11 +27,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		String token = resolveToken(request);
 
 		if (token != null && jwtProvider.validateToken(token)) {
-			Authentication auth = jwtProvider.getAuthentication(token); // SecurityContext에 인증 정보 저장
-			SecurityContextHolder.getContext().setAuthentication(auth);
+
+			String tokenType = jwtProvider.getTokenType(token);
+
+			if ("access".equals(tokenType)) { // 기존 accessToken 처리
+				Authentication auth = jwtProvider.getAuthentication(token); // SecurityContext에 인증 정보 저장
+				SecurityContextHolder.getContext().setAuthentication(auth);
+			} else if ("signup".equals(tokenType)) { // signupToken 처리 로직 추가
+				 // ThreadLocal에만 저장
+				JwtHolder.set(token);
+			}
+
 		}
 
 		filterChain.doFilter(request, response);
+		JwtHolder.clear();
 	}
 
 	private String resolveToken(HttpServletRequest request) {

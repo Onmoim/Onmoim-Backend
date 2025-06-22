@@ -1,9 +1,11 @@
 package com.onmoim.server.oauth.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.onmoim.server.common.response.ResponseHandler;
@@ -11,6 +13,9 @@ import com.onmoim.server.oauth.dto.OAuthRequestDto;
 import com.onmoim.server.oauth.dto.OAuthResponseDto;
 import com.onmoim.server.oauth.dto.ReissueTokenRequestDto;
 import com.onmoim.server.oauth.service.OAuthService;
+import com.onmoim.server.oauth.service.RefreshTokenService;
+import com.onmoim.server.oauth.service.provider.OAuthProvider;
+import com.onmoim.server.user.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -30,6 +35,13 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthController {
 
 	private final OAuthService oAuthService;
+	private final UserService userService;
+	private final RefreshTokenService refreshTokenService;
+
+	@GetMapping("/oauth/callback")
+	public ResponseEntity<String> testCallback(@RequestParam String code) {
+		return ResponseEntity.ok("받은 code: " + code);
+	}
 
 	@PostMapping("/oauth")
 	@Operation(
@@ -51,8 +63,18 @@ public class AuthController {
 			)
 	})
 	public ResponseEntity<ResponseHandler<OAuthResponseDto>> login(
-				@Valid @RequestBody OAuthRequestDto oAuthRequestDto) {
-		OAuthResponseDto response = oAuthService.login(oAuthRequestDto.getProvider(), oAuthRequestDto.getToken());
+				@Valid @RequestBody OAuthRequestDto request) {
+
+		OAuthResponseDto response = new OAuthResponseDto();
+
+		String provider = request.getProvider();
+		String code = request.getAuthorizationCode();
+
+		if (provider.equals("google")) {
+			response = oAuthService.handleGoogleLogin(provider, code);
+		} else {
+			response = oAuthService.handleKakaoLogin(provider, code);
+		}
 
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
@@ -81,6 +103,32 @@ public class AuthController {
 		@RequestBody ReissueTokenRequestDto reissueTokenRequestDto) {
 		OAuthResponseDto response = oAuthService.reissueAccessToken(reissueTokenRequestDto.getRefreshToken());
 		return ResponseEntity.ok(ResponseHandler.response(response));
+	}
+
+	@PostMapping("/logout")
+	@Operation(
+		summary = "로그아웃",
+		description = "RefreshToken 제거 및 로그아웃 처리"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "로그아웃 성공",
+			content = @Content(
+				mediaType = "application/json",
+				schema = @Schema(implementation = ResponseHandler.class)
+			)
+		),
+		@ApiResponse(
+			responseCode = "401",
+			description = "UNAUTHORIZED - 인증 실패"
+		)
+	})
+	public ResponseEntity<ResponseHandler<String>> logout() {
+		Long userId = userService.getCurrentUserId();
+		refreshTokenService.deleteRefreshToken(userId);
+
+		return ResponseEntity.ok(ResponseHandler.response("로그아웃 성공"));
 	}
 
 }

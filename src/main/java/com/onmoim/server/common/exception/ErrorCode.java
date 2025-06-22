@@ -35,6 +35,7 @@ public enum ErrorCode {
 
 	/* ------------------ 400 BAD_REQUEST : 유저 관련 오류 ------------------ */
 	ALREADY_EXISTS_USER(BAD_REQUEST, "이미 가입된 사용자입니다."),
+	SIGNUP_TOKEN_REQUIRED(BAD_REQUEST, "회원가입용 토큰이 없습니다."),
 
 	/* ------------------ 4XX BAD_REQUEST : 모임 관련 오류 ------------------ */
 	NOT_EXISTS_GROUP(NOT_FOUND, "존재하지 않는 모임입니다."),
@@ -73,15 +74,22 @@ public enum ErrorCode {
 	/* ------------------ 500 INTERNAL_SERVER_ERROR : 시스템 오류 ------------------ */
 	LOCK_SYSTEM_ERROR(INTERNAL_SERVER_ERROR, "락 시스템 오류가 발생했습니다. 잠시 후 다시 시도해 주세요"),
 
-	/* ------------------ 400 BAD_REQUEST : 권한 관련 오류 ------------------ */
+	/* ------------------ 409 CONFLICT : 유저 관련 오류(비즈니스 로직상 불가) ------------------ */
+	IS_GROUP_OWNER(CONFLICT, "탈퇴를 위해 모임장 권한 양도가 필요합니다."),
+
+	/* ------------------ 403 FORBIDDEN : 권한 관련 오류 ------------------ */
 	NOT_GROUP_MEMBER(FORBIDDEN, "모임 멤버만 접근 가능합니다."),
+	FORBIDDEN_USER_ACCESS(FORBIDDEN, "다른 사용자의 계정에 접근할 수 없습니다"),
 
 	/* ------------------ 401 UNAUTHORIZED : Auth 관련 오류 ------------------ */
+	INVALID_ACCESS_TOKEN(UNAUTHORIZED, "유효하지 않은 access token입니다."),
 	INVALID_REFRESH_TOKEN(UNAUTHORIZED, "유효하지 않은 refresh token입니다."),
 	REFRESH_TOKEN_MISMATCH(UNAUTHORIZED, "저장된 refresh token과 일치하지 않습니다."),
 	USER_NOT_FOUND(UNAUTHORIZED, "존재하지 않는 사용자입니다."),
-	UNAUTHORIZED_ACCESS(UNAUTHORIZED, "인증되지 않은 사용자입니다.");
+	UNAUTHORIZED_ACCESS(UNAUTHORIZED, "인증되지 않은 사용자입니다."),
 
+	/* ------------------ 500 INTERNAL_SERVER_ERROR: 서버 관련 오류 ------------------ */
+	OAUTH_PROVIDER_ERROR(INTERNAL_SERVER_ERROR, "외부 인증 서버와의 통신 중 오류가 발생하였습니다.");
 
 	private final HttpStatus httpStatus;
 	private final String detail;
