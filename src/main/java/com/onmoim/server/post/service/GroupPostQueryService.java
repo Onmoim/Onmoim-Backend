@@ -66,6 +66,30 @@ public class GroupPostQueryService {
     }
 
     /**
+     * 게시글 접근 권한 통합 검증 (댓글 작성/답글 작성용)
+     * - 게시글 존재 확인
+     * - 게시글이 해당 그룹에 속하는지 확인
+     * - 사용자가 그룹 멤버인지 확인
+     */
+    public GroupPost validatePostAccess(Long postId, Long groupId, Long userId) {
+        GroupPost post = findById(postId);
+        validatePostBelongsToGroup(post, groupId);
+        validateGroupMembership(groupId, userId);
+        return post;
+    }
+
+    /**
+     * 게시글 조회 권한 검증 (댓글 목록 조회용)
+     * - 게시글 존재 확인
+     * - 게시글이 해당 그룹에 속하는지 확인
+     */
+    public GroupPost validatePostReadAccess(Long postId, Long groupId) {
+        GroupPost post = findById(postId);
+        validatePostBelongsToGroup(post, groupId);
+        return post;
+    }
+
+    /**
      * 게시글 저장
      */
     @Transactional
