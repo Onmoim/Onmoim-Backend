@@ -27,6 +27,7 @@ import com.onmoim.server.group.dto.request.MemberIdRequestDto;
 import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupDetailResponseDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
+import com.onmoim.server.group.dto.response.GroupStatisticsResponseDto;
 import com.onmoim.server.group.service.GroupService;
 import com.onmoim.server.meeting.dto.MeetingDetail;
 import com.onmoim.server.meeting.service.MeetingService;
@@ -385,4 +386,37 @@ public class GroupController {
 		));
 	}
 
+	@Operation(
+		summary = "모임 통계 조회",
+		description = "모임 연간 일정, 모임 월간 일정"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "모임 통계 조회 성공"),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자 접근"),
+		@ApiResponse(
+			responseCode = "403",
+			description = "현재 사용자가 해당 모임장이 아닌 경우"),
+		@ApiResponse(
+			responseCode = "404",
+			description = "존재하지 않는 모임")
+	})
+	@GetMapping("/v1/groups/{groupId}/statistics")
+	public ResponseEntity<ResponseHandler<GroupStatisticsResponseDto>> getGroupStatistics(
+		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
+		@PathVariable Long groupId
+	)
+	{
+		groupService.checkOwner(groupId);
+
+		return ResponseEntity.ok(ResponseHandler.response(
+			GroupStatisticsResponseDto.of(
+				1L,
+				2L
+			)
+		));
+	}
 }

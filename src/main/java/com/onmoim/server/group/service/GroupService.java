@@ -238,6 +238,16 @@ public class GroupService {
 		return groupQueryService.getGroupWithDetails(groupId);
 	}
 
+	@Transactional(readOnly = true)
+	public void checkOwner(Long groupId) {
+		// 유저 조회
+		User user = userQueryService.findById(getCurrentUserId());
+		// 모임 존재 확인
+		groupQueryService.existsById(groupId);
+		// 모임장 확인
+		groupUserQueryService.checkOwner(groupId, user.getId());
+	}
+
 	// 현재 사용자
 	private Long getCurrentUserId() {
 		CustomUserDetails principal = (CustomUserDetails) SecurityContextHolder.getContextHolderStrategy()
