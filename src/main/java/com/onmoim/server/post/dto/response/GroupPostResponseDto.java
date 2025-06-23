@@ -30,6 +30,8 @@ public class GroupPostResponseDto {
     private LocalDateTime createdDate;
     private LocalDateTime modifiedDate;
     private List<PostImageDto> images;
+    private Long likeCount;
+    private Boolean isLiked;
 
     public static GroupPostResponseDto fromEntity(GroupPost post) {
         return GroupPostResponseDto.builder()
@@ -43,6 +45,8 @@ public class GroupPostResponseDto {
                 .type(post.getType())
                 .createdDate(post.getCreatedDate())
                 .modifiedDate(post.getModifiedDate())
+                .likeCount(0L)
+                .isLiked(false)
                 .build();
     }
 
@@ -52,6 +56,25 @@ public class GroupPostResponseDto {
                 .filter(pi -> pi.getDeletedDate() == null)
                 .map(PostImageDto::fromEntity)
                 .toList();
+        return dto;
+    }
+
+    public static GroupPostResponseDto fromEntityWithLikes(GroupPost post, Long likeCount, Boolean isLiked) {
+        GroupPostResponseDto dto = fromEntity(post);
+        dto.likeCount = likeCount;
+        dto.isLiked = isLiked;
+        return dto;
+    }
+
+    public static GroupPostResponseDto fromEntityWithImagesAndLikes(
+            GroupPost post, 
+            List<PostImage> postImages,
+            Long likeCount,
+            Boolean isLiked
+    ) {
+        GroupPostResponseDto dto = fromEntityWithImages(post, postImages);
+        dto.likeCount = likeCount;
+        dto.isLiked = isLiked;
         return dto;
     }
 
