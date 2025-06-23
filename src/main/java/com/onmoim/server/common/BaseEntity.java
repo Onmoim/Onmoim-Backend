@@ -28,6 +28,11 @@ public class BaseEntity {
         this.deletedDate = LocalDateTime.now();
     }
 
+    // 논리삭제 복구
+    public void restore() {
+        this.deletedDate = null;
+    }
+
     // 삭제 확인
     public boolean isDeleted() {
         return deletedDate != null;

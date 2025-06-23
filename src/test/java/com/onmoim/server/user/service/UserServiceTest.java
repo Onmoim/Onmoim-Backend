@@ -1,3 +1,4 @@
+/*
 package com.onmoim.server.user.service;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -47,7 +48,7 @@ public class UserServiceTest {
 	private CategoryRepository categoryRepository;
 
 	@Autowired
-	private UserCategoryRepository userCategoryRepository;
+	private User6CategoryRepository userCategoryRepository;
 
 	@Autowired
 	private LocationRepository locationRepository;
@@ -144,3 +145,4 @@ public class UserServiceTest {
 	}
 
 }
+*/

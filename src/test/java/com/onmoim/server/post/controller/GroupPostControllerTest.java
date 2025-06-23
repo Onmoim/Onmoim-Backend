@@ -6,8 +6,11 @@ import com.onmoim.server.post.dto.request.GroupPostRequestDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.service.GroupPostService;
+import com.onmoim.server.post.service.PostLikeService;
+import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.security.JwtAuthenticationFilter;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,7 +22,8 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -60,6 +64,9 @@ class GroupPostControllerTest {
 	@MockBean
 	private GroupPostService groupPostService;
 
+	@MockBean
+	PostLikeService postLikeService;
+
 	private GroupPostRequestDto requestDto;
 	private GroupPostResponseDto responseDto;
 
@@ -70,14 +77,12 @@ class GroupPostControllerTest {
 			.apply(springSecurity())
 			.build();
 
-		// DTO 생성
 		requestDto = GroupPostRequestDto.builder()
 			.title("Test Title")
 			.content("Test Content")
 			.type(GroupPostType.FREE)
 			.build();
 
-		// ResponseDTO 생성
 		responseDto = GroupPostResponseDto.builder()
 			.id(1L)
 			.groupId(1L)
@@ -92,9 +97,13 @@ class GroupPostControllerTest {
 			.build();
 	}
 
+	private RequestPostProcessor authenticatedUser(Long userId) {
+		CustomUserDetails userDetails = new CustomUserDetails(userId, "test@example.com", "google");
+		return SecurityMockMvcRequestPostProcessors.user(userDetails);
+	}
+
 	@Test
 	@DisplayName("게시글 작성 성공 테스트")
-	@WithMockUser(roles = "USER")
 	void createPost() throws Exception {
 		// given
 		Long groupId = 1L;
@@ -111,42 +120,41 @@ class GroupPostControllerTest {
 				.file(file1)
 				.file(file2)
 				.file(jsonPart)
-				.param("userId", "1")
 				.contentType(MediaType.MULTIPART_FORM_DATA)
+				.with(authenticatedUser(1L))
 				.with(request -> {
 					request.setMethod("POST");
 					return request;
 				}))
 			.andDo(print())
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.id").value(1L))
-			.andExpect(jsonPath("$.title").value("Test Title"))
-			.andExpect(jsonPath("$.content").value("Test Content"));
+			.andExpect(jsonPath("$.data.id").value(1L))
+			.andExpect(jsonPath("$.data.title").value("Test Title"))
+			.andExpect(jsonPath("$.data.content").value("Test Content"));
 	}
 
 	@Test
 	@DisplayName("게시글 상세 조회 성공 테스트")
-	@WithMockUser(roles = "USER")
 	void getPostDetail() throws Exception {
 		// given
 		Long groupId = 1L;
 		Long postId = 1L;
 
-		given(groupPostService.getPost(eq(groupId), eq(postId)))
+		given(groupPostService.getPostWithLikes(eq(groupId), eq(postId), anyLong()))
 			.willReturn(responseDto);
 
 		// when & then
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/groups/{groupId}/posts/{postId}", groupId, postId))
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/groups/{groupId}/posts/{postId}", groupId, postId)
+				.with(authenticatedUser(1L)))
 			.andDo(print())
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.id").value(1L))
-			.andExpect(jsonPath("$.title").value("Test Title"))
-			.andExpect(jsonPath("$.content").value("Test Content"));
+			.andExpect(jsonPath("$.data.id").value(1L))
+			.andExpect(jsonPath("$.data.title").value("Test Title"))
+			.andExpect(jsonPath("$.data.content").value("Test Content"));
 	}
 
 	@Test
 	@DisplayName("게시글 수정 성공 테스트")
-	@WithMockUser(roles = "USER")
 	void updatePost() throws Exception {
 		// given
 		Long groupId = 1L;
@@ -164,7 +172,7 @@ class GroupPostControllerTest {
 				.file(file1)
 				.file(file2)
 				.file(jsonPart)
-				.param("userId", "1")
+				.with(authenticatedUser(1L))
 				.with(request -> {
 					request.setMethod("PUT");
 					return request;
@@ -172,14 +180,13 @@ class GroupPostControllerTest {
 				.contentType(MediaType.MULTIPART_FORM_DATA))
 			.andDo(print())
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.id").value(1L))
-			.andExpect(jsonPath("$.title").value("Test Title"))
-			.andExpect(jsonPath("$.content").value("Test Content"));
+			.andExpect(jsonPath("$.data.id").value(1L))
+			.andExpect(jsonPath("$.data.title").value("Test Title"))
+			.andExpect(jsonPath("$.data.content").value("Test Content"));
 	}
 
 	@Test
 	@DisplayName("게시글 삭제 성공 테스트")
-	@WithMockUser(roles = "USER")
 	void deletePost() throws Exception {
 		// given
 		Long groupId = 1L;
@@ -189,8 +196,57 @@ class GroupPostControllerTest {
 
 		// when & then
 		mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/groups/{groupId}/posts/{postId}", groupId, postId)
-				.param("userId", "1"))
+				.with(authenticatedUser(1L)))
 			.andDo(print())
-			.andExpect(status().isNoContent());
+			.andExpect(status().isOk());
+	}
+
+	@Test
+	@DisplayName("게시글 좋아요 토글 성공 테스트 - 첫 좋아요")
+	void togglePostLikeFirstLike() throws Exception {
+		// given
+		Long groupId = 1L;
+		Long postId = 1L;
+
+		given(groupPostService.togglePostLike(eq(groupId), eq(postId), anyLong()))
+			.willReturn(true); // 좋아요 활성화
+
+		// when & then
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/groups/{groupId}/posts/{postId}/like", groupId, postId)
+				.with(authenticatedUser(1L)))
+			.andDo(print())
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.isLiked").value(true));
+	}
+
+	@Test
+	@DisplayName("게시글 좋아요 토글 성공 테스트 - 좋아요 취소")
+	void togglePostLikeCancel() throws Exception {
+		// given
+		Long groupId = 1L;
+		Long postId = 1L;
+
+		given(groupPostService.togglePostLike(eq(groupId), eq(postId), anyLong()))
+			.willReturn(false); // 좋아요 비활성화
+
+		// when & then
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/groups/{groupId}/posts/{postId}/like", groupId, postId)
+				.with(authenticatedUser(1L)))
+			.andDo(print())
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.isLiked").value(false));
+	}
+
+	@Test
+	@DisplayName("게시글 좋아요 토글 실패 테스트 - 인증되지 않은 사용자")
+	void togglePostLikeUnauthorized() throws Exception {
+		// given
+		Long groupId = 1L;
+		Long postId = 1L;
+
+		// when & then
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/groups/{groupId}/posts/{postId}/like", groupId, postId))
+			.andDo(print())
+			.andExpect(status().isForbidden());
 	}
 }
