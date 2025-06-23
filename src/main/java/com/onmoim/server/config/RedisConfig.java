@@ -20,12 +20,23 @@ public class RedisConfig {
 	@Value("${spring.data.redis.port}")
 	private int port;
 
+	@Value("${spring.profiles.active}")
+	private String activeProfile;
+
 	@Bean
 	public RedisConnectionFactory redisConnectionFactory() {
 		RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
-		LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-			.useSsl()
-			.build();
+		LettuceClientConfiguration clientConfig;
+
+		if (isSslEnabled()) {
+			clientConfig = LettuceClientConfiguration.builder()
+				.useSsl()
+				.build();
+		} else {
+			clientConfig = LettuceClientConfiguration.builder()
+				.build();
+		}
+
 		return new LettuceConnectionFactory(config, clientConfig);
 	}
 
@@ -45,4 +56,9 @@ public class RedisConfig {
 
 		return redisTemplate;
 	}
+
+	private boolean isSslEnabled() {
+		return "dev".equals(activeProfile); // dev에서만 SSL 사용
+	}
+
 }
