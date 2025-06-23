@@ -36,6 +36,7 @@ import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.service.GroupPostService;
+import com.onmoim.server.post.service.PostLikeService;
 import com.onmoim.server.security.CustomUserDetails;
 
 /**
@@ -48,6 +49,7 @@ import com.onmoim.server.security.CustomUserDetails;
 public class GroupPostController {
 
     private final GroupPostService groupPostService;
+    private final PostLikeService postLikeService;
 
 
     @Operation(
@@ -109,8 +111,9 @@ public class GroupPostController {
             @Parameter(description = "게시글 ID")
             @PathVariable Long postId
     ) {
+        Long userId = getCurrentUserIdOrNull();
         GroupPostResponseDto response =
-                groupPostService.getPost(groupId, postId);
+                groupPostService.getPostWithLikes(groupId, postId, userId);
         return ResponseEntity.ok(ResponseHandler.response(response));
     }
 
@@ -148,11 +151,13 @@ public class GroupPostController {
                         .size(size)
                         .build();
 
+        Long userId = getCurrentUserIdOrNull();
         CursorPageResponseDto<GroupPostResponseDto> response =
-                groupPostService.getPosts(
+                groupPostService.getPostsWithLikes(
                         groupId,
                         type,
-                        cursorRequest
+                        cursorRequest,
+                        userId
                 );
 
         return ResponseEntity.ok(ResponseHandler.response(response));
@@ -228,6 +233,38 @@ public class GroupPostController {
         return ResponseEntity.ok(ResponseHandler.response(null));
     }
 
+    /**
+     * 게시글 좋아요 토글
+     */
+    @Operation(
+            summary = "게시글 좋아요 토글",
+            description = "게시글에 좋아요를 추가하거나 취소합니다. 좋아요 상태에 따라 자동으로 토글됩니다. 처음 좋아요 클릭시 좋아요"
+	            + "두번 누르면 놓아요 취소" + "세번 누르면 다시 좋아요 활성화"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "좋아요 토글 성공"),
+            @ApiResponse(responseCode = "400", description = "게시글 또는 모임을 찾을 수 없음"),
+            @ApiResponse(responseCode = "401", description = "로그인이 필요합니다")
+    })
+    @PostMapping("/v1/groups/{groupId}/posts/{postId}/like")
+    public ResponseEntity<ResponseHandler<PostLikeToggleResponse>> togglePostLike(
+            @Parameter(description = "모임 ID")
+            @PathVariable Long groupId,
+            @Parameter(description = "게시글 ID")
+            @PathVariable Long postId
+    ) {
+        Long userId = getCurrentUserId();
+        boolean isLiked = groupPostService.togglePostLike(groupId, postId, userId);
+
+        PostLikeToggleResponse response = new PostLikeToggleResponse(isLiked);
+        return ResponseEntity.ok(ResponseHandler.response(response));
+    }
+
+    /**
+     * 좋아요 토글 응답 DTO
+     */
+    public record PostLikeToggleResponse(boolean isLiked) {}
+
 	/**
 	 * 현재 사용자 ID 조회
 	 */
@@ -238,5 +275,16 @@ public class GroupPostController {
 				.getAuthentication()
 				.getPrincipal();
 		return principal.getUserId();
+	}
+
+	/**
+	 * 현재 사용자 ID 조회
+	 */
+	private Long getCurrentUserIdOrNull() {
+		try {
+			return getCurrentUserId();
+		} catch (Exception e) {
+			return null;
+		}
 	}
 }
