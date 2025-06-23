@@ -13,24 +13,25 @@ import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.entity.PostImage;
 import com.onmoim.server.post.entity.QGroupPost;
+import com.onmoim.server.post.service.PostLikeQueryService;
 
-/**
- * 모임 게시글을 위한 커스텀 레포지토리 구현체 (Querydsl 구현)
- */
+
 @RequiredArgsConstructor
 public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
     private final PostImageRepository postImageRepository;
+    private final PostLikeQueryService postLikeQueryService;
+
 
     @Override
-    public CursorPageResponseDto<GroupPostResponseDto> findPostsWithImages(
+    public CursorPageResponseDto<GroupPostResponseDto> findPostsWithImagesAndLikes(
             Group group,
             GroupPostType type,
             Long cursorId,
-            int size
+            int size,
+            Long userId
     ) {
-
         BooleanBuilder predicate = buildPredicate(group, type, cursorId);
 
         Deque<GroupPost> pagedPosts = fetchPagedPosts(predicate, size);
@@ -38,7 +39,7 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
         boolean hasNext = pagedPosts.size() > size;
         Long nextCursorId = extractNextCursor(pagedPosts, size, hasNext);
 
-        List<GroupPostResponseDto> dtos = mapToDtoWithImages(pagedPosts);
+        List<GroupPostResponseDto> dtos = mapToDtoWithImagesAndLikes(pagedPosts, userId);
 
         return CursorPageResponseDto.<GroupPostResponseDto>builder()
                 .content(dtos)
@@ -102,6 +103,40 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
                 .map(post -> GroupPostResponseDto.fromEntityWithImages(
                         post,
                         imagesByPostId.getOrDefault(post.getId(), Collections.emptyList())
+                ))
+                .toList();
+    }
+
+    private List<GroupPostResponseDto> mapToDtoWithImagesAndLikes(Collection<GroupPost> posts, Long userId) {
+        if (posts.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Long> postIds = posts.stream()
+                .map(GroupPost::getId)
+                .toList();
+
+        // 이미지 정보 조회
+        Map<Long, List<PostImage>> imagesByPostId = Collections.unmodifiableMap(
+                postImageRepository
+                        .findByPostIdInAndIsDeletedFalse(postIds)
+                        .stream()
+                        .collect(Collectors.groupingBy(
+                                pi -> pi.getPost().getId(),
+                                Collectors.toUnmodifiableList()
+                        ))
+        );
+
+        // 좋아요 정보 조회
+        Map<Long, PostLikeQueryService.PostLikeInfo> likeInfoMap =
+                postLikeQueryService.getPostLikeInfoMap(postIds, userId);
+
+        return posts.stream()
+                .map(post -> GroupPostResponseDto.fromEntityWithImagesAndLikes(
+                        post,
+                        imagesByPostId.getOrDefault(post.getId(), Collections.emptyList()),
+                        likeInfoMap.get(post.getId()).likeCount(),
+                        likeInfoMap.get(post.getId()).isLiked()
                 ))
                 .toList();
     }

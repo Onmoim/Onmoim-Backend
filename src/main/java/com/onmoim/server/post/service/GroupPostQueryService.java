@@ -27,6 +27,7 @@ public class GroupPostQueryService {
     private final GroupPostRepository groupPostRepository;
     private final GroupQueryService groupQueryService;
     private final GroupUserQueryService groupUserQueryService;
+    private final PostLikeQueryService postLikeQueryService;
 
     /**
      * 게시글 조회 - 존재하지 않으면 예외 발생
@@ -72,33 +73,42 @@ public class GroupPostQueryService {
         return groupPostRepository.save(post);
     }
 
+
     /**
      * 단일 게시글 상세 조회
      */
-    public GroupPostResponseDto getPost(Long groupId, Long postId) {
+    public GroupPostResponseDto getPostWithLikes(Long groupId, Long postId, Long userId) {
         groupQueryService.getById(groupId);
         GroupPost post = findById(postId);
         validatePostBelongsToGroup(post, groupId);
 
-        return GroupPostResponseDto.fromEntity(post);
+        PostLikeQueryService.PostLikeInfo likeInfo = postLikeQueryService.getPostLikeInfo(postId, userId);
+
+        return GroupPostResponseDto.fromEntityWithLikes(
+                post,
+                likeInfo.likeCount(),
+                likeInfo.isLiked()
+        );
     }
 
+
     /**
-     * 커서 기반 페이징을 이용한 게시글 목록 조회 (N+1 문제 해결)
+     * 커서 기반 페이징을 이용한 게시글 목록 조회
      */
-    public CursorPageResponseDto<GroupPostResponseDto> getPosts(
+    public CursorPageResponseDto<GroupPostResponseDto> getPostsWithLikes(
             Long groupId,
             GroupPostType type,
-            CursorPageRequestDto request
+            CursorPageRequestDto request,
+            Long userId
     ) {
         Group group = groupQueryService.getById(groupId);
 
-        // 최적화된 메서드 사용 - 게시글과 이미지를 함께 조회
-        return groupPostRepository.findPostsWithImages(
+        return groupPostRepository.findPostsWithImagesAndLikes(
                 group,
                 type,
                 request.getCursorId(),
-                request.getSize()
+                request.getSize(),
+                userId
         );
     }
 }
