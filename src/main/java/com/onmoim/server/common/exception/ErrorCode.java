@@ -63,6 +63,10 @@ public enum ErrorCode {
 	POST_NOT_FOUND(BAD_REQUEST, "게시글을 찾을 수 없습니다."),
 	POST_NOT_LIKED(BAD_REQUEST, "좋아요를 하지 않은 게시글입니다."),
 
+	/* ------------------ 400 BAD_REQUEST : 댓글 관련 오류 ------------------ */
+	COMMENT_NOT_FOUND(BAD_REQUEST, "댓글을 찾을 수 없습니다."),
+	INVALID_COMMENT_THREAD(BAD_REQUEST, "답글 조회는 부모 댓글에서만 가능합니다."),
+
 	/* ------------------ 401 BAD_REQUEST : 권한 없음 ------------------ */
 	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다."),
 

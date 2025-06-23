@@ -28,7 +28,7 @@ public class BaseEntity {
         this.deletedDate = LocalDateTime.now();
     }
 
-    // 논리삭제 복구
+    // soft delete 복구
     public void restore() {
         this.deletedDate = null;
     }
