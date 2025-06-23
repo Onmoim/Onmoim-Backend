@@ -50,7 +50,7 @@ public class GoogleOAuthProvider implements OAuthProvider {
 	}
 
 	@Override
-	public OAuthUserDto getUserInfoByAuthorizationCode(String code) {
+	public OAuthUserDto getUserInfoByToken(String code) {
 
 		try {
 			// 1. Authorization Code로 Access Token 요청
