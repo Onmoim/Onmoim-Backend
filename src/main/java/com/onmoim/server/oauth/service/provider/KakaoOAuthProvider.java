@@ -49,36 +49,13 @@ public class KakaoOAuthProvider implements OAuthProvider {
 	}
 
 	@Override
-	public OAuthUserDto getUserInfoByAuthorizationCode(String code) {
+	public OAuthUserDto getUserInfoByToken(String token) {
 		try {
-			// 1. Access Token 요청
-			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-			MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-			params.add("grant_type", "authorization_code");
-			params.add("client_id", clientId);
-			params.add("client_secret", clientSecret);
-			params.add("redirect_uri", redirectUri);
-			params.add("code", code);
-
-			HttpEntity<?> request = new HttpEntity<>(params, headers);
-
-
-			ResponseEntity<Map> response = restTemplate.postForEntity(
-				tokenUri,
-				request,
-				Map.class
-			);
-
-			String accessToken = (String) response.getBody().get("access_token");
-
-			// 2. 사용자 정보 요청
+			// accessToken으로 사용자 정보 요청
 			HttpHeaders userHeaders = new HttpHeaders();
-			userHeaders.setBearerAuth(accessToken);
+			userHeaders.setBearerAuth(token);
 
 			HttpEntity<?> userInfoRequest = new HttpEntity<>(userHeaders);
-
 			ResponseEntity<Map> userInfoResponse = restTemplate.exchange(
 				userInfoUri,
 				HttpMethod.GET,
@@ -86,17 +63,20 @@ public class KakaoOAuthProvider implements OAuthProvider {
 				Map.class
 			);
 
-			Map<String, Object> body = userInfoResponse.getBody();
-			log.info("body = {}", body);
+			log.info("userInfoResponse = {}", userInfoResponse);
 
-			Map<String, Object> kakaoAccount = (Map<String, Object>) body.get("kakao_account");
+			Map<String, Object> userInfo = userInfoResponse.getBody();
+			log.info("userInfo = {}", userInfo);
+
+			Map<String, Object> kakaoAccount = (Map<String, Object>) userInfo.get("kakao_account");
+			String kakaoId = String.valueOf(userInfo.get("id"));
 			String email = (String) kakaoAccount.get("email");
-			String kakaoId = String.valueOf(body.get("id"));
 			log.info("email = {}", email);
 			log.info("kakaoId = {}", kakaoId);
 
 			return new OAuthUserDto("kakao", kakaoId, email);
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new CustomException(OAUTH_PROVIDER_ERROR);
 		}
 

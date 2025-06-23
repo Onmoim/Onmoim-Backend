@@ -1,5 +1,8 @@
 package com.onmoim.server.oauth.controller;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -68,12 +71,12 @@ public class AuthController {
 		OAuthResponseDto response = new OAuthResponseDto();
 
 		String provider = request.getProvider();
-		String code = request.getAuthorizationCode();
+		String token = request.getToken();
 
 		if (provider.equals("google")) {
-			response = oAuthService.handleGoogleLogin(provider, code);
+			response = oAuthService.handleGoogleLogin(provider, token);
 		} else {
-			response = oAuthService.handleKakaoLogin(provider, code);
+			response = oAuthService.handleKakaoLogin(provider, token);
 		}
 
 		return ResponseEntity.ok(ResponseHandler.response(response));
