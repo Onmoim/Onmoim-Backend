@@ -20,10 +20,6 @@ import com.onmoim.server.user.entity.User;
                 @Index(
                         name = "idx_post_group_deleted",
                         columnList = "group_id,deleted_date"
-                ),
-                @Index(
-                        name = "idx_post_author_deleted",
-                        columnList = "author_id,deleted_date"
                 )
         }
 )

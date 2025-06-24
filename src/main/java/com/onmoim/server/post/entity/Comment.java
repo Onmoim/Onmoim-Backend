@@ -17,10 +17,6 @@ import com.onmoim.server.user.entity.User;
         @Index(
             name = "idx_comment_post_parent_deleted",
             columnList = "post_id,parent_id,deleted_date"
-        ),
-        @Index(
-            name = "idx_comment_author_deleted",
-            columnList = "author_id,deleted_date"
         )
     }
 )
