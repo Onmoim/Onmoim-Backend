@@ -11,9 +11,6 @@ import com.onmoim.server.user.entity.User;
 
 /**
  * 모임 게시글 엔티티
- * TODO: 좋아요 수 필드 추가 (향후 구현)
- * TODO: 댓글 관련 연관관계 추가 (향후 구현)
- * TODO: 게시글 카테고리 관계 추가 (향후 구현)
  */
 @Entity
 @Getter
@@ -84,6 +81,4 @@ public class GroupPost extends BaseEntity {
     public void softDelete() {
         super.softDelete();
     }
-
-    // TODO: 좋아요 추가/취소 메서드 추가 (향후 구현)
 }

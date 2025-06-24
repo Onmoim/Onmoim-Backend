@@ -248,6 +248,8 @@ public class GroupPostController {
         return ResponseEntity.ok(ResponseHandler.response(null));
     }
 
+	//좋아요 API
+
     /**
      * 게시글 좋아요 토글
      */
@@ -299,7 +301,7 @@ public class GroupPostController {
             @Parameter(description = "커서 ID (마지막으로 조회한 댓글 ID)")
             @RequestParam(required = false) Long cursor
     ) {
-        // 게시글 조회 권한 검증
+
         GroupPost post = groupPostQueryService.validatePostReadAccess(postId, groupId);
 
         CursorPageResponseDto<CommentResponseDto> response =
@@ -358,7 +360,6 @@ public class GroupPostController {
     ) {
         Long userId = getCurrentUserId();
 
-        // 게시글 접근 권한 통합 검증
         GroupPost post = groupPostQueryService.validatePostAccess(postId, groupId, userId);
 
         User user = userQueryService.findById(userId);
@@ -391,7 +392,6 @@ public class GroupPostController {
     ) {
         Long userId = getCurrentUserId();
 
-        // 게시글 접근 권한 통합 검증
         GroupPost post = groupPostQueryService.validatePostAccess(postId, groupId, userId);
 
         User user = userQueryService.findById(userId);
