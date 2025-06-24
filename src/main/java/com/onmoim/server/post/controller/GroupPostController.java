@@ -34,6 +34,8 @@ import com.onmoim.server.post.dto.request.CursorPageRequestDto;
 import com.onmoim.server.post.dto.request.GroupPostRequestDto;
 import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
+import com.onmoim.server.post.dto.response.PostLikeToggleResponseDto;
+
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.service.GroupPostService;
 import com.onmoim.server.post.service.PostLikeService;
@@ -260,7 +262,7 @@ public class GroupPostController {
             @ApiResponse(responseCode = "401", description = "로그인이 필요합니다")
     })
     @PostMapping("/v1/groups/{groupId}/posts/{postId}/like")
-    public ResponseEntity<ResponseHandler<PostLikeToggleResponse>> togglePostLike(
+    public ResponseEntity<ResponseHandler<PostLikeToggleResponseDto>> togglePostLike(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,
             @Parameter(description = "게시글 ID")
@@ -269,14 +271,11 @@ public class GroupPostController {
         Long userId = getCurrentUserId();
         boolean isLiked = groupPostService.togglePostLike(groupId, postId, userId);
 
-        PostLikeToggleResponse response = new PostLikeToggleResponse(isLiked);
+        PostLikeToggleResponseDto response = new PostLikeToggleResponseDto(isLiked);
         return ResponseEntity.ok(ResponseHandler.response(response));
     }
 
-    /**
-     * 좋아요 토글 응답 DTO
-     */
-    public record PostLikeToggleResponse(boolean isLiked) {}
+
 
     //  댓글 관련 API
 
