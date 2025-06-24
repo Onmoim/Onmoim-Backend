@@ -15,8 +15,6 @@ import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.S3FileStorageService;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.entity.Group;
-import com.onmoim.server.group.entity.GroupUser;
-import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.location.entity.Location;
 
@@ -107,9 +105,5 @@ public class GroupQueryService {
 	) {
 		Group group = getById(groupId);
 		group.updateLocation(geoPoint);
-	}
-
-	public void banMember(GroupUser user) {
-		user.updateStatus(Status.BAN);
 	}
 }

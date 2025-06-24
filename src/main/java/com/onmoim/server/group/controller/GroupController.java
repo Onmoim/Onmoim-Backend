@@ -386,6 +386,7 @@ public class GroupController {
 		));
 	}
 
+	// todo: ing
 	@Operation(
 		summary = "모임 통계 조회",
 		description = "모임 연간 일정, 모임 월간 일정"

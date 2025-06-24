@@ -428,7 +428,7 @@ class GroupServiceTest {
 		// expected
 		assertThatThrownBy(() -> groupService.banMember(groupId, owner.getId()))
 			.isInstanceOf(CustomException.class)
-			.hasMessage(MEMBER_NOT_FOUND_IN_GROUP.getDetail());
+			.hasMessage(GROUP_FORBIDDEN.getDetail());
 	}
 
 	@Test
@@ -694,6 +694,6 @@ class GroupServiceTest {
 		// expected
 		assertThatThrownBy(() -> groupService.transferOwnership(groupId, member.getId()))
 			.isInstanceOf(CustomException.class)
-			.hasMessage(MEMBER_NOT_FOUND_IN_GROUP.getDetail());
+			.hasMessage(GROUP_FORBIDDEN.getDetail());
 	}
 }
