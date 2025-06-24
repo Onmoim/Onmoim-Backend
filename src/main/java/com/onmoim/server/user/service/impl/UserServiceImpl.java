@@ -23,7 +23,6 @@ import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.oauth.dto.OAuthUserDto;
 import com.onmoim.server.oauth.service.RefreshTokenService;
-import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.security.JwtHolder;
 import com.onmoim.server.security.JwtProvider;
 import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
