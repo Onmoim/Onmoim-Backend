@@ -88,6 +88,11 @@ public class CommentQueryService {
         Comment parentComment = commentRepository.findByIdWithAuthor(commentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
+        // 논리삭제 체크 (PK 조회 최적화로 애플리케이션에서 처리)
+        if (parentComment.getDeletedDate() != null) {
+            throw new CustomException(ErrorCode.COMMENT_NOT_FOUND);
+        }
+
         if (!parentComment.isParentComment()) {
             throw new CustomException(ErrorCode.INVALID_COMMENT_THREAD);
         }

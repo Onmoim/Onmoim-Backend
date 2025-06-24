@@ -49,17 +49,17 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
 	/**
 	 * 특정 댓글 조회 (작성자 정보 포함)
+	 * PK 조회이므로 클러스터링 인덱스 사용, deletedDate는 애플리케이션에서 체크
 	 */
 	@Query("""
 		SELECT c FROM Comment c
 		JOIN FETCH c.author
 		WHERE c.id = :commentId
-		AND c.deletedDate IS NULL
 		""")
 	Optional<Comment> findByIdWithAuthor(@Param("commentId") Long commentId);
 
 	/**
-	 * 여러 부모댓글의 답글 개수를 한 번에 조회 (N+1 문제 해결)
+	 * 여러 부모댓글의 답글 개수를 한 번에 조회
 	 */
 	@Query("""
 		SELECT c.parent.id as parentId, COUNT(c) as replyCount
@@ -88,7 +88,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 		SELECT c FROM Comment c
 		WHERE c.id = :commentId
 		AND c.author = :author
-		AND c.deletedDate IS NULL
 		""")
 	Optional<Comment> findByIdAndAuthor(
 		@Param("commentId") Long commentId,
