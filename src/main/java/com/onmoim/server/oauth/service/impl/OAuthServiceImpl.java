@@ -70,6 +70,12 @@ public class OAuthServiceImpl implements OAuthService {
 		refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
 
 		return new OAuthResponseDto(accessToken, refreshToken, EXISTS);
+		List<UserCategory> userCategoryList = userCategoryRepository.findUserCategoriesByUser(user);
+		if (userCategoryList.isEmpty()) {
+			return new OAuthResponseDto(accessToken, refreshToken, NO_CATEGORY); // 카테고리 없는 경우
+		} else {
+			return new OAuthResponseDto(accessToken, refreshToken, EXISTS);
+		}
 	}
 
 	private Authentication createAuthentication(User user) {
