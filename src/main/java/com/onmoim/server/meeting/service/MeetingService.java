@@ -1,7 +1,14 @@
 package com.onmoim.server.meeting.service;
 
+import static java.lang.Boolean.*;
+
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import javax.sql.DataSource;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
@@ -13,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.s3.service.FileStorageService;
+import com.onmoim.server.meeting.dto.MeetingDetail;
 import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
 import com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto;
 import com.onmoim.server.meeting.entity.Meeting;
@@ -327,6 +335,36 @@ public class MeetingService {
 		}
 
 		meeting.softDelete();
+	}
+
+	public List<MeetingDetail> getUpcomingMeetings(
+		int limit,
+		Long groupId
+	)
+	{
+		// d-day 가까운 순서로 모임 일정 조회
+		List<Meeting> meetings = meetingQueryService.getUpcomingMeetingsByDday(limit, groupId);
+
+		// 일정 id 추출
+		List<Long> meetingIds = meetings.stream().map(Meeting::getId).toList();
+
+		// 현재 사용자 참석 여부 확인을 위한 UserMeeting 조회
+		List<UserMeeting> userMeetings = meetingQueryService.getUserMeetings(getCurrentUserId(), meetingIds);
+
+		// key: meetingId value: Meeting
+		Map<Long, Meeting> meetingMap = meetings.stream()
+			.collect(Collectors.toMap(Meeting::getId, Function.identity()));
+
+		// key: meetingId value: boolean(참석 여부)
+		Map<Long, Boolean> userMeetingMap = userMeetings.stream()
+			.collect(Collectors.toMap(um -> um.getMeeting().getId(), um -> TRUE));
+
+		// 반환
+		return meetingIds.stream()
+			.map(id -> MeetingDetail.of(
+				meetingMap.get(id),
+				userMeetingMap.getOrDefault(id, FALSE))
+			).toList();
 	}
 
 	private void tryDeleteFileFromS3(String fileUrl) {

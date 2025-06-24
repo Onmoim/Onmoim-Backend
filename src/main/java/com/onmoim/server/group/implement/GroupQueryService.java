@@ -13,6 +13,7 @@ import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.S3FileStorageService;
+import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -67,11 +68,11 @@ public class GroupQueryService {
 			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
 	}
 
-	// 모임 상세 조회에서 사용
-	public Group getGroupWithDetails(Long groupId) {
-		return groupRepository.findGroupWithDetails(groupId)
+	// 모임 상세 조회
+	public GroupDetail getGroupWithDetails(Long groupId) {
+		return GroupDetail.of(groupRepository.findGroupWithDetails(groupId)
 			.filter(group -> !group.isDeleted())
-			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
+			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP)));
 	}
 
 	// 모임을 삭제합니다.

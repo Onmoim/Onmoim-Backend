@@ -19,13 +19,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.common.response.ResponseHandler;
+import com.onmoim.server.group.dto.GroupDetail;
+import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.dto.request.MemberIdRequestDto;
 import com.onmoim.server.group.dto.response.CursorPageResponseDto;
+import com.onmoim.server.group.dto.response.GroupDetailResponseDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
-import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.service.GroupService;
+import com.onmoim.server.meeting.dto.MeetingDetail;
+import com.onmoim.server.meeting.service.MeetingService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -42,6 +46,7 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "Group", description = "모임 관련 API")
 public class GroupController {
 	private final GroupService groupService;
+	private final MeetingService meetingService;
 
 	@Operation(
 		summary = "모임 생성",
@@ -206,7 +211,7 @@ public class GroupController {
 		@RequestParam(required = false, defaultValue = "10") int size
 	)
 	{
-		List<GroupUser> groupMembers = groupService.getGroupMembers(groupId, cursorId, size);
+		List<GroupMember> groupMembers = groupService.getGroupMembers(groupId, cursorId, size);
 		Long totalCount = groupService.groupMemberCount(groupId);
 		return ResponseEntity.ok(ResponseHandler.response(CursorPageResponseDto.of(
 			groupMembers,
@@ -343,5 +348,41 @@ public class GroupController {
 		return ResponseEntity.ok(ResponseHandler.response("모임원 강퇴 성공"));
 	}
 
-	// todo: 모임 상세 조회 after 일정 생성, 조회
+	@Operation(
+		summary = "모임 상세 조회",
+		description = "모임 상세한 내용과 d-day가 임박한 상위 2개 일정 조회"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "모임 상세 조회 성공"),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자 접근"),
+		@ApiResponse(
+			responseCode = "403",
+			description = "현재 사용자가 해당 모임원이 아닌 경우"),
+		@ApiResponse(
+			responseCode = "404",
+			description = "존재하지 않는 모임")
+	})
+	@GetMapping("/v1/groups/{groupId}")
+	public ResponseEntity<ResponseHandler<GroupDetailResponseDto>> getGroupDetail(
+		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
+		@PathVariable Long groupId
+	)
+	{
+		GroupDetail detail = groupService.readGroup(groupId);
+		Long count = groupService.groupMemberCount(groupId);
+		List<MeetingDetail> meetingDetails = meetingService.getUpcomingMeetings(2, groupId);
+
+		return ResponseEntity.ok(ResponseHandler.response(
+			GroupDetailResponseDto.of(
+					detail,
+					count,
+					meetingDetails
+			)
+		));
+	}
+
 }

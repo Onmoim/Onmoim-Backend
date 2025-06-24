@@ -17,6 +17,8 @@ import com.onmoim.server.chat.service.ChatMessageService;
 import com.onmoim.server.chat.service.ChatRoomService;
 import com.onmoim.server.group.aop.NamedLock;
 import com.onmoim.server.group.aop.Retry;
+import com.onmoim.server.group.dto.GroupDetail;
+import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -116,18 +118,24 @@ public class GroupService {
 
 	// 모임 회원 조회
 	@Transactional(readOnly = true)
-	public List<GroupUser> getGroupMembers(
+	public List<GroupMember> getGroupMembers(
 		Long groupId,
 		Long cursorId,
 		int size
 	) {
+		// 유저 조회
+		User user = userQueryService.findById(getCurrentUserId());
+		// 모임 존재 확인
 		groupQueryService.existsById(groupId);
+		// 모인원 확인
+		groupUserQueryService.checkJoined(groupId, user.getId());
 		return groupUserQueryService.findGroupUserAndMembers(groupId, cursorId, size);
 	}
 
-	// 모임 회원 수 조회
+	// 모임 전체 회원 수 조회
+	@Transactional(readOnly = true)
 	public Long groupMemberCount(Long groupId) {
-		groupQueryService.existsById(groupId);
+		// 회원 수 조회
 		return groupUserQueryService.countMembers(groupId);
 	}
 
@@ -218,6 +226,16 @@ public class GroupService {
 		groupUserQueryService.checkOwner(groupId, user.getId());
 		// 업데이트
 		groupQueryService.updateGroup(group, description, capacity, image);
+	}
+
+	@Transactional(readOnly = true)
+	public GroupDetail readGroup(Long groupId) {
+		// 유저 조회
+		User user = userQueryService.findById(getCurrentUserId());
+		// 모인원 확인
+		groupUserQueryService.checkJoined(groupId, user.getId());
+		// (모임 + 카테고리 + 로케이션) 조회
+		return groupQueryService.getGroupWithDetails(groupId);
 	}
 
 	// 현재 사용자

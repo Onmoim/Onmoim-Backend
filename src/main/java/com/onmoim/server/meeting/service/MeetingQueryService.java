@@ -5,7 +5,6 @@ import static com.onmoim.server.meeting.entity.QMeeting.meeting;
 import com.onmoim.server.meeting.dto.response.PageResponseDto;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.ScrollPosition;
 import org.springframework.data.domain.Sort;
@@ -19,6 +18,7 @@ import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.meeting.dto.response.MeetingResponseDto;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingType;
+import com.onmoim.server.meeting.entity.UserMeeting;
 import com.onmoim.server.meeting.repository.MeetingRepository;
 import com.onmoim.server.meeting.repository.UserMeetingRepository;
 import com.onmoim.server.meeting.util.CursorUtils;
@@ -179,10 +179,11 @@ public class MeetingQueryService {
 	 * @param limit 조회할 일정 수
 	 * @return D-day가 가까운 일정 목록
 	 */
-	public List<Meeting> getUpcomingMeetingsByDday(int limit) {
+	public List<Meeting> getUpcomingMeetingsByDday(int limit, Long groupId) {
 		LocalDateTime now = LocalDateTime.now();
 
 		BooleanBuilder predicate = new BooleanBuilder()
+			.and(meeting.groupId.eq(groupId))
 			.and(meeting.startAt.gt(now))
 			.and(meeting.deletedDate.isNull());
 
@@ -190,5 +191,9 @@ public class MeetingQueryService {
 			.stream()
 			.limit(limit)
 			.toList();
+	}
+
+	public List<UserMeeting> getUserMeetings(Long userId, List<Long> meetingIds) {
+		return userMeetingRepository.findByUserAndMeetings(userId, meetingIds);
 	}
 }
