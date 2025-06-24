@@ -57,6 +57,7 @@ public class UserServiceTest {
 	void signupSuccess() {
 		// given
 		SignupRequestDto request = new SignupRequestDto("홍길동", "M", LocalDate.now(), 1L);
+
 		String signupToken = jwtProvider.createSignupToken("google", "1234567890", "test@test.com"); // signupToken 생성
 		JwtHolder.set(signupToken);
 
