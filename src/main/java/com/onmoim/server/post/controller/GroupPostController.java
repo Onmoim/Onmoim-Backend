@@ -54,7 +54,7 @@ import com.onmoim.server.security.CustomUserDetails;
  * 모임 게시글 관련 API 컨트롤러
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Tag(name = "모임 게시글 API", description = "모임 게시글 생성, 조회, 수정, 삭제 API")
 public class GroupPostController {
@@ -84,7 +84,7 @@ public class GroupPostController {
             @ApiResponse(responseCode = "400", description = "모임 또는 사용자를 찾을 수 없음")
     })
     @PostMapping(
-            value = "/v1/groups/{groupId}/posts",
+            value = "/groups/{groupId}/posts",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<ResponseHandler<GroupPostResponseDto>> createPost(
@@ -119,7 +119,7 @@ public class GroupPostController {
             ),
             @ApiResponse(responseCode = "400", description = "게시글 또는 모임을 찾을 수 없음")
     })
-    @GetMapping("/v1/groups/{groupId}/posts/{postId}")
+    @GetMapping("/groups/{groupId}/posts/{postId}")
     public ResponseEntity<ResponseHandler<GroupPostResponseDto>> getPost(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,
@@ -149,7 +149,7 @@ public class GroupPostController {
             ),
             @ApiResponse(responseCode = "400", description = "모임을 찾을 수 없음")
     })
-    @GetMapping("/v1/groups/{groupId}/posts")
+    @GetMapping("/groups/{groupId}/posts")
     public ResponseEntity<ResponseHandler<CursorPageResponseDto<GroupPostResponseDto>>> getPosts(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,
@@ -199,7 +199,7 @@ public class GroupPostController {
             @ApiResponse(responseCode = "400", description = "게시글 또는 모임을 찾을 수 없음")
     })
     @PutMapping(
-            value = "/v1/groups/{groupId}/posts/{postId}",
+            value = "/groups/{groupId}/posts/{postId}",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<ResponseHandler<GroupPostResponseDto>> updatePost(
@@ -236,7 +236,7 @@ public class GroupPostController {
             @ApiResponse(responseCode = "400", description = "게시글 삭제 권한 없음"),
             @ApiResponse(responseCode = "400", description = "게시글 또는 모임을 찾을 수 없음")
     })
-    @DeleteMapping("/v1/groups/{groupId}/posts/{postId}")
+    @DeleteMapping("/groups/{groupId}/posts/{postId}")
     public ResponseEntity<ResponseHandler<Void>> deletePost(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,
@@ -263,7 +263,7 @@ public class GroupPostController {
             @ApiResponse(responseCode = "400", description = "게시글 또는 모임을 찾을 수 없음"),
             @ApiResponse(responseCode = "401", description = "로그인이 필요합니다")
     })
-    @PostMapping("/v1/groups/{groupId}/posts/{postId}/like")
+    @PostMapping("/groups/{groupId}/posts/{postId}/like")
     public ResponseEntity<ResponseHandler<PostLikeToggleResponseDto>> togglePostLike(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,
@@ -292,7 +292,7 @@ public class GroupPostController {
             @ApiResponse(responseCode = "200", description = "댓글 목록 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없음")
     })
-    @GetMapping("/v1/groups/{groupId}/posts/{postId}/comments")
+    @GetMapping("/groups/{groupId}/posts/{postId}/comments")
     public ResponseEntity<ResponseHandler<CursorPageResponseDto<CommentResponseDto>>> getComments(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,
@@ -321,7 +321,7 @@ public class GroupPostController {
             @ApiResponse(responseCode = "404", description = "댓글을 찾을 수 없음"),
             @ApiResponse(responseCode = "400", description = "부모댓글이 아님")
     })
-    @GetMapping("/v1/groups/{groupId}/posts/{postId}/comments/{commentId}/thread")
+    @GetMapping("/groups/{groupId}/posts/{postId}/comments/{commentId}/thread")
     public ResponseEntity<ResponseHandler<CommentThreadResponseDto>> getCommentThread(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,
@@ -349,7 +349,7 @@ public class GroupPostController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "404", description = "게시글을 찾을 수 없음")
     })
-    @PostMapping("/v1/groups/{groupId}/posts/{postId}/comments")
+    @PostMapping("/groups/{groupId}/posts/{postId}/comments")
     public ResponseEntity<ResponseHandler<Long>> createComment(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,
@@ -379,7 +379,7 @@ public class GroupPostController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "404", description = "댓글을 찾을 수 없음")
     })
-    @PostMapping("/v1/groups/{groupId}/posts/{postId}/comments/{commentId}/replies")
+    @PostMapping("/groups/{groupId}/posts/{postId}/comments/{commentId}/replies")
     public ResponseEntity<ResponseHandler<Long>> createReply(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,
@@ -412,7 +412,7 @@ public class GroupPostController {
             @ApiResponse(responseCode = "404", description = "댓글을 찾을 수 없음"),
             @ApiResponse(responseCode = "403", description = "수정 권한 없음")
     })
-    @PutMapping("/v1/groups/{groupId}/posts/{postId}/comments/{commentId}")
+    @PutMapping("/groups/{groupId}/posts/{postId}/comments/{commentId}")
     public ResponseEntity<ResponseHandler<Long>> updateComment(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,
@@ -441,7 +441,7 @@ public class GroupPostController {
             @ApiResponse(responseCode = "404", description = "댓글을 찾을 수 없음"),
             @ApiResponse(responseCode = "403", description = "삭제 권한 없음")
     })
-    @DeleteMapping("/v1/groups/{groupId}/posts/{postId}/comments/{commentId}")
+    @DeleteMapping("/groups/{groupId}/posts/{postId}/comments/{commentId}")
     public ResponseEntity<ResponseHandler<Void>> deleteComment(
             @Parameter(description = "모임 ID")
             @PathVariable Long groupId,

@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import com.onmoim.server.common.BaseEntity;
+import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.user.entity.User;
 
@@ -14,14 +16,12 @@ import com.onmoim.server.user.entity.User;
  */
 @Entity
 @Getter
-@Table(
-        name = "post",
-        indexes = {
-                @Index(
-                        name = "idx_post_group",
-                        columnList = "group_id"
-                )
-        }
+@Table(name = "post", indexes = {
+	@Index(
+		name = "idx_post_group",
+		columnList = "group_id"
+	)
+}
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GroupPost extends BaseEntity {
@@ -64,6 +64,9 @@ public class GroupPost extends BaseEntity {
         this.type = type;
     }
 
+    /**
+     * 게시글 수정
+     */
     public void update(
             String title,
             String content,
@@ -74,7 +77,21 @@ public class GroupPost extends BaseEntity {
         this.type = type;
     }
 
-    public void softDelete() {
-        super.softDelete();
+    /**
+     * 게시글 작성자 검증
+     */
+    public void validateAuthor(Long userId) {
+        if (!this.author.getId().equals(userId)) {
+            throw new CustomException(ErrorCode.DENIED_UNAUTHORIZED_USER);
+        }
+    }
+
+    /**
+     * 게시글 그룹 소속 검증
+     */
+    public void validateBelongsToGroup(Long groupId) {
+        if (!this.group.getId().equals(groupId)) {
+            throw new CustomException(ErrorCode.POST_NOT_FOUND);
+        }
     }
 }

@@ -44,24 +44,6 @@ public class GroupPostQueryService {
     }
 
     /**
-     * 게시글이 해당 그룹에 속하는지 확인
-     */
-    public void validatePostBelongsToGroup(GroupPost post, Long groupId) {
-        if (!post.getGroup().getId().equals(groupId)) {
-            throw new CustomException(ErrorCode.POST_NOT_FOUND);
-        }
-    }
-
-    /**
-     * 사용자가 게시글 작성자인지 확인
-     */
-    public void validatePostAuthor(GroupPost post, Long userId) {
-        if (!post.getAuthor().getId().equals(userId)) {
-            throw new CustomException(ErrorCode.DENIED_UNAUTHORIZED_USER);
-        }
-    }
-
-    /**
      * 사용자가 그룹의 멤버인지 확인
      * MEMBER 또는 OWNER만 게시글 관련 작업 가능
      */
@@ -79,7 +61,7 @@ public class GroupPostQueryService {
      */
     public GroupPost validatePostAccess(Long postId, Long groupId, Long userId) {
         GroupPost post = findById(postId);
-        validatePostBelongsToGroup(post, groupId);
+        post.validateBelongsToGroup(groupId);
         validateGroupMembership(groupId, userId);
         return post;
     }
@@ -91,7 +73,7 @@ public class GroupPostQueryService {
      */
     public GroupPost validatePostReadAccess(Long postId, Long groupId) {
         GroupPost post = findById(postId);
-        validatePostBelongsToGroup(post, groupId);
+        post.validateBelongsToGroup(groupId);
         return post;
     }
 
@@ -103,14 +85,13 @@ public class GroupPostQueryService {
         return groupPostRepository.save(post);
     }
 
-
     /**
      * 단일 게시글 상세 조회
      */
     public GroupPostResponseDto getPostWithLikes(Long groupId, Long postId, Long userId) {
         groupQueryService.getById(groupId);
         GroupPost post = findById(postId);
-        validatePostBelongsToGroup(post, groupId);
+        post.validateBelongsToGroup(groupId);
 
         PostLikeQueryService.PostLikeInfo likeInfo = postLikeQueryService.getPostLikeInfo(postId, userId);
 
@@ -120,7 +101,6 @@ public class GroupPostQueryService {
                 likeInfo.isLiked()
         );
     }
-
 
     /**
      * 커서 기반 페이징을 이용한 게시글 목록 조회

@@ -125,12 +125,11 @@ public class GroupPostCommandService {
             GroupPostRequestDto request,
             List<MultipartFile> files
     ) {
-        groupQueryService.getById(groupId);
         groupPostQueryService.validateGroupMembership(groupId, userId);
 
         GroupPost post = groupPostQueryService.findById(postId);
-        groupPostQueryService.validatePostBelongsToGroup(post, groupId);
-        groupPostQueryService.validatePostAuthor(post, userId);
+        post.validateBelongsToGroup(groupId);
+        post.validateAuthor(userId);
 
         post.update(
                 request.getTitle(),
@@ -155,12 +154,11 @@ public class GroupPostCommandService {
             Long postId,
             Long userId
     ) {
-        groupQueryService.getById(groupId);
         groupPostQueryService.validateGroupMembership(groupId, userId);
 
         GroupPost post = groupPostQueryService.findById(postId);
-        groupPostQueryService.validatePostBelongsToGroup(post, groupId);
-        groupPostQueryService.validatePostAuthor(post, userId);
+        post.validateBelongsToGroup(groupId);
+        post.validateAuthor(userId);
 
         post.softDelete();
         imagePostService.softDeleteAllByPostId(post.getId());

@@ -111,7 +111,7 @@ public class GroupPostService {
             Long userId
     ) {
         GroupPost post = groupPostQueryService.findById(postId);
-        groupPostQueryService.validatePostBelongsToGroup(post, groupId);
+        post.validateBelongsToGroup(groupId);
         groupPostQueryService.validateGroupMembership(groupId, userId);
 
         User user = userQueryService.findById(userId);
