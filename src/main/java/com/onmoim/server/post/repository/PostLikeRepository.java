@@ -31,7 +31,7 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
     Long countActiveLikesByPostId(@Param("postId") Long postId);
 
     /**
-     * 여러 게시글의 활성 좋아요 수를 한 번에 조회 (목록 조회 최적화)
+     * 여러 게시글의 활성 좋아요 수를 한 번에 조회
      */
     @Query("SELECT pl.post.id as postId, COUNT(pl) as likeCount " +
            "FROM PostLike pl " +
@@ -40,14 +40,14 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
     List<PostLikeCountProjection> countActiveLikesByPostIds(@Param("postIds") List<Long> postIds);
 
     /**
-     * 특정 사용자가 여러 게시글에 좋아요를 했는지 확인 (목록 조회 최적화)
+     * 특정 사용자가 여러 게시글에 좋아요를 했는지 확인
      */
     @Query("SELECT pl.post.id FROM PostLike pl " +
            "WHERE pl.post.id IN :postIds AND pl.user.id = :userId AND pl.deletedDate IS NULL")
     List<Long> findLikedPostIdsByUserAndPostIds(@Param("postIds") List<Long> postIds, @Param("userId") Long userId);
 
     /**
-     * 좋아요 수 집계를 위한 Projection 인터페이스
+     * 좋아요 수 집계를 위한 인터페이스
      */
     interface PostLikeCountProjection {
         Long getPostId();

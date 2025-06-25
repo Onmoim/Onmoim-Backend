@@ -1,7 +1,6 @@
 package com.onmoim.server.post.repository;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,7 +14,7 @@ import com.onmoim.server.user.entity.User;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
 	/**
-	 * 특정 게시글의 부모댓글 조회 (최신순, 커서 페이지네이션)
+	 * 특정 게시글의 부모댓글 조회
 	 */
 	@Query("""
 		SELECT c FROM Comment c
@@ -32,7 +31,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 	);
 
 	/**
-	 * 특정 부모댓글의 답글 조회 (최신순, 커서 페이지네이션)
+	 * 특정 부모댓글의 답글 조회
 	 */
 	@Query("""
 		SELECT c FROM Comment c
@@ -49,7 +48,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
 	/**
 	 * 특정 댓글 조회 (작성자 정보 포함)
-	 * PK 조회이므로 클러스터링 인덱스 사용, deletedDate는 애플리케이션에서 체크
 	 */
 	@Query("""
 		SELECT c FROM Comment c
@@ -59,7 +57,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 	Optional<Comment> findByIdWithAuthor(@Param("commentId") Long commentId);
 
 	/**
-	 * 여러 부모댓글의 답글 개수를 한 번에 조회
+	 * 여러 부모댓글의 답글 개수를 한 번에 조회 (타입 안전한 Projection 사용)
 	 */
 	@Query("""
 		SELECT c.parent.id as parentId, COUNT(c) as replyCount
@@ -68,18 +66,17 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 		AND c.deletedDate IS NULL
 		GROUP BY c.parent.id
 		""")
-	List<Object[]> countRepliesByParentIds(@Param("parentIds") List<Long> parentIds);
+	List<CommentReplyCountProjection> countRepliesByParentIds(@Param("parentIds") List<Long> parentIds);
 
 	/**
-	 * 특정 부모댓글의 답글 개수 조회
+	 * 댓글 답글 수 집계를 위한 인터페이스
 	 */
-	@Query("""
-		SELECT COUNT(c)
-		FROM Comment c
-		WHERE c.parent.id = :parentId
-		AND c.deletedDate IS NULL
-		""")
-	Long countRepliesByParentId(@Param("parentId") Long parentId);
+	interface CommentReplyCountProjection {
+		Long getParentId();
+		Long getReplyCount();
+	}
+
+
 
 	/**
 	 * 작성자와 댓글 ID로 댓글 조회 (권한 확인용)

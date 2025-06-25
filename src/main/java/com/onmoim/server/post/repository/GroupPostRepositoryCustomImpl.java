@@ -7,6 +7,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.post.vo.PostBatchQueryResult;
+import com.onmoim.server.post.vo.PostLikeBatchResult;
 import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPost;
@@ -82,38 +84,24 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
         return posts.getLast().getId();
     }
 
-    private List<GroupPostResponseDto> mapToDtoWithImages(Collection<GroupPost> posts) {
-        if (posts.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<Long> ids = posts.stream()
-                .map(GroupPost::getId)
-                .toList();
-
-        Map<Long, List<PostImage>> imagesByPostId = Collections.unmodifiableMap(
-                postImageRepository
-                        .findByPostIdInAndIsDeletedFalse(ids)
-                        .stream()
-                        .collect(Collectors.groupingBy(
-                                pi -> pi.getPost().getId(),
-                                Collectors.toUnmodifiableList()
-                        ))
-        );
-
-        return posts.stream()
-                .map(post -> GroupPostResponseDto.fromEntityWithImages(
-                        post,
-                        imagesByPostId.getOrDefault(post.getId(), Collections.emptyList())
-                ))
-                .toList();
-    }
-
     private List<GroupPostResponseDto> mapToDtoWithImagesAndLikes(Collection<GroupPost> posts, Long userId) {
         if (posts.isEmpty()) {
             return Collections.emptyList();
         }
 
+        PostBatchQueryResult batchResult = createBatchQueryResult(posts, userId);
+
+        return posts.stream()
+                .map(post -> GroupPostResponseDto.fromEntityWithImagesAndLikes(
+                        post,
+                        batchResult.getImagesForPost(post.getId()),
+                        batchResult.getLikeCountForPost(post.getId()),
+                        batchResult.isLikedByUser(post.getId())
+                ))
+                .toList();
+    }
+
+    private PostBatchQueryResult createBatchQueryResult(Collection<GroupPost> posts, Long userId) {
         List<Long> postIds = posts.stream()
                 .map(GroupPost::getId)
                 .toList();
@@ -128,16 +116,8 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
                         ))
         );
 
-        Map<Long, PostLikeQueryService.PostLikeInfo> likeInfoMap =
-                postLikeQueryService.getPostLikeInfoMap(postIds, userId);
+        PostLikeBatchResult likeBatchResult = postLikeQueryService.getPostLikeBatchResult(postIds, userId);
 
-        return posts.stream()
-                .map(post -> GroupPostResponseDto.fromEntityWithImagesAndLikes(
-                        post,
-                        imagesByPostId.getOrDefault(post.getId(), Collections.emptyList()),
-                        likeInfoMap.get(post.getId()).likeCount(),
-                        likeInfoMap.get(post.getId()).isLiked()
-                ))
-                .toList();
+        return PostBatchQueryResult.of(imagesByPostId, likeBatchResult.likeInfoByPostId());
     }
 }

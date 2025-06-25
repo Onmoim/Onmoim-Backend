@@ -16,6 +16,7 @@ import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.repository.GroupPostRepository;
 import com.onmoim.server.post.util.PostValidationUtils;
+import com.onmoim.server.post.vo.PostLikeInfo;
 
 /**
  * 모임 게시글 조회용 Service
@@ -91,7 +92,7 @@ public class GroupPostQueryService {
         GroupPost post = findById(postId);
         post.validateBelongsToGroup(groupId);
 
-        PostLikeQueryService.PostLikeInfo likeInfo = postLikeQueryService.getPostLikeInfo(postId, userId);
+        PostLikeInfo likeInfo = postLikeQueryService.getPostLikeInfo(postId, userId);
 
         return GroupPostResponseDto.fromEntityWithLikes(
                 post,

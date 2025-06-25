@@ -184,7 +184,7 @@ class MeetingQueryServiceTest {
 		}
 
 		// When: D-day가 가까운 일정 2개 조회
-		List<Meeting> result = meetingQueryService.getUpcomingMeetingsByDday(2);
+		List<Meeting> result = meetingQueryService.getUpcomingMeetingsByDday(group.getId(), 2);
 
 		// Then: 가장 가까운 미래 일정 2개만 조회되어야 함
 		assertThat(result).hasSize(2);

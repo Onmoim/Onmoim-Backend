@@ -16,7 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.onmoim.server.post.repository.PostLikeRepository;
-import com.onmoim.server.post.service.PostLikeQueryService.PostLikeInfo;
+import com.onmoim.server.post.vo.PostLikeInfo;
+import com.onmoim.server.post.vo.PostLikeBatchResult;
 
 @ExtendWith(MockitoExtension.class)
 class PostLikeQueryServiceTest {
@@ -98,10 +99,48 @@ class PostLikeQueryServiceTest {
     }
 
     @Test
-    @DisplayName("게시글별 좋아요 수 배치 조회 테스트")
-    void getLikeCountMap() {
+    @DisplayName("게시글 좋아요 배치 조회 테스트 - 타입 안전한 VO 사용")
+    void getPostLikeBatchResult() {
         // given
         List<Long> postIds = Arrays.asList(1L, 2L);
+        Long userId = 1L;
+        List<PostLikeRepository.PostLikeCountProjection> mockResults = Arrays.asList(
+                new PostLikeRepository.PostLikeCountProjection() {
+                    @Override public Long getPostId() { return 1L; }
+                    @Override public Long getLikeCount() { return 5L; }
+                },
+                new PostLikeRepository.PostLikeCountProjection() {
+                    @Override public Long getPostId() { return 2L; }
+                    @Override public Long getLikeCount() { return 3L; }
+                }
+        );
+        List<Long> mockLikedPostIds = Arrays.asList(1L); // 1번 게시글만 좋아요
+
+        when(postLikeRepository.countActiveLikesByPostIds(postIds))
+                .thenReturn(mockResults);
+        when(postLikeRepository.findLikedPostIdsByUserAndPostIds(postIds, userId))
+                .thenReturn(mockLikedPostIds);
+
+        // when
+        PostLikeBatchResult result = postLikeQueryService.getPostLikeBatchResult(postIds, userId);
+
+        // then
+        assertThat(result.getLikeCount(1L)).isEqualTo(5L);
+        assertThat(result.getLikeCount(2L)).isEqualTo(3L);
+        assertThat(result.isLikedByUser(1L)).isTrue();   // 1번 게시글은 좋아요
+        assertThat(result.isLikedByUser(2L)).isFalse();  // 2번 게시글은 좋아요 안함
+        assertThat(result.getLikedPostCount()).isEqualTo(1L);
+        
+        verify(postLikeRepository).countActiveLikesByPostIds(postIds);
+        verify(postLikeRepository).findLikedPostIdsByUserAndPostIds(postIds, userId);
+    }
+
+    @Test
+    @DisplayName("비로그인 사용자의 좋아요 배치 조회 - 모두 false 반환")
+    void getPostLikeBatchResultWithNullUser() {
+        // given
+        List<Long> postIds = Arrays.asList(1L, 2L);
+        Long nullUserId = null;
         List<PostLikeRepository.PostLikeCountProjection> mockResults = Arrays.asList(
                 new PostLikeRepository.PostLikeCountProjection() {
                     @Override public Long getPostId() { return 1L; }
@@ -117,50 +156,16 @@ class PostLikeQueryServiceTest {
                 .thenReturn(mockResults);
 
         // when
-        Map<Long, Long> result = postLikeQueryService.getLikeCountMap(postIds);
+        PostLikeBatchResult result = postLikeQueryService.getPostLikeBatchResult(postIds, nullUserId);
 
         // then
-        assertThat(result).hasSize(2);
-        assertThat(result.get(1L)).isEqualTo(5L);
-        assertThat(result.get(2L)).isEqualTo(3L);
+        assertThat(result.getLikeCount(1L)).isEqualTo(5L);
+        assertThat(result.getLikeCount(2L)).isEqualTo(3L);
+        assertThat(result.isLikedByUser(1L)).isFalse(); // 비로그인 사용자는 모두 false
+        assertThat(result.isLikedByUser(2L)).isFalse();
+        assertThat(result.getLikedPostCount()).isEqualTo(0L);
+        
         verify(postLikeRepository).countActiveLikesByPostIds(postIds);
-    }
-
-    @Test
-    @DisplayName("사용자의 게시글별 좋아요 상태 배치 조회 테스트")
-    void getLikedStatusMap() {
-        // given
-        List<Long> postIds = Arrays.asList(1L, 2L);
-        Long userId = 1L;
-        List<Long> mockLikedPostIds = Arrays.asList(1L); // 1번 게시글만 좋아요
-
-        when(postLikeRepository.findLikedPostIdsByUserAndPostIds(postIds, userId))
-                .thenReturn(mockLikedPostIds);
-
-        // when
-        Map<Long, Boolean> result = postLikeQueryService.getLikedStatusMap(postIds, userId);
-
-        // then
-        assertThat(result).hasSize(2);
-        assertThat(result.get(1L)).isTrue();  // 1번 게시글은 좋아요
-        assertThat(result.get(2L)).isFalse(); // 2번 게시글은 좋아요 안함
-        verify(postLikeRepository).findLikedPostIdsByUserAndPostIds(postIds, userId);
-    }
-
-    @Test
-    @DisplayName("비로그인 사용자의 좋아요 상태 조회 시 모두 false 반환")
-    void getLikedStatusMapWithNullUser() {
-        // given
-        List<Long> postIds = Arrays.asList(1L, 2L);
-        Long nullUserId = null;
-
-        // when
-        Map<Long, Boolean> result = postLikeQueryService.getLikedStatusMap(postIds, nullUserId);
-
-        // then
-        assertThat(result).hasSize(2);
-        assertThat(result.get(1L)).isFalse();
-        assertThat(result.get(2L)).isFalse();
     }
 
     @Test
@@ -189,28 +194,17 @@ class PostLikeQueryServiceTest {
 
     @Test
     @DisplayName("빈 게시글 ID 리스트로 배치 조회 시 빈 결과 반환")
-    void getLikeCountMapEmpty() {
-        // given
-        List<Long> emptyPostIds = Arrays.asList();
-
-        // when
-        Map<Long, Long> result = postLikeQueryService.getLikeCountMap(emptyPostIds);
-
-        // then
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("빈 게시글 ID 리스트로 좋아요 상태 조회 시 빈 결과 반환")
-    void getLikedStatusMapEmpty() {
+    void getPostLikeBatchResultEmpty() {
         // given
         List<Long> emptyPostIds = Arrays.asList();
         Long userId = 1L;
 
         // when
-        Map<Long, Boolean> result = postLikeQueryService.getLikedStatusMap(emptyPostIds, userId);
+        PostLikeBatchResult result = postLikeQueryService.getPostLikeBatchResult(emptyPostIds, userId);
 
         // then
-        assertThat(result).isEmpty();
+        assertThat(result.likeInfoByPostId()).isEmpty();
+        assertThat(result.likedPostIds()).isEmpty();
+        assertThat(result.getLikedPostCount()).isEqualTo(0L);
     }
 }

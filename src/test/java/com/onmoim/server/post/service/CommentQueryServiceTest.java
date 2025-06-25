@@ -2,6 +2,7 @@ package com.onmoim.server.post.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +28,7 @@ import com.onmoim.server.post.entity.Comment;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.repository.CommentRepository;
+import com.onmoim.server.post.repository.CommentRepository.CommentReplyCountProjection;
 import com.onmoim.server.user.entity.User;
 
 @ExtendWith(MockitoExtension.class)
@@ -117,10 +119,17 @@ class CommentQueryServiceTest {
         // given
         Long cursor = null;
         List<Comment> comments = Arrays.asList(parentComment2, parentComment1); // 최신순
-        List<Object[]> replyCountData = Arrays.asList(
-                new Object[]{1L, 2L}, // parentComment1에 답글 2개
-                new Object[]{2L, 0L}  // parentComment2에 답글 0개
-        );
+
+        // CommentReplyCountProjection Mock 객체 생성
+        CommentReplyCountProjection projection1 = mock(CommentReplyCountProjection.class);
+        when(projection1.getParentId()).thenReturn(1L);
+        when(projection1.getReplyCount()).thenReturn(2L);
+
+        CommentReplyCountProjection projection2 = mock(CommentReplyCountProjection.class);
+        when(projection2.getParentId()).thenReturn(2L);
+        when(projection2.getReplyCount()).thenReturn(0L);
+
+        List<CommentReplyCountProjection> replyCountData = Arrays.asList(projection1, projection2);
 
         when(commentRepository.findParentCommentsByPost(testPost, cursor)).thenReturn(comments);
         when(commentRepository.countRepliesByParentIds(Arrays.asList(2L, 1L))).thenReturn(replyCountData);
@@ -169,9 +178,14 @@ class CommentQueryServiceTest {
         Long cursor = null;
         List<Comment> replies = Arrays.asList(childComment2, childComment1); // 최신순
 
+        // CommentReplyCountProjection Mock 객체 생성 (배치 조회용)
+        CommentReplyCountProjection projection = mock(CommentReplyCountProjection.class);
+        when(projection.getParentId()).thenReturn(1L);
+        when(projection.getReplyCount()).thenReturn(2L);
+
         when(commentRepository.findByIdWithAuthor(commentId)).thenReturn(Optional.of(parentComment1));
         when(commentRepository.findRepliesByParent(parentComment1, cursor)).thenReturn(replies);
-        when(commentRepository.countRepliesByParentId(commentId)).thenReturn(2L);
+        when(commentRepository.countRepliesByParentIds(Arrays.asList(1L))).thenReturn(Arrays.asList(projection));
 
         // when
         CommentThreadResponseDto result = commentQueryService.getCommentThread(commentId, cursor);
@@ -188,7 +202,7 @@ class CommentQueryServiceTest {
 
         verify(commentRepository).findByIdWithAuthor(commentId);
         verify(commentRepository).findRepliesByParent(parentComment1, cursor);
-        verify(commentRepository).countRepliesByParentId(commentId);
+        verify(commentRepository).countRepliesByParentIds(Arrays.asList(1L));
     }
 
     @Test
@@ -233,9 +247,14 @@ class CommentQueryServiceTest {
         Long cursor = null;
         List<Comment> replies = Arrays.asList();
 
+        // CommentReplyCountProjection Mock 객체 생성 (답글 없음)
+        CommentReplyCountProjection projection = mock(CommentReplyCountProjection.class);
+        when(projection.getParentId()).thenReturn(2L);
+        when(projection.getReplyCount()).thenReturn(0L);
+
         when(commentRepository.findByIdWithAuthor(commentId)).thenReturn(Optional.of(parentComment2));
         when(commentRepository.findRepliesByParent(parentComment2, cursor)).thenReturn(replies);
-        when(commentRepository.countRepliesByParentId(commentId)).thenReturn(0L);
+        when(commentRepository.countRepliesByParentIds(Arrays.asList(2L))).thenReturn(Arrays.asList(projection));
 
         // when
         CommentThreadResponseDto result = commentQueryService.getCommentThread(commentId, cursor);
