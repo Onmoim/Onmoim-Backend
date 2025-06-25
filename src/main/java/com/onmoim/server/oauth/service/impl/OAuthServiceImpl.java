@@ -32,24 +32,22 @@ import lombok.extern.slf4j.Slf4j;
 public class OAuthServiceImpl implements OAuthService {
 
 	private final OAuthProviderFactory oauthProviderFactory;
-	private final GoogleOAuthProvider googleProvider;
-	// private final KakaoOAuthProvider kakaoProvider;
 	private final UserRepository userRepository;
 	private final JwtProvider jwtProvider;
 	private final RefreshTokenService refreshTokenService;
 
 	@Override
-	public OAuthResponseDto handleGoogleLogin(String providerName, String authorizationCode) {
+	public OAuthResponseDto handleGoogleLogin(String providerName, String token) {
 		OAuthProvider provider = oauthProviderFactory.getProvider(providerName);
-		OAuthUserDto oAuthUserDto = provider.getUserInfoByAuthorizationCode(authorizationCode);
+		OAuthUserDto oAuthUserDto = provider.getUserInfoByToken(token);
 
 		return processUserLogin(oAuthUserDto, providerName);
 	}
 
 	@Override
-	public OAuthResponseDto handleKakaoLogin(String providerName, String authorizationCode) {
+	public OAuthResponseDto handleKakaoLogin(String providerName, String token) {
 		OAuthProvider provider = oauthProviderFactory.getProvider(providerName);
-		OAuthUserDto oAuthUserDto = provider.getUserInfoByAuthorizationCode(authorizationCode);
+		OAuthUserDto oAuthUserDto = provider.getUserInfoByToken(token);
 
 		return processUserLogin(oAuthUserDto, providerName);
 	}
