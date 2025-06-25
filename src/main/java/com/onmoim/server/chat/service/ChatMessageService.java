@@ -27,15 +27,15 @@ public class ChatMessageService {
 	private final ChatMessageRepository chatMessageRepository;
 	private final ApplicationEventPublisher eventPublisher;
 	private final RoomChatMessageIdGenerator roomChatMessageIdGenerator;
+	private final RoomListService roomListService;
 
 	/**
 	 * 시스템 메시지 전송
 	 */
 	@Transactional
 	public ChatRoomMessageId sendSystemMessage(Long roomId, String content) {
-		ChatRoomMessage systemMessage = ChatRoomMessage.create(
+		ChatRoomMessage systemMessage = ChatRoomMessage.systemMessageCreate(
 			ChatRoomMessageId.create(roomId, roomChatMessageIdGenerator.getSequence(roomId)),
-			null,
 			content,
 			LocalDateTime.now(),
 			MessageType.SYSTEM,
@@ -48,12 +48,15 @@ public class ChatMessageService {
 		// 시스템 메시지 브로드캐스트
 		// com.onmoim.server.chat.service.ChatMessageEventHandler 처리
 		String destination = SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
+		ChatMessageDto message = ChatMessageDto.of(systemMessage, ChatUserDto.createSystem());
 		eventPublisher.publishEvent(
 			new MessageSendEvent(
 				destination,
-				ChatMessageDto.of(systemMessage, ChatUserDto.createSystem())
+				message
 			)
 		);
+
+		roomListService.chatListUpdate(roomId, message);
 
 		log.debug("시스템 메시지 전송 완료: 방ID: {}, 내용: {}", roomId, content);
 		return systemMessage.getId();

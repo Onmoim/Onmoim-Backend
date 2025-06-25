@@ -7,6 +7,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.onmoim.server.chat.dto.ChatMessageDto;
+import com.onmoim.server.chat.dto.ChatRoomListUpdateDto;
 import com.onmoim.server.chat.entity.ChatRoomMessageId;
 import com.onmoim.server.chat.entity.DeliveryStatus;
 
@@ -24,6 +25,7 @@ public class ChatMessageEventHandler {
 	private final SimpMessagingTemplate messagingTemplate;
 	private final ChatMessageService chatMessageService;
 	private final ChatMessageRetryService chatMessageRetryService;
+	private final RoomListService roomListService;
 
 	@Async
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -35,6 +37,7 @@ public class ChatMessageEventHandler {
 		try {
 			// WebSocket을 통해 메시지 전송
 			messagingTemplate.convertAndSend(destination, message);
+			roomListService.chatListUpdate(message.getRoomId(), message);
 
 			// 전송 성공 시 SENT 상태 업데이트
 			chatMessageService.updateMessageDeliveryStatus(messageId, DeliveryStatus.SENT);
@@ -48,5 +51,12 @@ public class ChatMessageEventHandler {
 			// 실패 재시도 처리
 			chatMessageRetryService.failedProcess(message, destination);
 		}
+	}
+
+	@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+	public void handleChatRoomListMessage(RoomListSendEvent event){
+		ChatRoomListUpdateDto message = event.chatRoomListUpdateDto();
+		String destination = event.destination();
+		messagingTemplate.convertAndSend(destination, message);
 	}
 }

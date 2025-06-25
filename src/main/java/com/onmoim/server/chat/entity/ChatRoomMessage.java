@@ -34,10 +34,10 @@ public class ChatRoomMessage extends BaseEntity {
 	@Column(nullable = false, columnDefinition = "TEXT")
 	private String content;
 
-	@Column(nullable = false)
+	@Column
 	private LocalDateTime timestamp;
 
-	@Column(nullable = false)
+	@Column
 	@Enumerated(EnumType.STRING)
 	private MessageType type;
 
@@ -53,6 +53,15 @@ public class ChatRoomMessage extends BaseEntity {
 		MessageType type,
 		DeliveryStatus deliveryStatus) {
 		return new ChatRoomMessage(id, senderId, content, timestamp, type, deliveryStatus);
+	}
+
+	public static ChatRoomMessage systemMessageCreate(
+		ChatRoomMessageId id,
+		String content,
+		LocalDateTime timestamp,
+		MessageType type,
+		DeliveryStatus deliveryStatus) {
+		return new ChatRoomMessage(id, -1L , content, timestamp, type, deliveryStatus);
 	}
 
 	public void setDeliveryStatus(DeliveryStatus status) {
