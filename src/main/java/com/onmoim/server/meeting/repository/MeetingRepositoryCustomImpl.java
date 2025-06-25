@@ -19,20 +19,20 @@ public class MeetingRepositoryCustomImpl implements MeetingRepositoryCustom {
 
     @Override
     public CursorPageResponseDto<MeetingResponseDto> findUpcomingMeetingsInGroup(
-            Long groupId, 
-            MeetingType type, 
-            Long cursorId, 
+            Long groupId,
+            MeetingType type,
+            Long cursorId,
             int size
     ) {
         BooleanBuilder predicate = buildGroupMeetingPredicate(groupId, type, cursorId);
-        
+
         Deque<Meeting> pagedMeetings = fetchPagedMeetings(predicate, size);
-        
+
         boolean hasNext = pagedMeetings.size() > size;
         Long nextCursorId = extractNextCursor(pagedMeetings, size, hasNext);
-        
+
         List<MeetingResponseDto> dtos = mapToDto(pagedMeetings);
-        
+
         return CursorPageResponseDto.<MeetingResponseDto>builder()
                 .content(dtos)
                 .hasNext(hasNext)
@@ -42,19 +42,19 @@ public class MeetingRepositoryCustomImpl implements MeetingRepositoryCustom {
 
     @Override
     public CursorPageResponseDto<MeetingResponseDto> findMyUpcomingMeetings(
-            List<Long> meetingIds, 
-            Long cursorId, 
+            List<Long> meetingIds,
+            Long cursorId,
             int size
     ) {
         BooleanBuilder predicate = buildMyMeetingPredicate(meetingIds, cursorId);
-        
+
         Deque<Meeting> pagedMeetings = fetchPagedMeetings(predicate, size);
-        
+
         boolean hasNext = pagedMeetings.size() > size;
         Long nextCursorId = extractNextCursor(pagedMeetings, size, hasNext);
-        
+
         List<MeetingResponseDto> dtos = mapToDto(pagedMeetings);
-        
+
         return CursorPageResponseDto.<MeetingResponseDto>builder()
                 .content(dtos)
                 .hasNext(hasNext)
@@ -115,4 +115,20 @@ public class MeetingRepositoryCustomImpl implements MeetingRepositoryCustom {
                 .map(MeetingResponseDto::from)
                 .toList();
     }
-} 
+
+    @Override
+    public List<Meeting> findUpcomingMeetingsByDday(Long groupId, int limit) {
+        QMeeting q = QMeeting.meeting;
+
+        return queryFactory
+                .selectFrom(q)
+                .leftJoin(q.group).fetchJoin()
+                .leftJoin(q.creator).fetchJoin()
+                .where(q.group.id.eq(groupId)
+                        .and(q.startAt.after(LocalDateTime.now()))
+                        .and(q.deletedDate.isNull()))
+                .orderBy(q.startAt.asc())
+                .limit(limit)
+                .fetch();
+    }
+}

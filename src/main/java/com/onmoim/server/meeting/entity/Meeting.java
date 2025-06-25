@@ -32,7 +32,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-// 인덱스 1: idx_meeting_group_start_at (group_id, start_at)
 @Table(name = "meeting", indexes = {
 	@Index(name = "idx_meeting_group_start_at", columnList = "group_id, start_at")
 })

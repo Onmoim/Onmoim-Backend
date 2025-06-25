@@ -41,7 +41,7 @@ public class CommentService {
      * 답글 작성
      */
     public Long createReply(GroupPost post, User author, Long parentCommentId, String content) {
-        // 부모 댓글 조회 및 검증
+
         Comment parentComment = commentRepository.findByIdWithAuthor(parentCommentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 

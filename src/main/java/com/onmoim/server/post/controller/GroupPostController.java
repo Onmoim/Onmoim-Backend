@@ -456,9 +456,6 @@ public class GroupPostController {
         return ResponseEntity.ok(ResponseHandler.response(null));
     }
 
-	/**
-	 * 현재 사용자 ID 조회
-	 */
 	private Long getCurrentUserId() {
 		CustomUserDetails principal =
 			(CustomUserDetails) SecurityContextHolder.getContextHolderStrategy()
@@ -468,9 +465,6 @@ public class GroupPostController {
 		return principal.getUserId();
 	}
 
-	/**
-	 * 현재 사용자 ID 조회
-	 */
 	private Long getCurrentUserIdOrNull() {
 		try {
 			return getCurrentUserId();

@@ -1,13 +1,8 @@
 package com.onmoim.server.meeting.service;
 
-import static com.onmoim.server.meeting.entity.QMeeting.meeting;
-
 import com.onmoim.server.meeting.dto.response.CursorPageResponseDto;
-import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.data.domain.Sort;
-import org.springframework.data.util.Streamable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +13,6 @@ import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingType;
 import com.onmoim.server.meeting.repository.MeetingRepository;
 import com.onmoim.server.meeting.repository.UserMeetingRepository;
-import com.querydsl.core.BooleanBuilder;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -78,21 +72,13 @@ public class MeetingQueryService {
 	}
 
 	/**
-	 * D-day가 가까운 일정 조회
+	 * 특정 그룹의 D-day가 가까운 일정 조회
 	 *
+	 * @param groupId 그룹 ID
 	 * @param limit 조회할 일정 수
 	 * @return D-day가 가까운 일정 목록
 	 */
-	public List<Meeting> getUpcomingMeetingsByDday(int limit) {
-		LocalDateTime now = LocalDateTime.now();
-
-		BooleanBuilder predicate = new BooleanBuilder()
-			.and(meeting.startAt.gt(now))
-			.and(meeting.deletedDate.isNull());
-
-		return Streamable.of(meetingRepository.findAll(predicate, Sort.by("startAt").ascending()))
-			.stream()
-			.limit(limit)
-			.toList();
+	public List<Meeting> getUpcomingMeetingsByDday(Long groupId, int limit) {
+		return meetingRepository.findUpcomingMeetingsByDday(groupId, limit);
 	}
 }

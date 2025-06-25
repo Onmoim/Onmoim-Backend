@@ -19,7 +19,7 @@ import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
 import com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.UserMeeting;
-import com.onmoim.server.meeting.repository.MeetingLockRepository;
+import com.onmoim.server.meeting.repository.lock.MeetingLockRepository;
 import com.onmoim.server.meeting.repository.MeetingRepository;
 import com.onmoim.server.meeting.repository.UserMeetingRepository;
 import com.onmoim.server.security.CustomUserDetails;
@@ -105,7 +105,7 @@ public class MeetingService {
 		return transactionTemplate.execute(status -> {
 			Group group = groupQueryService.getById(groupId);
 			User creator = userQueryService.findById(userId);
-			
+
 			Meeting meeting = Meeting.meetingCreateBuilder()
 					.group(group)
 					.type(request.getType())
@@ -281,7 +281,7 @@ public class MeetingService {
 	}
 
 	/**
-	 * 일정 이미지 수정 (별도 트랜잭션)
+	 * 일정 이미지 수정
 	 */
 	@Transactional
 	public void updateMeetingImage(Long meetingId, MultipartFile image) {

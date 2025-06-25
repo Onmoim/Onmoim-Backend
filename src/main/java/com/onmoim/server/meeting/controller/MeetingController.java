@@ -45,7 +45,7 @@ public class MeetingController {
 	 */
 	@GetMapping("/meetings/my")
 	@Operation(
-		summary = "내 예정 일정 조회 (커서 페이징)",
+		summary = "내 예정 일정 조회",
 		description = "내가 속한 모든 모임의 예정된 일정을 시간순으로 조회합니다.")
 	@ApiResponses({
 		@ApiResponse(
