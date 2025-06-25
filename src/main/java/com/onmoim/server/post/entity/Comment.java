@@ -15,8 +15,8 @@ import com.onmoim.server.user.entity.User;
     name = "comment",
     indexes = {
         @Index(
-            name = "idx_comment_post_parent_deleted",
-            columnList = "post_id,parent_id,deleted_date"
+            name = "idx_comment_post_parent",
+            columnList = "post_id,parent_id"
         )
     }
 )

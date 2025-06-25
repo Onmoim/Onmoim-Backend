@@ -18,8 +18,8 @@ import com.onmoim.server.user.entity.User;
         name = "post",
         indexes = {
                 @Index(
-                        name = "idx_post_group_deleted",
-                        columnList = "group_id,deleted_date"
+                        name = "idx_post_group",
+                        columnList = "group_id"
                 )
         }
 )

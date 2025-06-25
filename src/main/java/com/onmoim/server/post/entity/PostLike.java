@@ -18,12 +18,12 @@ import com.onmoim.server.user.entity.User;
 	name = "post_likes",
 	indexes = {
 		@Index(
-			name = "idx_post_likes_post_deleted",
-			columnList = "post_id,deleted_date"
+			name = "idx_post_likes_post",
+			columnList = "post_id"
 		),
 		@Index(
-			name = "idx_post_likes_user_post_deleted",
-			columnList = "user_id,post_id,deleted_date"
+			name = "idx_post_likes_user_post",
+			columnList = "user_id,post_id"
 		)
 	}
 )
