@@ -19,11 +19,13 @@ import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.repository.LocationRepository;
+import com.onmoim.server.oauth.enumeration.SignupStatus;
 import com.onmoim.server.security.JwtHolder;
 import com.onmoim.server.security.JwtProvider;
 import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
 import com.onmoim.server.user.dto.request.SignupRequestDto;
 import com.onmoim.server.user.dto.response.ProfileResponseDto;
+import com.onmoim.server.user.dto.response.SignupResponseDto;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.entity.UserCategory;
 import com.onmoim.server.user.repository.UserCategoryRepository;
@@ -63,10 +65,16 @@ public class UserServiceTest {
 
 		try {
 			// when
-			Long userId = userService.signup(request);
+			SignupResponseDto response = userService.signup(request);
 
 			// then
-			User savedUser = userRepository.findById(userId).orElseThrow();
+			assertNotNull(response.getUserId());
+			assertNotNull(response.getAccessToken());
+			assertNotNull(response.getRefreshToken());
+			assertEquals(SignupStatus.NO_CATEGORY, response.getStatus());
+
+			// then
+			User savedUser = userRepository.findById(response.getUserId()).orElseThrow();
 			assertEquals("홍길동", savedUser.getName());
 			assertEquals("test@test.com", savedUser.getEmail());
 		} finally {
@@ -89,6 +97,12 @@ public class UserServiceTest {
 			.addressId(1L)
 			.build()
 		);
+
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		UsernamePasswordAuthenticationToken auth =
+			new UsernamePasswordAuthenticationToken(String.valueOf(user.getId()), null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
 
 		Category category1 = Category.create("운동/스포츠", null);
 		Category category2 = Category.create("음악/악기", null);
