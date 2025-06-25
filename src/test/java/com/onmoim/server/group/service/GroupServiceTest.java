@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.*;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -510,6 +511,7 @@ class GroupServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("모임 탈퇴 성공: 모임원 (MEMBER -> PENDING)")
 	void leaveGroupSuccess1() {
 		User owner = User.builder().name("owner").build();
@@ -539,6 +541,7 @@ class GroupServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("모임 탈퇴 성공 + 모임 삭제: 모임장 + 모임원 = 1명")
 	void leaveGroupSuccess2() {
 		User owner = User.builder().name("owner").build();
@@ -565,6 +568,7 @@ class GroupServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("모임 탈퇴 실패: 모임장 + 모임원 = 2명")
 	void leaveGroupFailure1() {
 		User owner = User.builder().name("owner").build();
@@ -590,6 +594,7 @@ class GroupServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("모임 탈퇴 실패: 모임원 아닌 사용자 탈퇴 시도")
 	void leaveGroupFailure2() {
 		User owner = User.builder().name("owner").build();

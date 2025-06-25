@@ -86,7 +86,7 @@ public class GroupQueryService {
 		MultipartFile image
 	) {
 		// 현재 모임원 숫자
-		Long currentMember = groupUserQueryService.countMembers(group.getId());
+		Long currentMember = groupRepository.countGroupMembers(group.getId());
 
 		// 모임 설명, 모임 정원 변경
 		group.update(description, capacity, currentMember);

@@ -12,11 +12,11 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
+import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.user.entity.User;
 
@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class GroupUserQueryService {
 	private final GroupUserRepository groupUserRepository;
+	private final GroupRepository groupRepository;
 
 	public void save(GroupUser groupUser) {
 		try {
@@ -149,7 +150,7 @@ public class GroupUserQueryService {
 
 	// 현재 모임 회원 수
 	public Long countMembers(Long groupId) {
-		return groupUserRepository.countGroupMembers(groupId);
+		return groupRepository.countGroupMembers(groupId);
 	}
 
 	// fetch join 사용해서 모임 멤버 조회
@@ -159,7 +160,7 @@ public class GroupUserQueryService {
 		int size
 	)
 	{
-		List<GroupUser> groupUsers = groupUserRepository.findGroupUsers(groupId, cursorId, size);
+		List<GroupUser> groupUsers = groupRepository.findGroupUsers(groupId, cursorId, size);
 		return groupUsers.stream().map(GroupMember::of).toList();
 	}
 }

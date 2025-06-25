@@ -240,14 +240,17 @@ public class GroupService {
 		return groupQueryService.getGroupWithDetails(groupId);
 	}
 
-	// 내 주변 인기 모임 조회
+	// todo: 내 주변 인기 모임 조회 (인기의 기준)
 	@Transactional(readOnly = true)
 	public List<?> readNearbyPopularGroups(ReadCondition condition) {
 		// 유저 + 로케이션 조회
-		User user = userQueryService.findById(getCurrentUserId());
+		User user = userQueryService.findUserWithLocationById(getCurrentUserId());
+		Long locationId = user.getLocation().getId();
 
 		return null;
 	}
+
+	// todo: 활동이 활발한 모임(위치 상관 X)
 
 	// 모임장 확인
 	@Transactional(readOnly = true)
