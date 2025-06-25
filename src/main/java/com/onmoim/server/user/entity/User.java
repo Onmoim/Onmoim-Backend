@@ -5,12 +5,17 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.Comment;
 
 import com.onmoim.server.common.BaseEntity;
+import com.onmoim.server.location.entity.Location;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -48,8 +53,9 @@ public class User extends BaseEntity {
 	@Comment("생년월일")
 	private LocalDateTime birth;
 
-	@Comment("지역 id")
-	private Long addressId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "location_id")
+	private Location location;
 
 	@Comment("프로필 사진 url")
 	private String profileImgUrl;
@@ -59,7 +65,7 @@ public class User extends BaseEntity {
 
 	@Builder
 	private User(Long roleId, String oauthId, String provider, String email, String name, String gender,
-		LocalDateTime birth, Long addressId, String profileImgUrl, String introduction) {
+		LocalDateTime birth, Location location, String profileImgUrl, String introduction) {
 		this.roleId = roleId;
 		this.provider = provider;
 		this.email = email;
@@ -67,13 +73,13 @@ public class User extends BaseEntity {
 		this.name = name;
 		this.gender = gender;
 		this.birth = birth;
-		this.addressId = addressId;
+		this.location = location;
 		this.profileImgUrl = profileImgUrl;
 		this.introduction = introduction;
 	}
 
 	public static User create(Long roleId, String oauthId, String provider, String email, String name,
-		String gender, LocalDateTime birth, Long addressId, String profileImgUrl, String introduction) {
+		String gender, LocalDateTime birth, Location location, String profileImgUrl, String introduction) {
 		return User.builder()
 			.roleId(roleId)
 			.oauthId(oauthId)
@@ -82,17 +88,17 @@ public class User extends BaseEntity {
 			.name(name)
 			.gender(gender)
 			.birth(birth)
-			.addressId(addressId)
+			.location(location)
 			.profileImgUrl(profileImgUrl)
 			.introduction(introduction)
 			.build();
 	}
 
-	public void updateProfile(String name, String gender, LocalDateTime birth, Long addressId, String profileImgUrl, String introduction) {
+	public void updateProfile(String name, String gender, LocalDateTime birth, Location location, String profileImgUrl, String introduction) {
 		this.name = name;
 		this.gender = gender;
 		this.birth = birth;
-		this.addressId = addressId;
+		this.location = location;
 		this.introduction = introduction;
 		this.profileImgUrl = profileImgUrl;
 	}
@@ -104,7 +110,7 @@ public class User extends BaseEntity {
 		this.name = "deletedUser";
 		this.gender = null;
 		this.birth = null;
-		this.addressId = null;
+		this.location = null;
 		this.introduction = null;
 		this.profileImgUrl = null;
 		this.softDelete();

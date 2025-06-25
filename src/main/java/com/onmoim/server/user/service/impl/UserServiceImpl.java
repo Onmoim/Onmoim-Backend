@@ -1,6 +1,7 @@
 package com.onmoim.server.user.service.impl;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
+import static com.onmoim.server.oauth.enumeration.SignupStatus.*;
 import static org.springframework.data.jpa.domain.AbstractPersistable_.*;
 
 import java.util.List;
@@ -21,7 +22,10 @@ import com.onmoim.server.common.s3.service.FileStorageService;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupUserRepository;
+import com.onmoim.server.location.entity.Location;
+import com.onmoim.server.location.repository.LocationRepository;
 import com.onmoim.server.oauth.dto.OAuthUserDto;
+import com.onmoim.server.oauth.service.OAuthService;
 import com.onmoim.server.oauth.service.RefreshTokenService;
 import com.onmoim.server.security.JwtHolder;
 import com.onmoim.server.security.JwtProvider;
@@ -29,6 +33,7 @@ import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
 import com.onmoim.server.user.dto.request.SignupRequestDto;
 import com.onmoim.server.user.dto.request.UpdateProfileRequestDto;
 import com.onmoim.server.user.dto.response.ProfileResponseDto;
+import com.onmoim.server.user.dto.response.SignupResponseDto;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.entity.UserCategory;
 import com.onmoim.server.user.mapper.UserMapperCustom;
@@ -46,6 +51,8 @@ import lombok.extern.slf4j.Slf4j;
 public class UserServiceImpl implements UserService {
 
 	private final UserRepository userRepository;
+	private final LocationRepository locationRepository;
+	private final OAuthService oAuthService;
 	private final CategoryRepository categoryRepository;
 	private final UserCategoryRepository userCategoryRepository;
 	private final UserMapperCustom userMapperCustom;
@@ -83,7 +90,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public Long signup(SignupRequestDto request) {
+	public SignupResponseDto signup(SignupRequestDto request) {
 		OAuthUserDto claims = extractSignupClaims();
 
 		String provider = claims.getProvider();
@@ -98,6 +105,9 @@ public class UserServiceImpl implements UserService {
 			throw new CustomException(ALREADY_EXISTS_USER);
 		}
 
+		Location location = locationRepository.findById(request.getLocationId())
+			.orElseThrow(() -> new CustomException(LOCATION_NOT_FOUND));
+
 		User user = User.builder()
 			.oauthId(oauthId)
 			.provider(provider)
@@ -105,18 +115,31 @@ public class UserServiceImpl implements UserService {
 			.name(request.getName())
 			.gender(request.getGender())
 			.birth(request.getBirth().atStartOfDay())
-			.addressId(request.getAddressId())
+			.location(location)
 			.build();
 
 		userRepository.save(user);
 		Long userId = user.getId();
 
-		return userId;
+		Authentication authentication = oAuthService.createAuthentication(user);
+		oAuthService.setAuthenticationToContext(authentication);
+
+		String accessToken = jwtProvider.createAccessToken(authentication);
+		String refreshToken = jwtProvider.createRefreshToken(authentication);
+		refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
+
+		return new SignupResponseDto(userId, accessToken, refreshToken, NO_CATEGORY);
 	}
 
 	@Transactional
 	@Override
 	public void createUserCategory(CreateUserCategoryRequestDto request) {
+
+		Long userId = getCurrentUserId();
+
+		if (!userId.equals(request.getUserId())) {
+			throw new CustomException(FORBIDDEN_USER_ACCESS);
+		}
 
 		List<Long> categoryIdList = request.getCategoryIdList();
 		User user = userRepository.findById(request.getUserId())
@@ -159,6 +182,9 @@ public class UserServiceImpl implements UserService {
 		User user = userRepository.findById(getCurrentUserId())
 			.orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+		Location location = locationRepository.findById(request.getLocationId())
+			.orElseThrow(() -> new CustomException(LOCATION_NOT_FOUND));
+
 		// 0. 프로필 사진 첨부파일 있을 경우 먼저 S3에 업로드
 		FileUploadResponseDto fileUploadResponse = null;
 		if (profileImgFile != null) {
@@ -171,7 +197,7 @@ public class UserServiceImpl implements UserService {
 				request.getName(),
 				request.getGender(),
 				request.getBirth(),
-				request.getAddressId(),
+				location,
 				request.getIntroduction(),
 				fileUploadResponse.getFileUrl()
 			);
@@ -181,7 +207,7 @@ public class UserServiceImpl implements UserService {
 				request.getName(),
 				request.getGender(),
 				request.getBirth(),
-				request.getAddressId(),
+				location,
 				request.getIntroduction(),
 				request.getProfileImgUrl()
 			);
