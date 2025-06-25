@@ -47,21 +47,20 @@ public class PostLike extends BaseEntity {
 	public PostLike(GroupPost post, User user) {
 		this.post = post;
 		this.user = user;
-		// 생성시 자동으로 활성 상태 (deletedDate = null)
 	}
 
 	/**
 	 * 좋아요 활성화 (논리삭제 복구)
 	 */
 	public void active() {
-		super.restore(); // deletedDate를 null로 설정
+		super.restore();
 	}
 
 	/**
 	 * 좋아요 취소
 	 */
 	public void cancel() {
-		super.softDelete(); // deletedDate 설정
+		super.softDelete();
 	}
 
 	/**

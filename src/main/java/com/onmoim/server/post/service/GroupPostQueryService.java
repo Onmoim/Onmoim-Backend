@@ -31,17 +31,15 @@ public class GroupPostQueryService {
 
     /**
      * 게시글 조회 - 존재하지 않으면 예외 발생
-     * PK 조회이므로 클러스터링 인덱스 사용, deletedDate는 애플리케이션에서 체크
      */
     public GroupPost findById(Long postId) {
         GroupPost post = groupPostRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-        
-        // 논리삭제 체크 (PK 조회 최적화로 애플리케이션에서 처리)
+
         if (post.getDeletedDate() != null) {
             throw new CustomException(ErrorCode.POST_NOT_FOUND);
         }
-        
+
         return post;
     }
 

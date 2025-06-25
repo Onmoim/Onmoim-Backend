@@ -34,8 +34,11 @@ public class MeetingResponseDto {
 	@Schema(description = "장소명", example = "스타벅스 여의도브라이튼점")
 	private String placeName;
 
-	@Schema(description = "장소 좌표")
-	private GeoPoint geoPoint;
+	@Schema(description = "위도")
+	private Double latitude;
+
+	@Schema(description = "경도")  
+	private Double longitude;
 
 	@Schema(description = "최대 참석 인원", example = "10")
 	private int capacity;
@@ -66,7 +69,8 @@ public class MeetingResponseDto {
 			.title(meeting.getTitle())
 			.startAt(meeting.getStartAt())
 			.placeName(meeting.getPlaceName())
-			.geoPoint(meeting.getGeoPoint())
+			.latitude(meeting.getGeoPoint() != null ? meeting.getGeoPoint().getY() : null)
+			.longitude(meeting.getGeoPoint() != null ? meeting.getGeoPoint().getX() : null)
 			.capacity(meeting.getCapacity())
 			.joinCount(meeting.getJoinCount())
 			.cost(meeting.getCost())

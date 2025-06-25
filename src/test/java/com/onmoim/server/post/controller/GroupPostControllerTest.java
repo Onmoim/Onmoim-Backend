@@ -115,7 +115,6 @@ class GroupPostControllerTest {
 			.type(GroupPostType.FREE)
 			.createdDate(LocalDateTime.now())
 			.modifiedDate(LocalDateTime.now())
-			.images(new ArrayList<>())
 			.build();
 	}
 
@@ -280,7 +279,7 @@ class GroupPostControllerTest {
 		// given
 		Long groupId = 1L;
 		Long postId = 1L;
-		
+
 		CommentResponseDto comment1 = CommentResponseDto.builder()
 				.id(1L)
 				.content("첫 번째 댓글")
@@ -288,7 +287,7 @@ class GroupPostControllerTest {
 				.replyCount(2L)
 				.createdAt(LocalDateTime.now())
 				.build();
-		
+
 		CommentResponseDto comment2 = CommentResponseDto.builder()
 				.id(2L)
 				.content("두 번째 댓글")
@@ -309,7 +308,7 @@ class GroupPostControllerTest {
 				.content("Test Content")
 				.type(GroupPostType.FREE)
 				.build();
-		
+
 		given(groupPostQueryService.validatePostReadAccess(eq(postId), eq(groupId)))
 				.willReturn(mockPost);
 		given(commentQueryService.getParentComments(eq(mockPost), any()))
@@ -335,7 +334,7 @@ class GroupPostControllerTest {
 		Long groupId = 1L;
 		Long postId = 1L;
 		Long commentId = 1L;
-		
+
 		CommentResponseDto parentComment = CommentResponseDto.builder()
 				.id(1L)
 				.content("부모 댓글")
@@ -343,7 +342,7 @@ class GroupPostControllerTest {
 				.replyCount(2L)
 				.createdAt(LocalDateTime.now())
 				.build();
-		
+
 		CommentResponseDto reply1 = CommentResponseDto.builder()
 				.id(3L)
 				.content("첫 번째 답글")
@@ -351,7 +350,7 @@ class GroupPostControllerTest {
 				.replyCount(0L)
 				.createdAt(LocalDateTime.now())
 				.build();
-		
+
 		CommentResponseDto reply2 = CommentResponseDto.builder()
 				.id(4L)
 				.content("두 번째 답글")
@@ -371,7 +370,7 @@ class GroupPostControllerTest {
 				.willReturn(response);
 
 		// when & then
-		mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}/thread", 
+		mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}/thread",
 				groupId, postId, commentId)
 				.with(authenticatedUser(1L)))
 			.andDo(print())
@@ -393,7 +392,7 @@ class GroupPostControllerTest {
 		Long groupId = 1L;
 		Long postId = 1L;
 		CommentRequestDto requestDto = new CommentRequestDto("새로운 댓글입니다");
-		
+
 		// Mock 게시글 엔티티와 사용자 엔티티 생성
 		GroupPost mockPost = GroupPost.builder()
 				.title("Test Title")
@@ -403,7 +402,7 @@ class GroupPostControllerTest {
 		User mockUser = User.builder()
 				.name("testUser")
 				.build();
-		
+
 		given(groupPostQueryService.validatePostAccess(eq(postId), eq(groupId), anyLong()))
 				.willReturn(mockPost);
 		given(userQueryService.findById(anyLong()))
@@ -433,7 +432,7 @@ class GroupPostControllerTest {
 		Long postId = 1L;
 		Long commentId = 1L;
 		CommentRequestDto requestDto = new CommentRequestDto("답글입니다");
-		
+
 		// Mock 게시글 엔티티와 사용자 엔티티 생성
 		GroupPost mockPost = GroupPost.builder()
 				.title("Test Title")
@@ -443,7 +442,7 @@ class GroupPostControllerTest {
 		User mockUser = User.builder()
 				.name("testUser")
 				.build();
-		
+
 		given(groupPostQueryService.validatePostAccess(eq(postId), eq(groupId), anyLong()))
 				.willReturn(mockPost);
 		given(userQueryService.findById(anyLong()))
@@ -452,7 +451,7 @@ class GroupPostControllerTest {
 				.willReturn(6L);
 
 		// when & then
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}/replies", 
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}/replies",
 				groupId, postId, commentId)
 				.file(new MockMultipartFile("request", "", "application/json",
 						objectMapper.writeValueAsString(requestDto).getBytes()))
@@ -474,19 +473,19 @@ class GroupPostControllerTest {
 		Long postId = 1L;
 		Long commentId = 1L;
 		CommentRequestDto requestDto = new CommentRequestDto("수정된 댓글입니다");
-		
+
 		// Mock 사용자 엔티티 생성
 		User mockUser = User.builder()
 				.name("testUser")
 				.build();
-		
+
 		given(userQueryService.findById(anyLong()))
 				.willReturn(mockUser);
 		given(commentService.updateComment(eq(commentId), eq(mockUser), eq("수정된 댓글입니다")))
 				.willReturn(1L);
 
 		// when & then
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}", 
+		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}",
 				groupId, postId, commentId)
 				.file(new MockMultipartFile("request", "", "application/json",
 						objectMapper.writeValueAsString(requestDto).getBytes()))
@@ -512,14 +511,14 @@ class GroupPostControllerTest {
 		User mockUser = User.builder()
 				.name("testUser")
 				.build();
-		
+
 		given(userQueryService.findById(anyLong()))
 				.willReturn(mockUser);
 		given(commentService.deleteComment(eq(commentId), eq(mockUser)))
 				.willReturn(commentId);
 
 		// when & then
-		mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}", 
+		mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}",
 				groupId, postId, commentId)
 				.with(authenticatedUser(1L)))
 			.andDo(print())

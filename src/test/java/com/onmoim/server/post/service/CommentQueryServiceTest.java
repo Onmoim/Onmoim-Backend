@@ -48,20 +48,17 @@ class CommentQueryServiceTest {
 
     @BeforeEach
     void setUp() {
-        // User 객체 생성
         testUser = User.builder()
                 .name("testUser")
                 .build();
         setId(testUser, 1L);
 
-        // Group 객체 생성
         testGroup = Group.builder()
                 .name("testGroup")
                 .capacity(10)
                 .build();
         setId(testGroup, 1L);
 
-        // GroupPost 객체 생성
         testPost = GroupPost.builder()
                 .title("Test Title")
                 .content("Test Content")
@@ -71,7 +68,6 @@ class CommentQueryServiceTest {
                 .build();
         setId(testPost, 1L);
 
-        // 부모 댓글들 생성
         parentComment1 = Comment.builder()
                 .post(testPost)
                 .author(testUser)
@@ -88,7 +84,6 @@ class CommentQueryServiceTest {
                 .build();
         setId(parentComment2, 2L);
 
-        // 자식 댓글들 생성
         childComment1 = Comment.builder()
                 .post(testPost)
                 .author(testUser)
@@ -140,7 +135,7 @@ class CommentQueryServiceTest {
         assertThat(result.getContent().get(0).getReplyCount()).isEqualTo(0L);
         assertThat(result.getContent().get(1).getId()).isEqualTo(1L); // parentComment1
         assertThat(result.getContent().get(1).getReplyCount()).isEqualTo(2L);
-        
+
         verify(commentRepository).findParentCommentsByPost(testPost, cursor);
         verify(commentRepository).countRepliesByParentIds(Arrays.asList(2L, 1L));
     }
@@ -162,7 +157,7 @@ class CommentQueryServiceTest {
         assertThat(result.getContent()).isEmpty();
         assertThat(result.isHasNext()).isFalse();
         assertThat(result.getNextCursorId()).isNull();
-        
+
         verify(commentRepository).findParentCommentsByPost(testPost, cursor);
     }
 
@@ -186,11 +181,11 @@ class CommentQueryServiceTest {
         assertThat(result.getParentComment()).isNotNull();
         assertThat(result.getParentComment().getId()).isEqualTo(1L);
         assertThat(result.getParentComment().getReplyCount()).isEqualTo(2L);
-        
+
         assertThat(result.getReplies()).hasSize(2);
         assertThat(result.getReplies().get(0).getId()).isEqualTo(4L); // childComment2
         assertThat(result.getReplies().get(1).getId()).isEqualTo(3L); // childComment1
-        
+
         verify(commentRepository).findByIdWithAuthor(commentId);
         verify(commentRepository).findRepliesByParent(parentComment1, cursor);
         verify(commentRepository).countRepliesByParentId(commentId);
@@ -208,7 +203,7 @@ class CommentQueryServiceTest {
         // when & then
         CustomException exception = assertThrows(CustomException.class,
                 () -> commentQueryService.getCommentThread(commentId, cursor));
-        
+
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.COMMENT_NOT_FOUND);
         verify(commentRepository).findByIdWithAuthor(commentId);
     }
@@ -225,7 +220,7 @@ class CommentQueryServiceTest {
         // when & then
         CustomException exception = assertThrows(CustomException.class,
                 () -> commentQueryService.getCommentThread(commentId, cursor));
-        
+
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_COMMENT_THREAD);
         verify(commentRepository).findByIdWithAuthor(commentId);
     }
@@ -250,13 +245,13 @@ class CommentQueryServiceTest {
         assertThat(result.getParentComment()).isNotNull();
         assertThat(result.getParentComment().getId()).isEqualTo(2L);
         assertThat(result.getParentComment().getReplyCount()).isEqualTo(0L);
-        
+
         assertThat(result.getReplies()).isEmpty();
         assertThat(result.isHasMore()).isFalse();
         assertThat(result.getNextCursor()).isNull();
-        
+
         verify(commentRepository).findByIdWithAuthor(commentId);
         verify(commentRepository).findRepliesByParent(parentComment2, cursor);
         verify(commentRepository).countRepliesByParentId(commentId);
     }
-} 
+}

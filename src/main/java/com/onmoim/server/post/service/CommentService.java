@@ -45,12 +45,11 @@ public class CommentService {
         Comment parentComment = commentRepository.findByIdWithAuthor(parentCommentId)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
-        // 논리삭제 체크 (PK 조회 최적화로 애플리케이션에서 처리)
         if (parentComment.getDeletedDate() != null) {
             throw new CustomException(ErrorCode.COMMENT_NOT_FOUND);
         }
 
-        // 부모 댓글인지 확인 (2단계 깊이만 허용)
+        // 부모 댓글인지 확인 (2단계 깊이만 허용합니다.)
         if (!parentComment.isParentComment()) {
             throw new CustomException(ErrorCode.INVALID_COMMENT_THREAD);
         }
@@ -78,7 +77,6 @@ public class CommentService {
         Comment comment = commentRepository.findByIdAndAuthor(commentId, author)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
-        // 논리삭제 체크 (PK 조회 최적화로 애플리케이션에서 처리)
         if (comment.getDeletedDate() != null) {
             throw new CustomException(ErrorCode.COMMENT_NOT_FOUND);
         }
@@ -94,7 +92,6 @@ public class CommentService {
         Comment comment = commentRepository.findByIdAndAuthor(commentId, author)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
-        // 논리삭제 체크 (PK 조회 최적화로 애플리케이션에서 처리)
         if (comment.getDeletedDate() != null) {
             throw new CustomException(ErrorCode.COMMENT_NOT_FOUND);
         }
@@ -102,4 +99,4 @@ public class CommentService {
         comment.softDelete();
         return comment.getId();
     }
-} 
+}
