@@ -15,6 +15,7 @@ import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.repository.GroupPostRepository;
+import com.onmoim.server.post.util.PostValidationUtils;
 
 /**
  * 모임 게시글 조회용 Service
@@ -30,16 +31,13 @@ public class GroupPostQueryService {
     private final PostLikeQueryService postLikeQueryService;
 
     /**
-     * 게시글 조회 - 존재하지 않으면 예외 발생
+     * 게시글 조회
      */
     public GroupPost findById(Long postId) {
         GroupPost post = groupPostRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
 
-        if (post.getDeletedDate() != null) {
-            throw new CustomException(ErrorCode.POST_NOT_FOUND);
-        }
-
+        PostValidationUtils.validatePostNotDeleted(post);
         return post;
     }
 
@@ -88,7 +86,7 @@ public class GroupPostQueryService {
     /**
      * 단일 게시글 상세 조회
      */
-    public GroupPostResponseDto getPostWithLikes(Long groupId, Long postId, Long userId) {
+    public GroupPostResponseDto getPost(Long groupId, Long postId, Long userId) {
         groupQueryService.getById(groupId);
         GroupPost post = findById(postId);
         post.validateBelongsToGroup(groupId);
@@ -105,7 +103,7 @@ public class GroupPostQueryService {
     /**
      * 커서 기반 페이징을 이용한 게시글 목록 조회
      */
-    public CursorPageResponseDto<GroupPostResponseDto> getPostsWithLikes(
+    public CursorPageResponseDto<GroupPostResponseDto> getPosts(
             Long groupId,
             GroupPostType type,
             CursorPageRequestDto request,

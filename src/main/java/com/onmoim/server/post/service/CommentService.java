@@ -10,6 +10,7 @@ import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.post.entity.Comment;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.repository.CommentRepository;
+import com.onmoim.server.post.util.PostValidationUtils;
 import com.onmoim.server.user.entity.User;
 
 /**
@@ -41,23 +42,7 @@ public class CommentService {
      * 답글 작성
      */
     public Long createReply(GroupPost post, User author, Long parentCommentId, String content) {
-
-        Comment parentComment = commentRepository.findByIdWithAuthor(parentCommentId)
-                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
-
-        if (parentComment.getDeletedDate() != null) {
-            throw new CustomException(ErrorCode.COMMENT_NOT_FOUND);
-        }
-
-        // 부모 댓글인지 확인 (2단계 깊이만 허용합니다.)
-        if (!parentComment.isParentComment()) {
-            throw new CustomException(ErrorCode.INVALID_COMMENT_THREAD);
-        }
-
-        // 부모 댓글과 같은 게시글인지 확인
-        if (!parentComment.getPost().getId().equals(post.getId())) {
-            throw new CustomException(ErrorCode.INVALID_COMMENT_THREAD);
-        }
+        Comment parentComment = findAndValidateParentCommentForReply(parentCommentId, post);
 
         Comment reply = Comment.builder()
                 .post(post)
@@ -71,16 +56,24 @@ public class CommentService {
     }
 
     /**
+     * 답글 작성을 위한 부모 댓글 조회 및 검증
+     */
+    private Comment findAndValidateParentCommentForReply(Long parentCommentId, GroupPost post) {
+        Comment parentComment = commentRepository.findByIdWithAuthor(parentCommentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+        PostValidationUtils.validateCommentNotDeleted(parentComment);
+        PostValidationUtils.validateParentComment(parentComment);
+        PostValidationUtils.validateCommentBelongsToPost(parentComment, post);
+
+        return parentComment;
+    }
+
+    /**
      * 댓글 수정 (작성자만 가능)
      */
     public Long updateComment(Long commentId, User author, String content) {
-        Comment comment = commentRepository.findByIdAndAuthor(commentId, author)
-                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
-
-        if (comment.getDeletedDate() != null) {
-            throw new CustomException(ErrorCode.COMMENT_NOT_FOUND);
-        }
-
+        Comment comment = findAndValidateCommentByAuthor(commentId, author);
         comment.updateContent(content);
         return comment.getId();
     }
@@ -89,14 +82,19 @@ public class CommentService {
      * 댓글 삭제 (작성자만 가능)
      */
     public Long deleteComment(Long commentId, User author) {
+        Comment comment = findAndValidateCommentByAuthor(commentId, author);
+        comment.softDelete();
+        return comment.getId();
+    }
+
+    /**
+     * 작성자 검증을 통한 댓글 조회 및 검증
+     */
+    private Comment findAndValidateCommentByAuthor(Long commentId, User author) {
         Comment comment = commentRepository.findByIdAndAuthor(commentId, author)
                 .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 
-        if (comment.getDeletedDate() != null) {
-            throw new CustomException(ErrorCode.COMMENT_NOT_FOUND);
-        }
-
-        comment.softDelete();
-        return comment.getId();
+        PostValidationUtils.validateCommentNotDeleted(comment);
+        return comment;
     }
 }

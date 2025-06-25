@@ -54,7 +54,7 @@ public class GroupPostService {
             Long postId,
             Long userId
     ) {
-        return groupPostQueryService.getPostWithLikes(groupId, postId, userId);
+        return groupPostQueryService.getPost(groupId, postId, userId);
     }
 
     /**
@@ -66,7 +66,7 @@ public class GroupPostService {
             CursorPageRequestDto request,
             Long userId
     ) {
-        return groupPostQueryService.getPostsWithLikes(groupId, type, request, userId);
+        return groupPostQueryService.getPosts(groupId, type, request, userId);
     }
 
     /**

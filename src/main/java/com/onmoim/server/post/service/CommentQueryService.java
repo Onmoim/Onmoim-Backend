@@ -11,12 +11,14 @@ import lombok.RequiredArgsConstructor;
 
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.post.constant.PostConstants;
 import com.onmoim.server.post.dto.response.CommentResponseDto;
 import com.onmoim.server.post.dto.response.CommentThreadResponseDto;
 import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.entity.Comment;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.repository.CommentRepository;
+import com.onmoim.server.post.util.PostValidationUtils;
 
 /**
  * 댓글 조회 서비스
@@ -28,8 +30,6 @@ public class CommentQueryService {
 
     private final CommentRepository commentRepository;
 
-    private static final int DEFAULT_PAGE_SIZE = 20;
-
     /**
      * 게시글의 부모댓글 목록 조회
      */
@@ -37,35 +37,17 @@ public class CommentQueryService {
             GroupPost post,
             Long cursor
     ) {
-        List<Comment> comments = commentRepository.findParentCommentsByPost(
-            post, cursor
-        );
+        List<Comment> comments = commentRepository.findParentCommentsByPost(post, cursor);
 
-        List<Comment> limitedComments = comments.stream()
-                .limit(DEFAULT_PAGE_SIZE + 1)
-                .toList();
+        List<Comment> limitedComments = applyPagination(comments);
+        boolean hasMore = comments.size() > PostConstants.CURSOR_PAGE_SIZE;
 
-        boolean hasMore = limitedComments.size() > DEFAULT_PAGE_SIZE;
-        if (hasMore) {
-            limitedComments = limitedComments.subList(0, DEFAULT_PAGE_SIZE);
-        }
-
-        List<Long> commentIds = limitedComments.stream()
-                .map(Comment::getId)
-                .toList();
-
+        List<Long> commentIds = extractCommentIds(limitedComments);
         Map<Long, Long> replyCountMap = getReplyCountMap(commentIds);
 
-        List<CommentResponseDto> responseDtos = limitedComments.stream()
-                .map(comment -> CommentResponseDto.from(
-                    comment,
-                    replyCountMap.getOrDefault(comment.getId(), 0L)
-                ))
-                .collect(Collectors.toList());
+        List<CommentResponseDto> responseDtos = convertToCommentDtos(limitedComments, replyCountMap);
 
-        Long nextCursor = hasMore && !limitedComments.isEmpty()
-                ? limitedComments.get(limitedComments.size() - 1).getId()
-                : null;
+        Long nextCursor = calculateNextCursor(hasMore, limitedComments);
 
         return CursorPageResponseDto.<CommentResponseDto>builder()
                 .content(responseDtos)
@@ -77,33 +59,13 @@ public class CommentQueryService {
     /**
      * 특정 댓글의 답글 목록 조회
      */
-    public CommentThreadResponseDto getCommentThread(
-            Long commentId,
-            Long cursor
-    ) {
-        Comment parentComment = commentRepository.findByIdWithAuthor(commentId)
-                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+    public CommentThreadResponseDto getCommentThread(Long commentId, Long cursor) {
 
-        if (parentComment.getDeletedDate() != null) {
-            throw new CustomException(ErrorCode.COMMENT_NOT_FOUND);
-        }
+        Comment parentComment = findAndValidateParentComment(commentId);
 
-        if (!parentComment.isParentComment()) {
-            throw new CustomException(ErrorCode.INVALID_COMMENT_THREAD);
-        }
-
-        List<Comment> replies = commentRepository.findRepliesByParent(
-            parentComment, cursor
-        );
-
-        List<Comment> limitedReplies = replies.stream()
-                .limit(DEFAULT_PAGE_SIZE + 1)
-                .toList();
-
-        boolean hasMore = limitedReplies.size() > DEFAULT_PAGE_SIZE;
-        if (hasMore) {
-            limitedReplies = limitedReplies.subList(0, DEFAULT_PAGE_SIZE);
-        }
+        List<Comment> replies = commentRepository.findRepliesByParent(parentComment, cursor);
+        List<Comment> limitedReplies = applyPagination(replies);
+        boolean hasMore = replies.size() > PostConstants.CURSOR_PAGE_SIZE;
 
         CommentResponseDto parentDto = CommentResponseDto.from(
             parentComment,
@@ -112,13 +74,61 @@ public class CommentQueryService {
 
         List<CommentResponseDto> replyDtos = limitedReplies.stream()
                 .map(CommentResponseDto::fromReply)
-                .collect(Collectors.toList());
+                .toList();
 
-        Long nextCursor = hasMore && !limitedReplies.isEmpty()
-                ? limitedReplies.get(limitedReplies.size() - 1).getId()
-                : null;
+        Long nextCursor = calculateNextCursor(hasMore, limitedReplies);
 
         return CommentThreadResponseDto.of(parentDto, replyDtos, nextCursor, hasMore);
+    }
+
+    private List<Comment> applyPagination(List<Comment> comments) {
+        List<Comment> limitedComments = comments.stream()
+                .limit(PostConstants.CURSOR_PAGE_SIZE + 1)
+                .toList();
+
+        boolean hasMore = limitedComments.size() > PostConstants.CURSOR_PAGE_SIZE;
+        if (hasMore) {
+            limitedComments = limitedComments.subList(0, PostConstants.CURSOR_PAGE_SIZE);
+        }
+
+        return limitedComments;
+    }
+
+    private List<Long> extractCommentIds(List<Comment> comments) {
+        return comments.stream()
+                .map(Comment::getId)
+                .toList();
+    }
+
+    private List<CommentResponseDto> convertToCommentDtos(
+            List<Comment> comments,
+            Map<Long, Long> replyCountMap
+    ) {
+        return comments.stream()
+                .map(comment -> CommentResponseDto.from(
+                    comment,
+                    replyCountMap.getOrDefault(comment.getId(), 0L)
+                ))
+                .toList();
+    }
+
+    private Long calculateNextCursor(boolean hasMore, List<Comment> comments) {
+        return hasMore && !comments.isEmpty()
+                ? comments.get(comments.size() - 1).getId()
+                : null;
+    }
+
+    /**
+     * 부모 댓글 조회 및 검증
+     */
+    private Comment findAndValidateParentComment(Long commentId) {
+        Comment parentComment = commentRepository.findByIdWithAuthor(commentId)
+                .orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
+
+        PostValidationUtils.validateCommentNotDeleted(parentComment);
+        PostValidationUtils.validateParentComment(parentComment);
+
+        return parentComment;
     }
 
     /**
