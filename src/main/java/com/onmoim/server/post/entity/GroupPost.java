@@ -16,11 +16,7 @@ import com.onmoim.server.user.entity.User;
  */
 @Entity
 @Getter
-@Table(name = "post", indexes = {
-	@Index(
-		name = "idx_post_group",
-		columnList = "group_id"
-	)
+@Table(name = "post", indexes = {@Index(name = "idx_post_group", columnList = "group_id")
 }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

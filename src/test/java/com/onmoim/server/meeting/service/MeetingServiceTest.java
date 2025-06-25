@@ -251,14 +251,14 @@ class MeetingServiceTest {
 
 		// 1단계: 미래 시간으로 모임 생성 (정상적인 참여가 가능하도록)
 		Meeting meetingToDelete = Meeting.meetingCreateBuilder()
-			.groupId(group.getId())
+			.group(group)
 			.type(MeetingType.FLASH)
 			.title("자동 삭제될 모임")
 			.startAt(LocalDateTime.now().plusDays(1)) // 미래 시간으로 설정
 			.placeName("사라질 장소")
 			.capacity(5)
 			.cost(0)
-			.creatorId(lastUser.getId())
+			.creator(lastUser)
 			.build();
 		meetingRepository.save(meetingToDelete);
 
@@ -267,7 +267,6 @@ class MeetingServiceTest {
 		assertThat(meetingRepository.findById(meetingToDelete.getId()).get().getJoinCount()).isEqualTo(1);
 
 		// 3단계: 모임 시작 시간을 과거로 변경 (이미 시작된 상태로 만들기)
-		// Reflection을 사용하여 시작 시간을 과거로 변경
 		try {
 			java.lang.reflect.Field startAtField = Meeting.class.getDeclaredField("startAt");
 			startAtField.setAccessible(true);
@@ -466,14 +465,14 @@ class MeetingServiceTest {
 			em.persist(GroupUser.create(group, owner, Status.OWNER));
 
 			Meeting meeting = Meeting.meetingCreateBuilder()
-				.groupId(group.getId())
+				.group(group)
 				.type(MeetingType.FLASH)
 				.title("테스트일정")
 				.startAt(LocalDateTime.now().plusDays(30))
 				.placeName("테스트장소")
 				.capacity(3)
 				.cost(0)
-				.creatorId(owner.getId())
+				.creator(owner)
 				.build();
 			em.persist(meeting);
 
@@ -514,7 +513,6 @@ class MeetingServiceTest {
 						detail, null, null);
 					SecurityContextHolder.getContext().setAuthentication(authenticated);
 
-					// 🎭 파사드 패턴 사용 (완벽한 Named Lock 보장)
 					meetingFacadeService.joinMeeting(finalMeetingId);
 					successCount.incrementAndGet();
 				} catch (Exception e) {
@@ -582,18 +580,17 @@ class MeetingServiceTest {
 		LocalDateTime startTime = LocalDateTime.now().plusDays(30); // 30일 후로 설정
 
 		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(group.getId())
+			.group(group)
 			.type(type)
 			.title("테스트일정_" + uniqueId)
 			.startAt(startTime)
 			.placeName("테스트장소")
 			.capacity(capacity)
 			.cost(0)
-			.creatorId(creator.getId())
+			.creator(creator)
 			.build();
 		meeting = meetingRepository.save(meeting);
 
-		// 생성자 자동 참석 (시간 제약 없음)
 		UserMeeting userMeeting = UserMeeting.create(meeting, creator);
 		userMeetingRepository.save(userMeeting);
 		meeting.creatorJoin();
@@ -618,7 +615,6 @@ class MeetingServiceTest {
 		SecurityContextHolder.clearContext();
 	}
 
-	// 값 공유를 위한 간단한 홀더 클래스
 	private static class Holder<T> {
 		T value;
 	}

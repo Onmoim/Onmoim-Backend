@@ -1,6 +1,6 @@
 package com.onmoim.server.meeting.controller;
 
-import com.onmoim.server.meeting.dto.response.PageResponseDto;
+import com.onmoim.server.meeting.dto.response.CursorPageResponseDto;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,25 +45,25 @@ public class MeetingController {
 	 */
 	@GetMapping("/meetings/my")
 	@Operation(
-		summary = "내 예정 일정 조회 (커서 토큰 페이징)",
-		description = "내가 속한 모든 모임의 예정된 일정을 시간순으로 조회합니다.(Keyset-Filtering)")
+		summary = "내 예정 일정 조회 (커서 페이징)",
+		description = "내가 속한 모든 모임의 예정된 일정을 시간순으로 조회합니다.")
 	@ApiResponses({
 		@ApiResponse(
 			responseCode = "200",
 			description = "조회 성공",
 			content = @Content(
-				schema = @Schema(implementation = PageResponseDto.class))),
+				schema = @Schema(implementation = CursorPageResponseDto.class))),
 		@ApiResponse(responseCode = "401", description = "인증 실패")
 	})
-	public ResponseEntity<ResponseHandler<PageResponseDto<MeetingResponseDto>>> getMyUpcomingMeetings(
+	public ResponseEntity<ResponseHandler<CursorPageResponseDto<MeetingResponseDto>>> getMyUpcomingMeetings(
 		@RequestParam(required = false)
-		@Parameter(description = "다음 페이지 커서 토큰 (첫 페이지는 생략)") String cursor,
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략)") Long cursorId,
 		@RequestParam(defaultValue = "10")
 		@Parameter(description = "페이지 크기") int size
 	) {
 		Long userId = getCurrentUserId();
-		PageResponseDto<MeetingResponseDto> response =
-			meetingQueryService.getMyUpcomingMeetings(userId, cursor, size);
+		CursorPageResponseDto<MeetingResponseDto> response =
+			meetingQueryService.getMyUpcomingMeetings(userId, cursorId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
@@ -117,31 +117,31 @@ public class MeetingController {
 	}
 
 	/**
-	 * 그룹별 예정된 일정 목록 조회 (커서 토큰 기반 페이징)
+	 * 그룹별 예정된 일정 목록 조회
 	 */
 	@GetMapping("/groups/{groupId}/meetings")
 	@Operation(
-		summary = "그룹별 예정된 일정 목록 조회 (커서 토큰 페이징)",
-		description = "특정 모임의 예정된 일정 목록을 시간순으로 조회합니다. (Keyset-Filtering)")
+		summary = "그룹별 예정된 일정 목록 조회 (커서 페이징)",
+		description = "특정 모임의 예정된 일정 목록을 시간순으로 조회합니다.")
 	@ApiResponses({
 		@ApiResponse(
 			responseCode = "200",
 			description = "조회 성공",
 			content = @Content(
-				schema = @Schema(implementation = PageResponseDto.class))),
+				schema = @Schema(implementation = CursorPageResponseDto.class))),
 		@ApiResponse(responseCode = "404", description = "모임을 찾을 수 없음")
 	})
-	public ResponseEntity<ResponseHandler<PageResponseDto<MeetingResponseDto>>> getGroupUpcomingMeetings(
+	public ResponseEntity<ResponseHandler<CursorPageResponseDto<MeetingResponseDto>>> getGroupUpcomingMeetings(
 		@PathVariable @Parameter(description = "모임 ID") Long groupId,
 		@RequestParam(required = false)
-		@Parameter(description = "다음 페이지 커서 토큰 (첫 페이지는 생략)") String cursor,
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략)") Long cursorId,
 		@RequestParam(defaultValue = "10")
 		@Parameter(description = "페이지 크기") int size,
 		@RequestParam(required = false)
 		@Parameter(description = "일정 유형 필터 (REGULAR: 정기모임, FLASH: 번개모임)") MeetingType type
 	) {
-		PageResponseDto<MeetingResponseDto> response =
-			meetingQueryService.getUpcomingMeetingsInGroup(groupId, type, cursor, size);
+		CursorPageResponseDto<MeetingResponseDto> response =
+			meetingQueryService.getUpcomingMeetingsInGroup(groupId, type, cursorId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
@@ -186,7 +186,7 @@ public class MeetingController {
 	@PutMapping(value = "/groups/{groupId}/meetings/{meetingId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	@Operation(
 		summary = "일정 수정",
-		description = "일정 정보를 수정합니다. 모임장만 수정 가능하며, 시작 24시간 전까지만 수정할 수 있습니다. 새 이미지를 업로드하면 기존 이미지는 교체됩니다.")
+		description = "일정 정보를 수정합니다. 모임장만 수정 가능하니다.")
 	@ApiResponses({
 		@ApiResponse(responseCode = "200", description = "수정 성공"),
 		@ApiResponse(responseCode = "400", description = "잘못된 요청"),

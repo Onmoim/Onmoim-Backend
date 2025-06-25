@@ -8,17 +8,22 @@ import com.onmoim.server.common.BaseEntity;
 import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
+import com.onmoim.server.user.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -41,9 +46,10 @@ public class Meeting extends BaseEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Comment("모임 ID (논리 FK)")
-	@Column(name = "group_id")
-	private Long groupId;
+	@Comment("모임 연관관계")
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "group_id")
+	private Group group;
 
 	@Comment("일정 유형")
 	@Enumerated(EnumType.STRING)
@@ -80,9 +86,10 @@ public class Meeting extends BaseEntity {
 	@Builder.Default
 	private MeetingStatus status = MeetingStatus.OPEN;
 
-	@Comment("작성자 ID (논리 FK)")
-	@Column(name = "creator_id")
-	private Long creatorId;
+	@Comment("작성자 연관관계")
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "creator_id")
+	private User creator;
 
 	@Comment("일정 대표 이미지")
 	private String imgUrl;
@@ -114,7 +121,7 @@ public class Meeting extends BaseEntity {
 		return switch (this.type) {
 			case REGULAR -> groupUser.isOwner();     // 정기모임: 모임장만
 			case FLASH -> groupUser.isOwner() ||
-						  groupUser.getUser().getId().equals(this.creatorId); // 번개모임: 모임장 또는 주최자
+						  groupUser.getUser().getId().equals(this.creator.getId()); // 번개모임: 모임장 또는 주최자
 		};
 	}
 
@@ -254,5 +261,14 @@ public class Meeting extends BaseEntity {
 		} else if (this.status == MeetingStatus.FULL) {
 			this.status = MeetingStatus.OPEN;
 		}
+	}
+
+	// Helper methods for accessing IDs (backwards compatibility)
+	public Long getGroupId() {
+		return this.group != null ? this.group.getId() : null;
+	}
+
+	public Long getCreatorId() {
+		return this.creator != null ? this.creator.getId() : null;
 	}
 }

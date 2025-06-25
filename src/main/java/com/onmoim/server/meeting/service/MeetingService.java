@@ -13,6 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.s3.service.FileStorageService;
+import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.group.implement.GroupQueryService;
 import com.onmoim.server.meeting.dto.request.MeetingCreateRequestDto;
 import com.onmoim.server.meeting.dto.request.MeetingUpdateRequestDto;
 import com.onmoim.server.meeting.entity.Meeting;
@@ -46,6 +48,7 @@ public class MeetingService {
 	private final MeetingRepository meetingRepository;
 	private final MeetingQueryService meetingQueryService;
 	private final UserQueryService userQueryService;
+	private final GroupQueryService groupQueryService;
 	private final UserMeetingRepository userMeetingRepository;
 	private final FileStorageService fileStorageService;
 	private final MeetingAuthService meetingAuthService;
@@ -53,10 +56,11 @@ public class MeetingService {
 	private final DataSource dataSource;
 	private final MeetingLockRepository meetingLockRepository;
 
-	public MeetingService(MeetingRepository meetingRepository, MeetingQueryService meetingQueryService, UserQueryService userQueryService, UserMeetingRepository userMeetingRepository, FileStorageService fileStorageService, MeetingAuthService meetingAuthService, TransactionTemplate transactionTemplate, DataSource dataSource, MeetingLockRepository meetingLockRepository) {
+	public MeetingService(MeetingRepository meetingRepository, MeetingQueryService meetingQueryService, UserQueryService userQueryService, GroupQueryService groupQueryService, UserMeetingRepository userMeetingRepository, FileStorageService fileStorageService, MeetingAuthService meetingAuthService, TransactionTemplate transactionTemplate, DataSource dataSource, MeetingLockRepository meetingLockRepository) {
 		this.meetingRepository = meetingRepository;
 		this.meetingQueryService = meetingQueryService;
 		this.userQueryService = userQueryService;
+		this.groupQueryService = groupQueryService;
 		this.userMeetingRepository = userMeetingRepository;
 		this.fileStorageService = fileStorageService;
 		this.meetingAuthService = meetingAuthService;
@@ -99,8 +103,11 @@ public class MeetingService {
 	private Long executeCreateMeeting(Long groupId, MeetingCreateRequestDto request,
 									  Long userId, User user) {
 		return transactionTemplate.execute(status -> {
+			Group group = groupQueryService.getById(groupId);
+			User creator = userQueryService.findById(userId);
+			
 			Meeting meeting = Meeting.meetingCreateBuilder()
-					.groupId(groupId)
+					.group(group)
 					.type(request.getType())
 					.title(request.getTitle())
 					.startAt(request.getStartAt())
@@ -108,7 +115,7 @@ public class MeetingService {
 					.geoPoint(request.getGeoPoint())
 					.capacity(request.getCapacity())
 					.cost(request.getCost())
-					.creatorId(userId)
+					.creator(creator)
 					.build();
 
 			meetingAuthService.validateCreatePermission(groupId, userId, meeting);

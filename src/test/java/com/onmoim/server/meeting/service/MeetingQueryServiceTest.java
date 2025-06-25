@@ -2,7 +2,7 @@ package com.onmoim.server.meeting.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.onmoim.server.meeting.dto.response.PageResponseDto;
+import com.onmoim.server.meeting.dto.response.CursorPageResponseDto;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +59,7 @@ class MeetingQueryServiceTest {
 		createTestMeetings(20);
 
 		// When: 첫 페이지 조회 (충분히 큰 사이즈로 전체 조회)
-		PageResponseDto<MeetingResponseDto> result = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, null, 20);
+		CursorPageResponseDto<MeetingResponseDto> result = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, null, 20);
 
 		// Then: 20개 모두 조회됨
 		assertThat(result.getContent()).hasSize(20);
@@ -73,7 +73,7 @@ class MeetingQueryServiceTest {
 		createTestMeetingsByType(MeetingType.FLASH, 10);
 
 		// When: 정기모임만 조회
-		PageResponseDto<MeetingResponseDto> result = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), MeetingType.REGULAR, null, 10);
+		CursorPageResponseDto<MeetingResponseDto> result = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), MeetingType.REGULAR, null, 10);
 
 		// Then: 정기모임 10개만 조회됨
 		assertThat(result.getContent()).hasSize(10);
@@ -90,45 +90,45 @@ class MeetingQueryServiceTest {
 		}
 
 		// When: 멤버 참여 모임 조회
-		PageResponseDto<MeetingResponseDto> result = meetingQueryService.getMyUpcomingMeetings(member.getId(), null, 10);
+		CursorPageResponseDto<MeetingResponseDto> result = meetingQueryService.getMyUpcomingMeetings(member.getId(), null, 10);
 
 		// Then: 10개 모임만 조회됨
 		assertThat(result.getContent()).hasSize(10);
 	}
 
 	@Test
-	@DisplayName("그룹 모임 커서 토큰 페이징 조회")
+	@DisplayName("그룹 모임 커서 페이징 조회")
 	void getUpcomingMeetingsInGroup_Paging() {
 		// Given: 25개의 모임 생성
 		createTestMeetings(25);
 		int pageSize = 10;
 
 		// When: 첫 번째 페이지 조회
-		PageResponseDto<MeetingResponseDto> firstPage = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, null, pageSize);
+		CursorPageResponseDto<MeetingResponseDto> firstPage = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, null, pageSize);
 
 		// Then: 첫 번째 페이지 검증
 		assertThat(firstPage.getContent()).hasSize(pageSize);
 		assertThat(firstPage.isHasNext()).isTrue();
-		assertThat(firstPage.getNextCursor()).isNotNull();
+		assertThat(firstPage.getNextCursorId()).isNotNull();
 
 		// When: 두 번째 페이지 조회
-		PageResponseDto<MeetingResponseDto> secondPage = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, firstPage.getNextCursor(), pageSize);
+		CursorPageResponseDto<MeetingResponseDto> secondPage = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, firstPage.getNextCursorId(), pageSize);
 
 		// Then: 두 번째 페이지 검증
 		assertThat(secondPage.getContent()).hasSize(pageSize);
 		assertThat(secondPage.isHasNext()).isTrue();
 
 		// When: 세 번째 페이지 조회
-		PageResponseDto<MeetingResponseDto> thirdPage = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, secondPage.getNextCursor(), pageSize);
+		CursorPageResponseDto<MeetingResponseDto> thirdPage = meetingQueryService.getUpcomingMeetingsInGroup(group.getId(), null, secondPage.getNextCursorId(), pageSize);
 
 		// Then: 세 번째 페이지 검증
 		assertThat(thirdPage.getContent()).hasSize(5);
 		assertThat(thirdPage.isHasNext()).isFalse();
-		assertThat(thirdPage.getNextCursor()).isNull();
+		assertThat(thirdPage.getNextCursorId()).isNull();
 	}
 
 	@Test
-	@DisplayName("사용자 참여 모임 커서 토큰 페이징 조회")
+	@DisplayName("사용자 참여 모임 커서 페이징 조회")
 	void getMyUpcomingMeetings_Paging() {
 		// Given: 25개 모임 중 15개만 참여
 		List<Meeting> meetings = createTestMeetings(25);
@@ -138,14 +138,14 @@ class MeetingQueryServiceTest {
 		int pageSize = 10;
 
 		// When: 첫 번째 페이지 조회
-		PageResponseDto<MeetingResponseDto> firstPage = meetingQueryService.getMyUpcomingMeetings(member.getId(), null, pageSize);
+		CursorPageResponseDto<MeetingResponseDto> firstPage = meetingQueryService.getMyUpcomingMeetings(member.getId(), null, pageSize);
 
 		// Then: 첫 번째 페이지 검증
 		assertThat(firstPage.getContent()).hasSize(pageSize);
 		assertThat(firstPage.isHasNext()).isTrue();
 
 		// When: 두 번째 페이지 조회
-		PageResponseDto<MeetingResponseDto> secondPage = meetingQueryService.getMyUpcomingMeetings(member.getId(), firstPage.getNextCursor(), pageSize);
+		CursorPageResponseDto<MeetingResponseDto> secondPage = meetingQueryService.getMyUpcomingMeetings(member.getId(), firstPage.getNextCursorId(), pageSize);
 
 		// Then: 두 번째 페이지 검증
 		assertThat(secondPage.getContent()).hasSize(5);
@@ -162,8 +162,8 @@ class MeetingQueryServiceTest {
 		// 과거 모임 1개 (조회되지 않아야 함)
 		meetings.add(meetingRepository.save(Meeting.meetingCreateBuilder()
 			.title("과거 모임")
-			.groupId(group.getId())
-			.creatorId(leader.getId())
+			.group(group)
+			.creator(leader)
 			.startAt(now.minusDays(1))
 			.placeName("테스트 장소")
 			.capacity(10)
@@ -174,8 +174,8 @@ class MeetingQueryServiceTest {
 		for (int i = 0; i < 10; i++) {
 			meetings.add(meetingRepository.save(Meeting.meetingCreateBuilder()
 				.title("테스트 모임 " + (i + 1))
-				.groupId(group.getId())
-				.creatorId(leader.getId())
+				.group(group)
+				.creator(leader)
 				.startAt(now.plusDays(i + 1)) // 1일 후부터 10일 후까지
 				.placeName("테스트 장소")
 				.capacity(10)
@@ -206,8 +206,8 @@ class MeetingQueryServiceTest {
 			MeetingType currentType = (type == null) ? (i % 2 == 0 ? MeetingType.REGULAR : MeetingType.FLASH) : type;
 			meetings.add(meetingRepository.save(Meeting.meetingCreateBuilder()
 				.title("테스트 모임 " + (i + 1))
-				.groupId(group.getId())
-				.creatorId(leader.getId())
+				.group(group)
+				.creator(leader)
 				.startAt(baseTime.plusHours(i))
 				.placeName("테스트 장소")
 				.capacity(10)
