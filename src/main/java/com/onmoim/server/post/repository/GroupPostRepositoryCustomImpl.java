@@ -67,6 +67,8 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
         QGroupPost q = QGroupPost.groupPost;
         List<GroupPost> fetched = queryFactory
                 .selectFrom(q)
+                .join(q.author).fetchJoin()
+                .join(q.group).fetchJoin()
                 .where(predicate)
                 .orderBy(q.id.desc())
                 .limit((long) size + 1)
@@ -116,7 +118,6 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
                 .map(GroupPost::getId)
                 .toList();
 
-        // 이미지 정보 조회
         Map<Long, List<PostImage>> imagesByPostId = Collections.unmodifiableMap(
                 postImageRepository
                         .findByPostIdInAndIsDeletedFalse(postIds)
@@ -127,7 +128,6 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
                         ))
         );
 
-        // 좋아요 정보 조회
         Map<Long, PostLikeQueryService.PostLikeInfo> likeInfoMap =
                 postLikeQueryService.getPostLikeInfoMap(postIds, userId);
 
