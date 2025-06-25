@@ -21,6 +21,7 @@ import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.common.response.ResponseHandler;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.GroupMember;
+import com.onmoim.server.group.dto.ReadCondition;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.dto.request.MemberIdRequestDto;
@@ -384,6 +385,53 @@ public class GroupController {
 					meetingDetails
 			)
 		));
+	}
+
+	@Operation(
+		summary = "인기: 활동이 활발한 모임 조회",
+		description = "활동이 활발한 모임 조회"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "활동이 활발한 모임 조회"),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자 접근")
+	})
+	@GetMapping("/v1/groups/what")
+	public ResponseEntity<ResponseHandler<Void>> get(
+		@Parameter(description = "커서 ID (마지막 조회한 커서 ID)", in = ParameterIn.QUERY)
+		@RequestParam(required = false) Long cursorId,
+		@Parameter(description = "페이지 크기 (고정 크기 = 10)", in = ParameterIn.QUERY)
+		@RequestParam(required = false, defaultValue = "10") int size
+	)
+	{
+		return null;
+	}
+
+	@Operation(
+		summary = "인기: 내 주변 인기 모임 조회",
+		description = "내 주변 인기 모임 조회"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "내 주변 인기 모임 조회"),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자 접근")
+	})
+	@GetMapping("/v1/groups/what2")
+	public ResponseEntity<ResponseHandler<CursorPageResponseDto<Void>>> getNearbyPopularGroups(
+		@Parameter(description = "커서 ID (마지막 조회한 커서 ID)", in = ParameterIn.QUERY)
+		@RequestParam(required = false) Long cursorId,
+		@Parameter(description = "페이지 크기 (고정 크기 = 10)", in = ParameterIn.QUERY)
+		@RequestParam(required = false, defaultValue = "10") int size
+	)
+	{
+		groupService.readNearbyPopularGroups(ReadCondition.of(cursorId, size));
+		return null;
 	}
 
 	// todo: ing

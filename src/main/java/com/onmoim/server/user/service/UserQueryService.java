@@ -4,6 +4,7 @@ import static com.onmoim.server.common.exception.ErrorCode.*;
 
 import org.springframework.stereotype.Service;
 
+import com.onmoim.server.common.BaseEntity;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.user.entity.User;
@@ -18,6 +19,7 @@ public class UserQueryService {
 
 	public User findById(Long userId) {
 		return userRepository.findById(userId)
+			.filter(BaseEntity::isDeleted)
 			.orElseThrow(() -> new CustomException(DENIED_UNAUTHORIZED_USER));
 	}
 }
