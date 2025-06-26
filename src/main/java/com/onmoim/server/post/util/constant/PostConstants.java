@@ -1,4 +1,4 @@
-package com.onmoim.server.post.constant;
+package com.onmoim.server.post.util.constant;
 
 /**
  * Post 도메인 공통 상수

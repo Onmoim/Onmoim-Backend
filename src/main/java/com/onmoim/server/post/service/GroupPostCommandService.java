@@ -13,7 +13,7 @@ import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.implement.GroupQueryService;
-import com.onmoim.server.post.constant.PostConstants;
+import com.onmoim.server.post.util.constant.PostConstants;
 import com.onmoim.server.post.dto.request.GroupPostRequestDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPost;

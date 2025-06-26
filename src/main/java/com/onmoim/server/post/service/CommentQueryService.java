@@ -1,6 +1,6 @@
 package com.onmoim.server.post.service;
 
-import static com.onmoim.server.post.constant.PostConstants.CURSOR_PAGE_SIZE;
+import static com.onmoim.server.post.util.constant.PostConstants.CURSOR_PAGE_SIZE;
 
 import java.util.List;
 import java.util.Map;
