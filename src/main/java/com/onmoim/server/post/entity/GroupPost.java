@@ -21,8 +21,8 @@ import com.onmoim.server.user.entity.User;
 @Entity
 @Getter
 @Table(name = "post", indexes = {
-	@Index(name = "idx_post_group_type_deleted", columnList = "group_id,type,deleted_date"),
-	@Index(name = "idx_post_author_deleted", columnList = "author_id,deleted_date")
+	@Index(name = "idx_post_group_type", columnList = "group_id,type"),
+	@Index(name = "idx_post_author", columnList = "author_id")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GroupPost extends BaseEntity {

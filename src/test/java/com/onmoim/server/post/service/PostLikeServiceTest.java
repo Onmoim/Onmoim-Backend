@@ -42,20 +42,18 @@ class PostLikeServiceTest {
 
     @BeforeEach
     void setUp() {
-        // User 객체 생성
+
         testUser = User.builder()
                 .name("testUser")
                 .build();
         setId(testUser, 1L);
 
-        // Group 객체 생성
         testGroup = Group.builder()
                 .name("testGroup")
                 .capacity(10)
                 .build();
         setId(testGroup, 1L);
 
-        // GroupPost 객체 생성
         testPost = GroupPost.builder()
                 .title("Test Title")
                 .content("Test Content")
@@ -65,7 +63,6 @@ class PostLikeServiceTest {
                 .build();
         setId(testPost, 1L);
 
-        // PostLike 객체 생성
         testPostLike = PostLike.builder()
                 .post(testPost)
                 .user(testUser)
@@ -172,7 +169,7 @@ class PostLikeServiceTest {
                 .user(testUser)
                 .build();
         setId(cancelledLike, 1L);
-        cancelledLike.cancel(); // 논리삭제 상태
+        cancelledLike.cancel();
 
         when(postLikeRepository.findByPostAndUser(testPost, testUser))
                 .thenReturn(Optional.of(cancelledLike));
@@ -197,7 +194,7 @@ class PostLikeServiceTest {
                 .build();
         setId(activeLike, 1L);
 
-        when(postLikeRepository.findByPostAndUserAndActive(testPost, testUser))
+        when(postLikeRepository.findByPostAndUser(testPost, testUser))
                 .thenReturn(Optional.of(activeLike));
 
         // when
@@ -205,22 +202,22 @@ class PostLikeServiceTest {
 
         // then
         assertThat(result).isEqualTo(1L);
-        assertThat(activeLike.isActive()).isFalse(); // 논리삭제 확인
-        verify(postLikeRepository).findByPostAndUserAndActive(testPost, testUser);
+        assertThat(activeLike.isActive()).isFalse();
+        verify(postLikeRepository).findByPostAndUser(testPost, testUser);
     }
 
     @Test
     @DisplayName("좋아요 취소 실패 - 좋아요하지 않은 게시글")
     void unlikePostNotLiked() {
         // given
-        when(postLikeRepository.findByPostAndUserAndActive(testPost, testUser))
+        when(postLikeRepository.findByPostAndUser(testPost, testUser))
                 .thenReturn(Optional.empty());
 
         // when & then
-        CustomException exception = assertThrows(CustomException.class, 
+        CustomException exception = assertThrows(CustomException.class,
                 () -> postLikeService.unlikePost(testPost, testUser));
-        
+
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.POST_NOT_LIKED);
-        verify(postLikeRepository).findByPostAndUserAndActive(testPost, testUser);
+        verify(postLikeRepository).findByPostAndUser(testPost, testUser);
     }
-} 
+}

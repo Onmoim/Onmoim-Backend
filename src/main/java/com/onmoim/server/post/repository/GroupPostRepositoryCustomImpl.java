@@ -52,8 +52,7 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
     private BooleanBuilder buildPredicate(Group group, GroupPostType type, Long cursorId) {
         QGroupPost q = QGroupPost.groupPost;
         BooleanBuilder b = new BooleanBuilder()
-                .and(q.group.id.eq(group.getId()))
-                .and(q.deletedDate.isNull());
+                .and(q.group.id.eq(group.getId()));
 
         if (type != null && type != GroupPostType.ALL) {
             b.and(q.type.eq(type));
@@ -74,7 +73,12 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
                 .orderBy(q.id.desc())
                 .limit((long) size + 1)
                 .fetch();
-        return new LinkedList<>(fetched);
+
+        List<GroupPost> activePosts = fetched.stream()
+                .filter(post -> post.getDeletedDate() == null)
+                .toList();
+
+        return new LinkedList<>(activePosts);
     }
 
     private Long extractNextCursor(Deque<GroupPost> posts, int size, boolean hasNext) {
@@ -107,8 +111,9 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
 
         Map<Long, List<PostImage>> imagesByPostId = Collections.unmodifiableMap(
                 postImageRepository
-                        .findByPostIdInAndIsDeletedFalse(postIds)
+                        .findByPostIdIn(postIds)
                         .stream()
+                        .filter(image -> image.getDeletedDate() == null) // 애플리케이션 레벨에서 활성 이미지만 필터링
                         .collect(Collectors.groupingBy(
                                 pi -> pi.getPost().getId(),
                                 Collectors.toUnmodifiableList()

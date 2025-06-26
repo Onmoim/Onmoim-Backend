@@ -21,7 +21,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 		JOIN FETCH c.author
 		WHERE c.post = :post
 		AND c.parent IS NULL
-		AND c.deletedDate IS NULL
 		AND (:cursor IS NULL OR c.id < :cursor)
 		ORDER BY c.id DESC
 		""")
@@ -37,7 +36,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 		SELECT c FROM Comment c
 		JOIN FETCH c.author
 		WHERE c.parent = :parent
-		AND c.deletedDate IS NULL
 		AND (:cursor IS NULL OR c.id < :cursor)
 		ORDER BY c.id DESC
 		""")
@@ -57,13 +55,12 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 	Optional<Comment> findByIdWithAuthor(@Param("commentId") Long commentId);
 
 	/**
-	 * 여러 부모댓글의 답글 개수를 한 번에 조회 (타입 안전한 Projection 사용)
+	 * 여러 부모댓글의 답글 개수를 한 번에 조회
 	 */
 	@Query("""
 		SELECT c.parent.id as parentId, COUNT(c) as replyCount
 		FROM Comment c
 		WHERE c.parent.id IN :parentIds
-		AND c.deletedDate IS NULL
 		GROUP BY c.parent.id
 		""")
 	List<CommentReplyCountProjection> countRepliesByParentIds(@Param("parentIds") List<Long> parentIds);

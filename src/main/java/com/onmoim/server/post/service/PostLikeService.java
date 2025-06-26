@@ -46,7 +46,8 @@ public class PostLikeService {
      * - 좋아요한 상태가 아니면 예외 발생
      */
     public Long unlikePost(GroupPost post, User user) {
-        PostLike postLike = postLikeRepository.findByPostAndUserAndActive(post, user)
+        PostLike postLike = postLikeRepository.findByPostAndUser(post, user)
+                .filter(PostLike::isActive)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_LIKED));
 
         postLike.cancel();
@@ -82,4 +83,4 @@ public class PostLikeService {
                 .build();
         return postLikeRepository.save(postLike);
     }
-} 
+}

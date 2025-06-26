@@ -12,8 +12,8 @@ import com.onmoim.server.user.entity.User;
 @Entity
 @Getter
 @Table(name = "comment", indexes = {
-	@Index(name = "idx_comment_post_parent_deleted", columnList = "post_id,parent_id,deleted_date"),
-	@Index(name = "idx_comment_reply_covering", columnList = "parent_id,deleted_date")
+	@Index(name = "idx_comment_post_parent", columnList = "post_id,parent_id"),
+	@Index(name = "idx_comment_reply", columnList = "parent_id")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Comment extends BaseEntity {

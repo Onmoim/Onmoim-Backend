@@ -31,7 +31,12 @@ public class CommentQueryService {
 
 	public CursorPageResponseDto<CommentResponseDto> getParentComments(GroupPost post, Long cursor) {
 		var all = commentRepository.findParentCommentsByPost(post, cursor);
-		var pagePlusOne = all.stream()
+
+		var activeComments = all.stream()
+			.filter(comment -> comment.getDeletedDate() == null)
+			.toList();
+
+		var pagePlusOne = activeComments.stream()
 			.limit(CURSOR_PAGE_SIZE + 1)
 			.toList();
 		var hasNext = pagePlusOne.size() > CURSOR_PAGE_SIZE;
@@ -62,7 +67,12 @@ public class CommentQueryService {
 		PostValidationUtils.validateParentComment(parent);
 
 		var repliesAll = commentRepository.findRepliesByParent(parent, cursor);
-		var repliesPlusOne = repliesAll.stream()
+
+		var activeReplies = repliesAll.stream()
+			.filter(reply -> reply.getDeletedDate() == null)
+			.toList();
+
+		var repliesPlusOne = activeReplies.stream()
 			.limit(CURSOR_PAGE_SIZE + 1)
 			.toList();
 		var hasNext = repliesPlusOne.size() > CURSOR_PAGE_SIZE;
@@ -99,6 +109,6 @@ public class CommentQueryService {
 		return comments.stream()
 			.map(Comment::getId)
 			.reduce((first, second) -> second)
-			.orElseThrow(() -> new IllegalStateException("댓글 리스트가 비어 있습니다."));
+			.orElseThrow(() -> new CustomException(ErrorCode.COMMENT_NOT_FOUND));
 	}
 }

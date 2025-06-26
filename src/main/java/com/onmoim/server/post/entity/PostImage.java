@@ -14,7 +14,7 @@ import com.onmoim.server.common.BaseEntity;
 @Getter
 @IdClass(PostImageId.class)
 @Table(name = "post_image", indexes = {
-    @Index(name = "idx_post_image_batch", columnList = "post_id,deleted_date")
+    @Index(name = "idx_post_image_batch", columnList = "post_id")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PostImage extends BaseEntity {

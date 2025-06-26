@@ -16,9 +16,9 @@ import com.onmoim.server.user.entity.User;
 @Getter
 @Table(
 	name = "post_likes",
-	indexes = {@Index(name = "idx_post_likes_covering",
-		columnList = "post_id,deleted_date,user_id"
-		)
+	indexes = {
+		@Index(name = "idx_post_likes_batch", columnList = "post_id"),
+		@Index(name = "idx_post_likes_user", columnList = "user_id,post_id")
 	}
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -44,7 +44,7 @@ public class PostLike extends BaseEntity {
 	}
 
 	/**
-	 * 좋아요 활성화 (논리삭제 복구)
+	 * 좋아요 활성화
 	 */
 	public void active() {
 		super.restore();
