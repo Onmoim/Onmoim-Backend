@@ -350,7 +350,7 @@ public class MeetingService {
 	)
 	{
 		// d-day 가까운 순서로 모임 일정 조회
-		List<Meeting> meetings = meetingQueryService.getUpcomingMeetingsByDday(limit, groupId);
+		List<Meeting> meetings = meetingQueryService.getUpcomingMeetingsByDday(groupId,limit);
 
 		// 일정 id 추출
 		List<Long> meetingIds = meetings.stream().map(Meeting::getId).toList();
