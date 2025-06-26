@@ -17,7 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.onmoim.server.post.repository.PostLikeRepository;
 import com.onmoim.server.post.vo.PostLikeInfo;
-import com.onmoim.server.post.vo.PostLikeBatchResult;
+import com.onmoim.server.post.dto.internal.PostLikeBatchResult;
 
 @ExtendWith(MockitoExtension.class)
 class PostLikeQueryServiceTest {

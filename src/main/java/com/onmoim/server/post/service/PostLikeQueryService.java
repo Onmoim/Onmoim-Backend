@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import com.onmoim.server.post.repository.PostLikeRepository;
-import com.onmoim.server.post.vo.PostLikeBatchResult;
+import com.onmoim.server.post.dto.internal.PostLikeBatchResult;
 import com.onmoim.server.post.vo.PostLikeInfo;
 
 /**
@@ -58,7 +58,8 @@ public class PostLikeQueryService {
      * 여러 게시글의 좋아요 정보를 한 번에 조회
      */
     public Map<Long, PostLikeInfo> getPostLikeInfoMap(List<Long> postIds, Long userId) {
-        return getPostLikeBatchResult(postIds, userId).likeInfoByPostId();
+        PostLikeBatchResult batchResult = getPostLikeBatchResult(postIds, userId);
+        return batchResult.likeInfoByPostId();
     }
 
     public PostLikeBatchResult getPostLikeBatchResult(List<Long> postIds, Long userId) {
@@ -89,7 +90,6 @@ public class PostLikeQueryService {
                         PostLikeRepository.PostLikeCountProjection::getLikeCount
                 ));
 
-        // 좋아요가 없는 게시글도 0으로 채워넣기
         return postIds.stream()
                 .collect(Collectors.toMap(
                         postId -> postId,

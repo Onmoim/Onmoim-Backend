@@ -271,6 +271,6 @@ class CommentQueryServiceTest {
 
         verify(commentRepository).findByIdWithAuthor(commentId);
         verify(commentRepository).findRepliesByParent(parentComment2, cursor);
-        verify(commentRepository).countRepliesByParentId(commentId);
+        verify(commentRepository).countRepliesByParentIds(Arrays.asList(2L));
     }
 }

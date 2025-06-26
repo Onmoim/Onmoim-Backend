@@ -7,8 +7,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import com.onmoim.server.group.entity.Group;
-import com.onmoim.server.post.vo.PostBatchQueryResult;
-import com.onmoim.server.post.vo.PostLikeBatchResult;
+import com.onmoim.server.post.dto.internal.PostBatchQueryResult;
+import com.onmoim.server.post.dto.internal.PostLikeBatchResult;
 import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPost;
@@ -16,6 +16,7 @@ import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.entity.PostImage;
 import com.onmoim.server.post.entity.QGroupPost;
 import com.onmoim.server.post.service.PostLikeQueryService;
+import com.onmoim.server.post.vo.PostLikeInfo;
 
 
 @RequiredArgsConstructor
