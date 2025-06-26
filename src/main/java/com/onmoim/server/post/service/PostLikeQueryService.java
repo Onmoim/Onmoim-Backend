@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 import com.onmoim.server.post.repository.PostLikeRepository;
 import com.onmoim.server.post.dto.internal.PostLikeBatchResult;
-import com.onmoim.server.post.vo.PostLikeInfo;
+import com.onmoim.server.post.entity.vo.PostLikeInfo;
 
 /**
  * 게시글 좋아요 조회 서비스

@@ -77,7 +77,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 	}
 
 
-
 	/**
 	 * 작성자와 댓글 ID로 댓글 조회 (권한 확인용)
 	 */

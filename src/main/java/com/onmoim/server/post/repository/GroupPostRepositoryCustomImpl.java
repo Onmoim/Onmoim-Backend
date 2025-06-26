@@ -16,8 +16,6 @@ import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.entity.PostImage;
 import com.onmoim.server.post.entity.QGroupPost;
 import com.onmoim.server.post.service.PostLikeQueryService;
-import com.onmoim.server.post.vo.PostLikeInfo;
-
 
 @RequiredArgsConstructor
 public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom {

@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.Set;
 
-import com.onmoim.server.post.vo.PostLikeInfo;
+import com.onmoim.server.post.entity.vo.PostLikeInfo;
 
 /**
  * 게시글 좋아요 배치 조회 결과 DTO

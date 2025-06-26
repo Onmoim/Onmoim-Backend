@@ -16,14 +16,8 @@ import com.onmoim.server.user.entity.User;
 @Getter
 @Table(
 	name = "post_likes",
-	indexes = {
-		@Index(
-			name = "idx_post_likes_post",
-			columnList = "post_id"
-		),
-		@Index(
-			name = "idx_post_likes_user_post",
-			columnList = "user_id,post_id"
+	indexes = {@Index(name = "idx_post_likes_covering",
+		columnList = "post_id,deleted_date,user_id"
 		)
 	}
 )

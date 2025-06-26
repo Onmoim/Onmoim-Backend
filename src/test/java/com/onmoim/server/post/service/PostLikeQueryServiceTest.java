@@ -6,7 +6,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.onmoim.server.post.repository.PostLikeRepository;
-import com.onmoim.server.post.vo.PostLikeInfo;
+import com.onmoim.server.post.entity.vo.PostLikeInfo;
 import com.onmoim.server.post.dto.internal.PostLikeBatchResult;
 
 @ExtendWith(MockitoExtension.class)
@@ -130,7 +129,7 @@ class PostLikeQueryServiceTest {
         assertThat(result.isLikedByUser(1L)).isTrue();   // 1번 게시글은 좋아요
         assertThat(result.isLikedByUser(2L)).isFalse();  // 2번 게시글은 좋아요 안함
         assertThat(result.getLikedPostCount()).isEqualTo(1L);
-        
+
         verify(postLikeRepository).countActiveLikesByPostIds(postIds);
         verify(postLikeRepository).findLikedPostIdsByUserAndPostIds(postIds, userId);
     }
@@ -164,7 +163,7 @@ class PostLikeQueryServiceTest {
         assertThat(result.isLikedByUser(1L)).isFalse(); // 비로그인 사용자는 모두 false
         assertThat(result.isLikedByUser(2L)).isFalse();
         assertThat(result.getLikedPostCount()).isEqualTo(0L);
-        
+
         verify(postLikeRepository).countActiveLikesByPostIds(postIds);
     }
 

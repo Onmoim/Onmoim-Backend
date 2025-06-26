@@ -14,11 +14,16 @@ import com.onmoim.server.user.entity.User;
 /**
  * 모임 게시글 엔티티
  */
+// 현재 type 컬럼은 카더널리티가 낮지만,
+// 공지만 보기, 자유게시판만 보기 같은 기능이 많습니다.
+// group_id, type, deleted_date를 복합 인덱스로 설정했는데,
+// 이렇게 type을 포함시키는 것이 실질적인 성능 향상에 도움이 될까요?
 @Entity
 @Getter
-@Table(name = "post", indexes = {@Index(name = "idx_post_group", columnList = "group_id")
-}
-)
+@Table(name = "post", indexes = {
+	@Index(name = "idx_post_group_type_deleted", columnList = "group_id,type,deleted_date"),
+	@Index(name = "idx_post_author_deleted", columnList = "author_id,deleted_date")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GroupPost extends BaseEntity {
 
