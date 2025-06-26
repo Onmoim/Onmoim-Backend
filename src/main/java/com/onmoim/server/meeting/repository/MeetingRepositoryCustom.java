@@ -29,7 +29,7 @@ public interface MeetingRepositoryCustom {
     );
 
     /**
-     * 그룹의 D-day가 가까운 일정 조회 (DB에서 limit 적용)
+     * 그룹의 D-day가 가까운 일정 조회
      */
     List<Meeting> findUpcomingMeetingsByDday(Long groupId, int limit);
 }
