@@ -15,6 +15,8 @@ import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.repository.GroupPostRepository;
+import com.onmoim.server.post.util.PostValidationUtils;
+import com.onmoim.server.post.entity.vo.PostLikeInfo;
 
 /**
  * 모임 게시글 조회용 Service
@@ -27,31 +29,17 @@ public class GroupPostQueryService {
     private final GroupPostRepository groupPostRepository;
     private final GroupQueryService groupQueryService;
     private final GroupUserQueryService groupUserQueryService;
+    private final PostLikeQueryService postLikeQueryService;
 
     /**
-     * 게시글 조회 - 존재하지 않으면 예외 발생
+     * 게시글 조회
      */
     public GroupPost findById(Long postId) {
-        return groupPostRepository.findById(postId)
+        GroupPost post = groupPostRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
-    }
 
-    /**
-     * 게시글이 해당 그룹에 속하는지 확인
-     */
-    public void validatePostBelongsToGroup(GroupPost post, Long groupId) {
-        if (!post.getGroup().getId().equals(groupId)) {
-            throw new CustomException(ErrorCode.POST_NOT_FOUND);
-        }
-    }
-
-    /**
-     * 사용자가 게시글 작성자인지 확인
-     */
-    public void validatePostAuthor(GroupPost post, Long userId) {
-        if (!post.getAuthor().getId().equals(userId)) {
-            throw new CustomException(ErrorCode.DENIED_UNAUTHORIZED_USER);
-        }
+        PostValidationUtils.validatePostNotDeleted(post);
+        return post;
     }
 
     /**
@@ -65,6 +53,30 @@ public class GroupPostQueryService {
     }
 
     /**
+     * 게시글 접근 권한 통합 검증 (댓글 작성/답글 작성용)
+     * - 게시글 존재 확인
+     * - 게시글이 해당 그룹에 속하는지 확인
+     * - 사용자가 그룹 멤버인지 확인
+     */
+    public GroupPost validatePostAccess(Long postId, Long groupId, Long userId) {
+        GroupPost post = findById(postId);
+        post.validateBelongsToGroup(groupId);
+        validateGroupMembership(groupId, userId);
+        return post;
+    }
+
+    /**
+     * 게시글 조회 권한 검증 (댓글 목록 조회용)
+     * - 게시글 존재 확인
+     * - 게시글이 해당 그룹에 속하는지 확인
+     */
+    public GroupPost validatePostReadAccess(Long postId, Long groupId) {
+        GroupPost post = findById(postId);
+        post.validateBelongsToGroup(groupId);
+        return post;
+    }
+
+    /**
      * 게시글 저장
      */
     @Transactional
@@ -75,30 +87,37 @@ public class GroupPostQueryService {
     /**
      * 단일 게시글 상세 조회
      */
-    public GroupPostResponseDto getPost(Long groupId, Long postId) {
+    public GroupPostResponseDto getPost(Long groupId, Long postId, Long userId) {
         groupQueryService.getById(groupId);
         GroupPost post = findById(postId);
-        validatePostBelongsToGroup(post, groupId);
+        post.validateBelongsToGroup(groupId);
 
-        return GroupPostResponseDto.fromEntity(post);
+        PostLikeInfo likeInfo = postLikeQueryService.getPostLikeInfo(postId, userId);
+
+        return GroupPostResponseDto.fromEntityWithLikes(
+                post,
+                likeInfo.likeCount(),
+                likeInfo.isLiked()
+        );
     }
 
     /**
-     * 커서 기반 페이징을 이용한 게시글 목록 조회 (N+1 문제 해결)
+     * 커서 기반 페이징을 이용한 게시글 목록 조회
      */
     public CursorPageResponseDto<GroupPostResponseDto> getPosts(
             Long groupId,
             GroupPostType type,
-            CursorPageRequestDto request
+            CursorPageRequestDto request,
+            Long userId
     ) {
         Group group = groupQueryService.getById(groupId);
 
-        // 최적화된 메서드 사용 - 게시글과 이미지를 함께 조회
-        return groupPostRepository.findPostsWithImages(
+        return groupPostRepository.findPostsWithImagesAndLikes(
                 group,
                 type,
                 request.getCursorId(),
-                request.getSize()
+                request.getSize(),
+                userId
         );
     }
 }

@@ -7,30 +7,32 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.post.dto.internal.PostBatchQueryResult;
+import com.onmoim.server.post.dto.internal.PostLikeBatchResult;
 import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPost;
 import com.onmoim.server.post.entity.GroupPostType;
 import com.onmoim.server.post.entity.PostImage;
 import com.onmoim.server.post.entity.QGroupPost;
+import com.onmoim.server.post.service.PostLikeQueryService;
 
-/**
- * 모임 게시글을 위한 커스텀 레포지토리 구현체 (Querydsl 구현)
- */
 @RequiredArgsConstructor
 public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
     private final PostImageRepository postImageRepository;
+    private final PostLikeQueryService postLikeQueryService;
+
 
     @Override
-    public CursorPageResponseDto<GroupPostResponseDto> findPostsWithImages(
+    public CursorPageResponseDto<GroupPostResponseDto> findPostsWithImagesAndLikes(
             Group group,
             GroupPostType type,
             Long cursorId,
-            int size
+            int size,
+            Long userId
     ) {
-
         BooleanBuilder predicate = buildPredicate(group, type, cursorId);
 
         Deque<GroupPost> pagedPosts = fetchPagedPosts(predicate, size);
@@ -38,7 +40,7 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
         boolean hasNext = pagedPosts.size() > size;
         Long nextCursorId = extractNextCursor(pagedPosts, size, hasNext);
 
-        List<GroupPostResponseDto> dtos = mapToDtoWithImages(pagedPosts);
+        List<GroupPostResponseDto> dtos = mapToDtoWithImagesAndLikes(pagedPosts, userId);
 
         return CursorPageResponseDto.<GroupPostResponseDto>builder()
                 .content(dtos)
@@ -50,8 +52,7 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
     private BooleanBuilder buildPredicate(Group group, GroupPostType type, Long cursorId) {
         QGroupPost q = QGroupPost.groupPost;
         BooleanBuilder b = new BooleanBuilder()
-                .and(q.group.id.eq(group.getId()))
-                .and(q.deletedDate.isNull());
+                .and(q.group.id.eq(group.getId()));
 
         if (type != null && type != GroupPostType.ALL) {
             b.and(q.type.eq(type));
@@ -66,11 +67,18 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
         QGroupPost q = QGroupPost.groupPost;
         List<GroupPost> fetched = queryFactory
                 .selectFrom(q)
+                .join(q.author).fetchJoin()
+                .join(q.group).fetchJoin()
                 .where(predicate)
                 .orderBy(q.id.desc())
                 .limit((long) size + 1)
                 .fetch();
-        return new LinkedList<>(fetched);
+
+        List<GroupPost> activePosts = fetched.stream()
+                .filter(post -> post.getDeletedDate() == null)
+                .toList();
+
+        return new LinkedList<>(activePosts);
     }
 
     private Long extractNextCursor(Deque<GroupPost> posts, int size, boolean hasNext) {
@@ -79,30 +87,41 @@ public class GroupPostRepositoryCustomImpl implements GroupPostRepositoryCustom 
         return posts.getLast().getId();
     }
 
-    private List<GroupPostResponseDto> mapToDtoWithImages(Collection<GroupPost> posts) {
+    private List<GroupPostResponseDto> mapToDtoWithImagesAndLikes(Collection<GroupPost> posts, Long userId) {
         if (posts.isEmpty()) {
             return Collections.emptyList();
         }
 
-        List<Long> ids = posts.stream()
+        PostBatchQueryResult batchResult = createBatchQueryResult(posts, userId);
+
+        return posts.stream()
+                .map(post -> GroupPostResponseDto.fromEntityWithImagesAndLikes(
+                        post,
+                        batchResult.getImagesForPost(post.getId()),
+                        batchResult.getLikeCountForPost(post.getId()),
+                        batchResult.isLikedByUser(post.getId())
+                ))
+                .toList();
+    }
+
+    private PostBatchQueryResult createBatchQueryResult(Collection<GroupPost> posts, Long userId) {
+        List<Long> postIds = posts.stream()
                 .map(GroupPost::getId)
                 .toList();
 
         Map<Long, List<PostImage>> imagesByPostId = Collections.unmodifiableMap(
                 postImageRepository
-                        .findByPostIdInAndIsDeletedFalse(ids)
+                        .findByPostIdIn(postIds)
                         .stream()
+                        .filter(image -> image.getDeletedDate() == null) // 애플리케이션 레벨에서 활성 이미지만 필터링
                         .collect(Collectors.groupingBy(
                                 pi -> pi.getPost().getId(),
                                 Collectors.toUnmodifiableList()
                         ))
         );
 
-        return posts.stream()
-                .map(post -> GroupPostResponseDto.fromEntityWithImages(
-                        post,
-                        imagesByPostId.getOrDefault(post.getId(), Collections.emptyList())
-                ))
-                .toList();
+        PostLikeBatchResult likeBatchResult = postLikeQueryService.getPostLikeBatchResult(postIds, userId);
+
+        return PostBatchQueryResult.of(imagesByPostId, likeBatchResult.likeInfoByPostId());
     }
 }

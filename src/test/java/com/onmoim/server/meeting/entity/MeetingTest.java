@@ -109,15 +109,18 @@ class MeetingTest {
 	@DisplayName("일정 참석 가능 여부 확인 - 정상 상황")
 	void canJoin_Success() {
 		// given
+		Group mockGroup = createMockGroup(1L);
+		User mockUser = createUser(1L);
+		
 		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
+			.group(mockGroup)
 			.type(MeetingType.FLASH)
 			.title("테스트 일정")
 			.startAt(LocalDateTime.now().plusDays(7)) // 충분히 미래로 설정
 			.placeName("테스트 장소")
 			.capacity(10)
 			.cost(0)
-			.creatorId(1L)
+			.creator(mockUser)
 			.build();
 
 		// when & then
@@ -128,16 +131,7 @@ class MeetingTest {
 	@DisplayName("일정 참석 불가 - 정원 초과")
 	void canJoin_Fail_CapacityFull() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(7))
-			.placeName("테스트 장소")
-			.capacity(2)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.FLASH, LocalDateTime.now().plusDays(7), 2);
 
 		// 정원까지 참석 처리
 		meeting.join();
@@ -152,16 +146,7 @@ class MeetingTest {
 	@DisplayName("일정 참석 불가 - 이미 시작됨")
 	void canJoin_Fail_AlreadyStarted() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().minusHours(1)) // 과거 일정
-			.placeName("테스트 장소")
-			.capacity(10)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.FLASH, LocalDateTime.now().minusHours(1), 10);
 
 		// when & then
 		assertThat(meeting.canJoin()).isFalse();
@@ -172,16 +157,7 @@ class MeetingTest {
 	@DisplayName("일정 참석 처리 성공")
 	void join_Success() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(7))
-			.placeName("테스트 장소")
-			.capacity(10)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.FLASH, LocalDateTime.now().plusDays(7), 10);
 
 		int initialCount = meeting.getJoinCount();
 
@@ -197,16 +173,7 @@ class MeetingTest {
 	@DisplayName("일정 참석 처리 - 정원 가득 차면 FULL 상태로 변경")
 	void join_StatusChangesToFull() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(7)) // 충분히 미래로 설정
-			.placeName("테스트 장소")
-			.capacity(2)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.FLASH, LocalDateTime.now().plusDays(7), 2);
 
 		// when
 		meeting.join();
@@ -221,16 +188,7 @@ class MeetingTest {
 	@DisplayName("일정 참석 처리 실패 - 정원 초과")
 	void join_Fail_CapacityExceeded() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(7)) // 충분히 미래로 설정
-			.placeName("테스트 장소")
-			.capacity(1)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.FLASH, LocalDateTime.now().plusDays(7), 1);
 
 		meeting.join(); // 정원 가득
 
@@ -244,16 +202,7 @@ class MeetingTest {
 	@DisplayName("일정 참석 취소 성공")
 	void leave_Success() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(7)) // 충분히 미래로 설정
-			.placeName("테스트 장소")
-			.capacity(10)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.FLASH, LocalDateTime.now().plusDays(7), 10);
 
 		meeting.join();
 		meeting.join();
@@ -270,16 +219,7 @@ class MeetingTest {
 	@DisplayName("일정 참석 취소 - FULL에서 OPEN으로 상태 변경")
 	void leave_StatusChangesToOpen() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(7)) // 충분히 미래로 설정
-			.placeName("테스트 장소")
-			.capacity(2)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.FLASH, LocalDateTime.now().plusDays(7), 2);
 
 		meeting.join();
 		meeting.join(); // FULL 상태
@@ -296,16 +236,7 @@ class MeetingTest {
 	@DisplayName("일정 참석 취소 실패 - 이미 시작되었고 참석자가 2명 이상")
 	void leave_Fail_AlreadyStarted() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().minusHours(1)) // 과거 일정
-			.placeName("테스트 장소")
-			.capacity(10)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.FLASH, LocalDateTime.now().minusHours(1), 10);
 
 		// 참석자 2명 추가 (자동 삭제 조건을 벗어나도록)
 		meeting.creatorJoin(); // 1명
@@ -321,16 +252,7 @@ class MeetingTest {
 	@DisplayName("일정 참석 취소 성공 - 이미 시작되었지만 참석자가 1명 이하 (자동 삭제 조건)")
 	void leave_Success_AlreadyStartedButAutoDeleteCondition() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().minusHours(1)) // 과거 일정
-			.placeName("테스트 장소")
-			.capacity(10)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.FLASH, LocalDateTime.now().minusHours(1), 10);
 
 		// 참석자 1명만 추가 (자동 삭제 조건)
 		meeting.creatorJoin(); // 1명
@@ -346,16 +268,7 @@ class MeetingTest {
 	@DisplayName("자동 삭제 대상 확인 - 참석자 1명 이하이고, 일정이 시작된 경우")
 	void shouldBeAutoDeleted_True() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(1)) // 미래 시간으로 생성
-			.placeName("테스트 장소")
-			.capacity(10)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.FLASH, LocalDateTime.now().plusDays(1), 10);
 
 		meeting.join(); // 1명 참석 (미래 모임이므로 정상적으로 참여 가능)
 
@@ -376,16 +289,7 @@ class MeetingTest {
 	@DisplayName("자동 삭제 대상 확인 실패 - 일정이 아직 시작되지 않은 경우")
 	void shouldBeAutoDeleted_False_NotStarted() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.FLASH)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusDays(1)) // 일정이 미래
-			.placeName("테스트 장소")
-			.capacity(10)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.FLASH, LocalDateTime.now().plusDays(1), 10);
 
 		meeting.join(); // 1명 참석
 
@@ -397,16 +301,7 @@ class MeetingTest {
 	@DisplayName("일정 수정 가능 여부 확인 - 시작 전")
 	void canBeUpdated_Success() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.REGULAR)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().plusHours(1)) // 1시간 후 (시작 전)
-			.placeName("테스트 장소")
-			.capacity(10)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.REGULAR, LocalDateTime.now().plusHours(1), 10);
 
 		// when & then
 		assertThat(meeting.canBeUpdated()).isTrue();
@@ -416,16 +311,7 @@ class MeetingTest {
 	@DisplayName("일정 수정 불가 - 이미 시작됨")
 	void canBeUpdated_Fail_AlreadyStarted() {
 		// given
-		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
-			.type(MeetingType.REGULAR)
-			.title("테스트 일정")
-			.startAt(LocalDateTime.now().minusHours(1)) // 1시간 전 (이미 시작됨)
-			.placeName("테스트 장소")
-			.capacity(10)
-			.cost(0)
-			.creatorId(1L)
-			.build();
+		Meeting meeting = createTestMeeting(MeetingType.REGULAR, LocalDateTime.now().minusHours(1), 10);
 
 		// when & then
 		assertThat(meeting.canBeUpdated()).isFalse();
@@ -435,8 +321,11 @@ class MeetingTest {
 	@DisplayName("일정 정보 수정")
 	void updateMeetingInfo_Success() {
 		// given
+		Group mockGroup = createMockGroup(1L);
+		User mockUser = createUser(1L);
+		
 		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(1L)
+			.group(mockGroup)
 			.type(MeetingType.REGULAR)
 			.title("원래 제목")
 			.startAt(LocalDateTime.now().plusDays(2))
@@ -444,7 +333,7 @@ class MeetingTest {
 			.geoPoint(new GeoPoint(37.498, 127.027))
 			.capacity(10)
 			.cost(1000)
-			.creatorId(1L)
+			.creator(mockUser)
 			.build();
 
 		// when
@@ -499,8 +388,11 @@ class MeetingTest {
 	//Helper Methods
 
 	private Meeting createRegularMeeting() {
+		Group mockGroup = createMockGroup(1L);
+		User mockUser = createUser(1L);
+		
 		return Meeting.meetingCreateBuilder()
-			.groupId(1L)
+			.group(mockGroup)
 			.type(MeetingType.REGULAR)
 			.title("정기모임 테스트")
 			.startAt(LocalDateTime.now().plusDays(1))
@@ -508,13 +400,16 @@ class MeetingTest {
 			.geoPoint(new GeoPoint(37.498, 127.027))
 			.capacity(10)
 			.cost(0)
-			.creatorId(1L)
+			.creator(mockUser)
 			.build();
 	}
 
 	private Meeting createFlashMeeting() {
+		Group mockGroup = createMockGroup(1L);
+		User mockUser = createUser(1L);
+		
 		return Meeting.meetingCreateBuilder()
-			.groupId(1L)
+			.group(mockGroup)
 			.type(MeetingType.FLASH)
 			.title("번개모임 테스트")
 			.startAt(LocalDateTime.now().plusDays(1)) // 충분히 미래로 설정
@@ -522,13 +417,16 @@ class MeetingTest {
 			.geoPoint(new GeoPoint(37.498, 127.027))
 			.capacity(5)
 			.cost(0)
-			.creatorId(1L)
+			.creator(mockUser)
 			.build();
 	}
 
 	private Meeting createFlashMeetingWithCreator(Long creatorId) {
+		Group mockGroup = createMockGroup(1L);
+		User mockUser = createUser(creatorId);
+		
 		return Meeting.meetingCreateBuilder()
-			.groupId(1L)
+			.group(mockGroup)
 			.type(MeetingType.FLASH)
 			.title("번개모임 테스트")
 			.startAt(LocalDateTime.now().plusDays(1)) // 충분히 미래로 설정
@@ -536,7 +434,7 @@ class MeetingTest {
 			.geoPoint(new GeoPoint(37.498, 127.027))
 			.capacity(5)
 			.cost(0)
-			.creatorId(creatorId)
+			.creator(mockUser)
 			.build();
 	}
 
@@ -557,6 +455,38 @@ class MeetingTest {
 		}
 
 		return user;
+	}
+
+	private Group createMockGroup(Long id) {
+		Group group = Group.builder()
+			.name("테스트 그룹")
+			.capacity(100)
+			.build();
+
+		try {
+			java.lang.reflect.Field idField = Group.class.getDeclaredField("id");
+			idField.setAccessible(true);
+			idField.set(group, id);
+		} catch (Exception e) {
+		}
+
+		return group;
+	}
+
+	private Meeting createTestMeeting(MeetingType type, LocalDateTime startAt, int capacity) {
+		Group mockGroup = createMockGroup(1L);
+		User mockUser = createUser(1L);
+		
+		return Meeting.meetingCreateBuilder()
+			.group(mockGroup)
+			.type(type)
+			.title("테스트 일정")
+			.startAt(startAt)
+			.placeName("테스트 장소")
+			.capacity(capacity)
+			.cost(0)
+			.creator(mockUser)
+			.build();
 	}
 
 	private GroupUser createGroupUser(User user, Status status) {

@@ -13,6 +13,9 @@ import com.onmoim.server.post.dto.request.GroupPostRequestDto;
 import com.onmoim.server.post.dto.response.CursorPageResponseDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPostType;
+import com.onmoim.server.post.entity.GroupPost;
+import com.onmoim.server.user.entity.User;
+import com.onmoim.server.user.service.UserQueryService;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,8 @@ public class GroupPostService {
 
     private final GroupPostQueryService groupPostQueryService;
     private final GroupPostCommandService groupPostCommandService;
+    private final PostLikeService postLikeService;
+    private final UserQueryService userQueryService;
 
     /**
      * 모임 게시글 작성
@@ -40,25 +45,28 @@ public class GroupPostService {
         );
     }
 
+
     /**
-     * 모임 게시글 조회
+     * 모임 게시글 조회 (좋아요 정보 포함)
      */
-    public GroupPostResponseDto getPost(
+    public GroupPostResponseDto getPostWithLikes(
             Long groupId,
-            Long postId
+            Long postId,
+            Long userId
     ) {
-        return groupPostQueryService.getPost(groupId, postId);
+        return groupPostQueryService.getPost(groupId, postId, userId);
     }
 
     /**
      * 커서 기반 페이징을 이용한 게시글 목록 조회
      */
-    public CursorPageResponseDto<GroupPostResponseDto> getPosts(
+    public CursorPageResponseDto<GroupPostResponseDto> getPostsWithLikes(
             Long groupId,
             GroupPostType type,
-            CursorPageRequestDto request
+            CursorPageRequestDto request,
+            Long userId
     ) {
-        return groupPostQueryService.getPosts(groupId, type, request);
+        return groupPostQueryService.getPosts(groupId, type, request, userId);
     }
 
     /**
@@ -92,4 +100,23 @@ public class GroupPostService {
     ) {
         groupPostCommandService.deletePost(groupId, postId, userId);
     }
+
+    /**
+     * 게시글 좋아요 토글
+     */
+    @Transactional
+    public boolean togglePostLike(
+            Long groupId,
+            Long postId,
+            Long userId
+    ) {
+        GroupPost post = groupPostQueryService.findById(postId);
+        post.validateBelongsToGroup(groupId);
+        groupPostQueryService.validateGroupMembership(groupId, userId);
+
+        User user = userQueryService.findById(userId);
+        return postLikeService.toggleLike(post, user);
+    }
+
+
 }

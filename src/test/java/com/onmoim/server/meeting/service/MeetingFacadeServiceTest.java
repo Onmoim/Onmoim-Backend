@@ -341,14 +341,14 @@ class MeetingFacadeServiceTest {
 
 	private Meeting createMeeting(Group group, User creator, MeetingType type, int capacity) {
 		Meeting meeting = Meeting.meetingCreateBuilder()
-			.groupId(group.getId())
+			.group(group)
 			.type(type)
 			.title("테스트일정")
 			.startAt(LocalDateTime.now().plusDays(30))
 			.placeName("테스트장소")
 			.capacity(capacity)
 			.cost(0)
-			.creatorId(creator.getId())
+			.creator(creator)
 			.build();
 		meetingRepository.save(meeting);
 		joinUserToMeeting(meeting, creator);

@@ -62,21 +62,18 @@ class GroupPostCommandServiceTest {
 
     @BeforeEach
     void setUp() {
-        // User 객체 생성
         testUser = User.builder()
                 .name("testUser")
                 .build();
-        // User 객체 ID 설정
+
         setId(testUser, 1L);
 
         testGroup = Group.builder()
                 .name("testGroup")
                 .capacity(10)
                 .build();
-        // Group 객체 ID 설정
         setId(testGroup, 1L);
 
-        // GroupPost 객체 생성
         testPost = GroupPost.builder()
                 .title("Test Title")
                 .content("Test Content")
@@ -84,17 +81,15 @@ class GroupPostCommandServiceTest {
                 .group(testGroup)
                 .author(testUser)
                 .build();
-        // GroupPost 객체 ID 설정
+
         setId(testPost, 1L);
 
-        // GroupPostRequestDto 객체 생성
         requestDto = GroupPostRequestDto.builder()
                 .title("Test Title")
                 .content("Test Content")
                 .type(GroupPostType.FREE)
                 .build();
 
-        // MockMultipartFile 리스트 생성
         mockFiles = Arrays.asList(
                 new MockMultipartFile("file", "test1.jpg", "image/jpeg", "test1".getBytes()),
                 new MockMultipartFile("file", "test2.jpg", "image/jpeg", "test2".getBytes())
@@ -130,7 +125,6 @@ class GroupPostCommandServiceTest {
                 .build();
         when(fileStorageService.uploadFile(any(MultipartFile.class), eq("posts"))).thenReturn(uploadResponse);
 
-        // 일괄 저장 처리로 변경
         List<PostImage> mockPostImages = new ArrayList<>();
         Image mockImage = Image.builder().imageUrl("https://test-url.com/test.jpg").build();
         PostImage mockPostImage = PostImage.builder().image(mockImage).post(testPost).build();
@@ -180,19 +174,14 @@ class GroupPostCommandServiceTest {
         Long postId = 1L;
         Long userId = 1L;
 
-        when(groupQueryService.getById(groupId)).thenReturn(testGroup);
         doNothing().when(groupPostQueryService).validateGroupMembership(groupId, userId);
         when(groupPostQueryService.findById(postId)).thenReturn(testPost);
-        doNothing().when(groupPostQueryService).validatePostBelongsToGroup(testPost, groupId);
-        doNothing().when(groupPostQueryService).validatePostAuthor(testPost, userId);
 
         FileUploadResponseDto uploadResponse = FileUploadResponseDto.builder()
                 .fileName("test.jpg")
                 .fileUrl("https://test-url.com/test.jpg")
                 .build();
         when(fileStorageService.uploadFile(any(MultipartFile.class), eq("posts"))).thenReturn(uploadResponse);
-
-        doNothing().when(imagePostService).softDeleteAllByPostId(any());
 
         List<PostImage> mockPostImages = new ArrayList<>();
         Image mockImage = Image.builder().imageUrl("https://test-url.com/test.jpg").build();
@@ -201,18 +190,13 @@ class GroupPostCommandServiceTest {
         when(imagePostService.saveImages(any(), any(GroupPost.class))).thenReturn(mockPostImages);
 
         // when
-        GroupPostResponseDto result = groupPostCommandService.updatePost(groupId, postId, userId, requestDto, mockFiles);
+        groupPostCommandService.updatePost(groupId, postId, userId, requestDto, mockFiles);
 
         // then
-        assertThat(result).isNotNull();
-        assertThat(result.getTitle()).isEqualTo("Test Title");
-        assertThat(result.getContent()).isEqualTo("Test Content");
         verify(groupPostQueryService).validateGroupMembership(groupId, userId);
         verify(groupPostQueryService).findById(postId);
-        verify(groupPostQueryService).validatePostBelongsToGroup(testPost, groupId);
-        verify(groupPostQueryService).validatePostAuthor(testPost, userId);
+
         verify(fileStorageService, times(2)).uploadFile(any(MultipartFile.class), eq("posts"));
-        verify(imagePostService).softDeleteAllByPostId(any());
         verify(imagePostService).saveImages(any(), any(GroupPost.class));
     }
 
@@ -224,13 +208,8 @@ class GroupPostCommandServiceTest {
         Long postId = 1L;
         Long userId = 1L;
 
-        when(groupQueryService.getById(groupId)).thenReturn(testGroup);
         doNothing().when(groupPostQueryService).validateGroupMembership(groupId, userId);
         when(groupPostQueryService.findById(postId)).thenReturn(testPost);
-        doNothing().when(groupPostQueryService).validatePostBelongsToGroup(testPost, groupId);
-        doNothing().when(groupPostQueryService).validatePostAuthor(testPost, userId);
-
-        doNothing().when(imagePostService).softDeleteAllByPostId(any());
 
         // when
         groupPostCommandService.deletePost(groupId, postId, userId);
@@ -238,8 +217,6 @@ class GroupPostCommandServiceTest {
         // then
         verify(groupPostQueryService).validateGroupMembership(groupId, userId);
         verify(groupPostQueryService).findById(postId);
-        verify(groupPostQueryService).validatePostBelongsToGroup(testPost, groupId);
-        verify(groupPostQueryService).validatePostAuthor(testPost, userId);
         verify(imagePostService).softDeleteAllByPostId(any());
     }
 }
