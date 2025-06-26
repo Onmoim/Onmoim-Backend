@@ -1,5 +1,6 @@
 package com.onmoim.server.user.dto.request;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class UpdateProfileRequestDto {
 
 	@NotNull(message = "생년월일은 필수입니다.")
 	@Schema(description = "생년월일")
-	private LocalDateTime birth;
+	private LocalDate birth;
 
 	@NotNull(message = "지역은 필수입니다.")
 	@Schema(description = "지역 id")

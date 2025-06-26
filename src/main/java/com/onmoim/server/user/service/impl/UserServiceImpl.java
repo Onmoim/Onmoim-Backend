@@ -196,7 +196,7 @@ public class UserServiceImpl implements UserService {
 			user.updateProfile(
 				request.getName(),
 				request.getGender(),
-				request.getBirth(),
+				request.getBirth().atStartOfDay(),
 				location,
 				request.getIntroduction(),
 				fileUploadResponse.getFileUrl()
@@ -206,7 +206,7 @@ public class UserServiceImpl implements UserService {
 			user.updateProfile(
 				request.getName(),
 				request.getGender(),
-				request.getBirth(),
+				request.getBirth().atStartOfDay(),
 				location,
 				request.getIntroduction(),
 				request.getProfileImgUrl()
