@@ -28,6 +28,6 @@ public class SignupRequestDto {
 
 	@NotNull(message = "지역은 필수입니다.")
 	@Schema(description = "지역 id")
-	private Long addressId;
+	private Long locationId;
 
 }

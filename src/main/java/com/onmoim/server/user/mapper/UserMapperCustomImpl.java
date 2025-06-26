@@ -26,10 +26,12 @@ public class UserMapperCustomImpl implements UserMapperCustom {
 	public ProfileResponseDto toProfileResponseDto(User user) {
 		ProfileResponseDto response = userMapper.toProfileResponseDto(user);
 
-		String location = locationRepository.findDongById(user.getAddressId());
+		Long locationId = user.getLocation().getId();
+		String locationName = locationRepository.findDongById(user.getLocation().getId());
 		List<String> categoryList = userCategoryRepository.findCategoryNamesByUserId(user.getId());
 
-		response.setLocation(location);
+		response.setLocationId(locationId);
+		response.setLocationName(locationName);
 		response.setCategoryList(categoryList);
 		return response;
 	}
