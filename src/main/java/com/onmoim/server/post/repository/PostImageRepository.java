@@ -19,12 +19,7 @@ public interface PostImageRepository extends JpaRepository<PostImage, PostImageI
     /**
      * 여러 게시글 ID에 해당하는 이미지들을 일괄 조회
      */
-    @Query("SELECT pi FROM PostImage pi WHERE pi.post.id IN :postIds AND pi.deletedDate IS NULL")
-    List<PostImage> findByPostIdInAndIsDeletedFalse(@Param("postIds") List<Long> postIds);
+    @Query("SELECT pi FROM PostImage pi WHERE pi.post.id IN :postIds")
+    List<PostImage> findByPostIdIn(@Param("postIds") List<Long> postIds);
 
-    /**
-     * 단일 게시글 ID에 해당하는 이미지들 조회
-     */
-    @Query("SELECT pi FROM PostImage pi WHERE pi.post.id = :postId AND pi.deletedDate IS NULL")
-    List<PostImage> findByPostIdAndIsDeletedFalse(@Param("postId") Long postId);
 }

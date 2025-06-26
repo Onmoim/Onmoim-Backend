@@ -29,7 +29,9 @@ public class GroupPostResponseDto {
     private GroupPostType type;
     private LocalDateTime createdDate;
     private LocalDateTime modifiedDate;
-    private List<PostImageDto> images;
+    private List<String> imageUrls;
+    private Long likeCount;
+    private Boolean isLiked;
 
     public static GroupPostResponseDto fromEntity(GroupPost post) {
         return GroupPostResponseDto.builder()
@@ -43,31 +45,39 @@ public class GroupPostResponseDto {
                 .type(post.getType())
                 .createdDate(post.getCreatedDate())
                 .modifiedDate(post.getModifiedDate())
+                .imageUrls(List.of())
+                .likeCount(0L)
+                .isLiked(false)
                 .build();
     }
 
     public static GroupPostResponseDto fromEntityWithImages(GroupPost post, List<PostImage> postImages) {
         GroupPostResponseDto dto = fromEntity(post);
-        dto.images = postImages.stream()
+        dto.imageUrls = postImages.stream()
                 .filter(pi -> pi.getDeletedDate() == null)
-                .map(PostImageDto::fromEntity)
+                .map(pi -> pi.getImage().getImageUrl())
                 .toList();
         return dto;
     }
 
-    @Getter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PostImageDto {
-        private Long id;
-        private String imageUrl;
-
-        public static PostImageDto fromEntity(PostImage postImage) {
-            return PostImageDto.builder()
-                    .id(postImage.getImage().getId())
-                    .imageUrl(postImage.getImage().getImageUrl())
-                    .build();
-        }
+    public static GroupPostResponseDto fromEntityWithLikes(GroupPost post, Long likeCount, Boolean isLiked) {
+        GroupPostResponseDto dto = fromEntity(post);
+        dto.likeCount = likeCount;
+        dto.isLiked = isLiked;
+        return dto;
     }
+
+    public static GroupPostResponseDto fromEntityWithImagesAndLikes(
+            GroupPost post, 
+            List<PostImage> postImages,
+            Long likeCount,
+            Boolean isLiked
+    ) {
+        GroupPostResponseDto dto = fromEntityWithImages(post, postImages);
+        dto.likeCount = likeCount;
+        dto.isLiked = isLiked;
+        return dto;
+    }
+
+
 }

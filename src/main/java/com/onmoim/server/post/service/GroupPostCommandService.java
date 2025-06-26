@@ -13,6 +13,7 @@ import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.implement.GroupQueryService;
+import com.onmoim.server.post.util.constant.PostConstants;
 import com.onmoim.server.post.dto.request.GroupPostRequestDto;
 import com.onmoim.server.post.dto.response.GroupPostResponseDto;
 import com.onmoim.server.post.entity.GroupPost;
@@ -32,15 +33,7 @@ public class GroupPostCommandService {
     private final ImagePostService imagePostService;
     private final FileStorageService fileStorageService;
 
-    // 게시글당 최대 이미지 개수
-    private static final int MAX_IMAGES_PER_POST = 5;
-
-    /**
-     * 이미지 개수 유효성 검증
-     */
-    private List<MultipartFile> validateAndFilterImages(
-            List<MultipartFile> files
-    ) {
+    private List<MultipartFile> validateAndFilterImages(List<MultipartFile> files) {
         if (CollectionUtils.isEmpty(files)) {
             return new ArrayList<>();
         }
@@ -49,39 +42,42 @@ public class GroupPostCommandService {
                 .filter(file -> !file.isEmpty())
                 .toList();
 
-        if (validFiles.size() > MAX_IMAGES_PER_POST) {
+        if (validFiles.size() > PostConstants.MAX_IMAGES_PER_POST) {
             throw new CustomException(ErrorCode.IMAGE_COUNT_EXCEEDED);
         }
 
         return validFiles;
     }
 
+
+    private Image uploadSingleFile(MultipartFile file) {
+        FileUploadResponseDto uploadResult = fileStorageService.uploadFile(
+                file,
+                PostConstants.IMAGE_UPLOAD_PATH
+        );
+
+        return Image.builder()
+                .imageUrl(uploadResult.getFileUrl())
+                .build();
+    }
+
+
+    private List<Image> uploadMultipleFiles(List<MultipartFile> files) {
+        return files.stream()
+                .map(this::uploadSingleFile)
+                .toList();
+    }
+
     /**
      * 이미지 업로드 처리 (최대 5개까지)
      */
-    private List<PostImage> processImageUploads(
-            GroupPost post,
-            List<MultipartFile> files
-    ) {
+    private List<PostImage> processImageUploads(GroupPost post, List<MultipartFile> files) {
         List<MultipartFile> validFiles = validateAndFilterImages(files);
         if (validFiles.isEmpty()) {
             return new ArrayList<>();
         }
 
-        List<Image> images = new ArrayList<>();
-        for (MultipartFile file : validFiles) {
-            FileUploadResponseDto uploadResult =
-                    fileStorageService.uploadFile(
-                            file,
-                            "posts"
-                    );
-
-            Image image = Image.builder()
-                    .imageUrl(uploadResult.getFileUrl())
-                    .build();
-            images.add(image);
-        }
-
+        List<Image> images = uploadMultipleFiles(validFiles);
         return imagePostService.saveImages(images, post);
     }
 
@@ -125,12 +121,11 @@ public class GroupPostCommandService {
             GroupPostRequestDto request,
             List<MultipartFile> files
     ) {
-        groupQueryService.getById(groupId);
         groupPostQueryService.validateGroupMembership(groupId, userId);
 
         GroupPost post = groupPostQueryService.findById(postId);
-        groupPostQueryService.validatePostBelongsToGroup(post, groupId);
-        groupPostQueryService.validatePostAuthor(post, userId);
+        post.validateBelongsToGroup(groupId);
+        post.validateAuthor(userId);
 
         post.update(
                 request.getTitle(),
@@ -155,12 +150,11 @@ public class GroupPostCommandService {
             Long postId,
             Long userId
     ) {
-        groupQueryService.getById(groupId);
         groupPostQueryService.validateGroupMembership(groupId, userId);
 
         GroupPost post = groupPostQueryService.findById(postId);
-        groupPostQueryService.validatePostBelongsToGroup(post, groupId);
-        groupPostQueryService.validatePostAuthor(post, userId);
+        post.validateBelongsToGroup(groupId);
+        post.validateAuthor(userId);
 
         post.softDelete();
         imagePostService.softDeleteAllByPostId(post.getId());

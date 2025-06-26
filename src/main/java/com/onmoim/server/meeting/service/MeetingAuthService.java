@@ -43,7 +43,7 @@ public class MeetingAuthService {
      * 일정 관리 권한 검증 (수정/삭제)
      */
     public GroupUser validateManagePermission(Meeting meeting, Long userId) {
-        GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
+        GroupUser groupUser = getGroupUser(meeting.getGroup().getId(), userId);
 
         if (!meeting.canBeManagedBy(groupUser)) {
             log.warn("일정 관리 권한 없음 - 일정: {}, 사용자: {}, 권한: {}",
@@ -58,7 +58,7 @@ public class MeetingAuthService {
      * 일정 이미지 업로드 권한 검증
      */
     public GroupUser validateImageUploadPermission(Meeting meeting, Long userId) {
-        GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
+        GroupUser groupUser = getGroupUser(meeting.getGroup().getId(), userId);
 
         if (!meeting.canUpdateImageBy(groupUser)) {
             log.warn("이미지 업로드 권한 없음 - 일정: {}, 사용자: {}, 권한: {}",
@@ -73,7 +73,7 @@ public class MeetingAuthService {
      * 일정 이미지 삭제 권한 검증
      */
     public GroupUser validateImageDeletePermission(Meeting meeting, Long userId) {
-        GroupUser groupUser = getGroupUser(meeting.getGroupId(), userId);
+        GroupUser groupUser = getGroupUser(meeting.getGroup().getId(), userId);
 
         if (!meeting.canDeleteImageBy(groupUser)) {
             log.warn("이미지 삭제 권한 없음 - 일정: {}, 사용자: {}, 권한: {}",
