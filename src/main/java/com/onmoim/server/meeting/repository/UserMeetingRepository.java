@@ -51,4 +51,13 @@ public interface UserMeetingRepository extends JpaRepository<UserMeeting, UserMe
 	 */
 	@Query("SELECT um.meeting.id FROM UserMeeting um WHERE um.user.id = :userId")
 	List<Long> findMeetingIdsByUserId(@Param("userId") Long userId);
+
+	/**
+	 * 특정 일정에 대한 사용자 참석 여부 확인
+	 */
+	@Query("SELECT um FROM UserMeeting um "
+		+ "WHERE um.user.id = :userId AND um.meeting.id IN :meetingIds")
+	List<UserMeeting> findByUserAndMeetings(
+		@Param("userId") Long userId,
+		@Param("meetingIds") List<Long> meetingIds);
 }

@@ -18,6 +18,7 @@ import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
 import com.onmoim.server.user.dto.request.SignupRequestDto;
 import com.onmoim.server.user.dto.request.UpdateProfileRequestDto;
 import com.onmoim.server.user.dto.response.ProfileResponseDto;
+import com.onmoim.server.user.dto.response.SignupResponseDto;
 import com.onmoim.server.user.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,9 +59,9 @@ public class UserController {
 			description = "BAD REQUEST - 이미 가입된 유저거나 요청값 오류 발생"
 		)
 	})
-	public ResponseEntity<ResponseHandler<Long>> signup(@RequestBody @Valid SignupRequestDto request) {
-		Long userId = userService.signup(request);
-		return ResponseEntity.ok(ResponseHandler.response(userId));
+	public ResponseEntity<ResponseHandler<SignupResponseDto>> signup(@RequestBody @Valid SignupRequestDto request) {
+		SignupResponseDto response = userService.signup(request);
+		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
 	@PutMapping(value = "/profile/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

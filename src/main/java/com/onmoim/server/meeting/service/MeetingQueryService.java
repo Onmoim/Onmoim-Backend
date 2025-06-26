@@ -11,6 +11,7 @@ import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.meeting.dto.response.MeetingResponseDto;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingType;
+import com.onmoim.server.meeting.entity.UserMeeting;
 import com.onmoim.server.meeting.repository.MeetingRepository;
 import com.onmoim.server.meeting.repository.UserMeetingRepository;
 
@@ -80,5 +81,9 @@ public class MeetingQueryService {
 	 */
 	public List<Meeting> getUpcomingMeetingsByDday(Long groupId, int limit) {
 		return meetingRepository.findUpcomingMeetingsByDday(groupId, limit);
+	}
+
+	public List<UserMeeting> getUserMeetings(Long userId, List<Long> meetingIds) {
+		return userMeetingRepository.findByUserAndMeetings(userId, meetingIds);
 	}
 }

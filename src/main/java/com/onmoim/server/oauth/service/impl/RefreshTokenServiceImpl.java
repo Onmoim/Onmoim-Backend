@@ -24,11 +24,21 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 		String key = getKey(userId);
 		log.info("Redis 저장 시작: key={}, value={}", key, refreshToken);
 
-		redisTemplate.opsForValue().set(
-			key,
-			refreshToken,
-			Duration.ofMillis(tokenProperties.getRefreshExpirationTime())
-		);
+		try {
+			redisTemplate.opsForValue().set(
+				key,
+				refreshToken,
+				Duration.ofMillis(tokenProperties.getRefreshExpirationTime())
+			);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		// redisTemplate.opsForValue().set(
+		// 	key,
+		// 	refreshToken,
+		// 	Duration.ofMillis(tokenProperties.getRefreshExpirationTime())
+		// );
 
 		log.info("Redis 저장 완료: key={}", key);
 	}

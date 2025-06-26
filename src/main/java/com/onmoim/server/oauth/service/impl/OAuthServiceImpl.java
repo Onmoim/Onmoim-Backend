@@ -3,6 +3,7 @@ package com.onmoim.server.oauth.service.impl;
 import static com.onmoim.server.common.exception.ErrorCode.*;
 import static com.onmoim.server.oauth.enumeration.SignupStatus.*;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,6 +22,8 @@ import com.onmoim.server.oauth.service.provider.OAuthProviderFactory;
 import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.security.JwtProvider;
 import com.onmoim.server.user.entity.User;
+import com.onmoim.server.user.entity.UserCategory;
+import com.onmoim.server.user.repository.UserCategoryRepository;
 import com.onmoim.server.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -32,24 +35,23 @@ import lombok.extern.slf4j.Slf4j;
 public class OAuthServiceImpl implements OAuthService {
 
 	private final OAuthProviderFactory oauthProviderFactory;
-	private final GoogleOAuthProvider googleProvider;
-	// private final KakaoOAuthProvider kakaoProvider;
 	private final UserRepository userRepository;
 	private final JwtProvider jwtProvider;
+	private final UserCategoryRepository userCategoryRepository;
 	private final RefreshTokenService refreshTokenService;
 
 	@Override
-	public OAuthResponseDto handleGoogleLogin(String providerName, String authorizationCode) {
+	public OAuthResponseDto handleGoogleLogin(String providerName, String token) {
 		OAuthProvider provider = oauthProviderFactory.getProvider(providerName);
-		OAuthUserDto oAuthUserDto = provider.getUserInfoByAuthorizationCode(authorizationCode);
+		OAuthUserDto oAuthUserDto = provider.getUserInfoByToken(token);
 
 		return processUserLogin(oAuthUserDto, providerName);
 	}
 
 	@Override
-	public OAuthResponseDto handleKakaoLogin(String providerName, String authorizationCode) {
+	public OAuthResponseDto handleKakaoLogin(String providerName, String token) {
 		OAuthProvider provider = oauthProviderFactory.getProvider(providerName);
-		OAuthUserDto oAuthUserDto = provider.getUserInfoByAuthorizationCode(authorizationCode);
+		OAuthUserDto oAuthUserDto = provider.getUserInfoByToken(token);
 
 		return processUserLogin(oAuthUserDto, providerName);
 	}
@@ -71,15 +73,20 @@ public class OAuthServiceImpl implements OAuthService {
 		String refreshToken = jwtProvider.createRefreshToken(authentication);
 		refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
 
-		return new OAuthResponseDto(accessToken, refreshToken, EXISTS);
+		List<UserCategory> userCategoryList = userCategoryRepository.findUserCategoriesByUser(user);
+		if (userCategoryList.isEmpty()) {
+			return new OAuthResponseDto(accessToken, refreshToken, NO_CATEGORY); // 카테고리 없는 경우
+		} else {
+			return new OAuthResponseDto(accessToken, refreshToken, EXISTS);
+		}
 	}
 
-	private Authentication createAuthentication(User user) {
+	public Authentication createAuthentication(User user) {
 		CustomUserDetails userDetails = new CustomUserDetails(user.getId(), user.getEmail(), user.getProvider());
 		return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 	}
 
-	private void setAuthenticationToContext(Authentication authentication) {
+	public void setAuthenticationToContext(Authentication authentication) {
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
 

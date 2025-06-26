@@ -18,6 +18,7 @@ import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.GroupUserId;
@@ -182,79 +183,54 @@ class GroupServiceTest {
 	@DisplayName("모임 회원 조회")
 	void selectGroupMembers() {
 		// given
+		User owner = User.builder()
+			.name("owner")
+			.build();
+		userRepository.save(owner);
+
 		Group group = Group.builder()
 			.name("group")
 			.description("description")
 			.capacity(100)
 			.build();
 		groupRepository.save(group);
+		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
 
-		// 모임원: 34명  모임장: 1
-		for (int i = 0; i < 35; i++) {
-			User user = User.builder().build();
-			userRepository.save(user);
-			if (i == 0) {
-				groupUserRepository.save(GroupUser.create(group, user, Status.OWNER));
-				continue;
+		for(int i = 0 ; i < 50; i++) { // owner + member = 26
+			User member = User.builder()
+				.name("member " + i)
+				.build();
+			userRepository.save(member);
+			if (i % 2 == 0) {
+				groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
 			}
-			groupUserRepository.save(GroupUser.create(group, user, Status.MEMBER));
 		}
 
+		setSecurityContext(owner.getId());
+
 		// expected
-		var size = 10;
-		var groupId = group.getId();
-
-		Long totalCount = groupService.groupMemberCount(groupId);
-		assertThat(totalCount).isEqualTo(35);
-
-		// 1 ~ 11
-		List<GroupUser> groupMembers1 = groupService.getGroupMembers(
-			groupId,
-			null,
-			size);
-
-		assertThat(groupMembers1.size()).isEqualTo(size + 1);
-		groupMembers1.removeLast();
-
-		Long cursorId1 = groupMembers1.getLast().getId().getUserId();
-		System.out.println("cursorId1 = " + cursorId1);
+		List<GroupMember> groupMembers1 = groupService.getGroupMembers(group.getId(), null, 10);
+		assertThat(groupMembers1.size()).isEqualTo(11);
+		// owner 0 2 4 6 8 10 12 14 16 18
 		System.out.println(groupMembers1);
+		GroupMember last1 = groupMembers1.get(9);
+		assertThat(groupMembers1.getFirst().username()).isEqualTo("owner");
+		assertThat(groupMembers1.getLast().username()).isEqualTo("member 18");
 
-		// 11 ~ 20
-		List<GroupUser> groupMembers2 = groupService.getGroupMembers(
-			groupId,
-			cursorId1,
-			size);
-
-		assertThat(groupMembers2.size()).isEqualTo(size + 1);
-		groupMembers2.removeLast();
-
-		Long cursorId2 = groupMembers2.getLast().getId().getUserId();
-		System.out.println("cursorId2 = " + cursorId2);
+		// 18 20 22 24 26 28 30 32 34 36 38
+		List<GroupMember> groupMembers2 = groupService.getGroupMembers(group.getId(), last1.memberId(), 10);
+		assertThat(groupMembers2.size()).isEqualTo(11);
 		System.out.println(groupMembers2);
+		GroupMember last2 = groupMembers2.get(9);
+		assertThat(groupMembers2.getFirst().username()).isEqualTo("member 18");
+		assertThat(groupMembers2.getLast().username()).isEqualTo("member 38");
 
-		// 21 ~ 30
-		List<GroupUser> groupMembers3 = groupService.getGroupMembers(
-			groupId,
-			cursorId2,
-			size);
-
-		assertThat(groupMembers3.size()).isEqualTo(size + 1);
-		groupMembers3.removeLast();
-
-		Long cursorId3 = groupMembers3.getLast().getId().getUserId();
-		System.out.println("cursorId3 = " + cursorId3);
+		List<GroupMember> groupMembers3 = groupService.getGroupMembers(group.getId(), last2.memberId(), 10);
+		assertThat(groupMembers3.size()).isEqualTo(6);
+		// 38 40 42 44 46 48
 		System.out.println(groupMembers3);
-
-		// 31 ~ 35
-		List<GroupUser> groupMembers4 = groupService.getGroupMembers(
-			groupId,
-			cursorId3,
-			size
-		);
-
-		System.out.println(groupMembers4);
-		assertThat(groupMembers4.size()).isEqualTo(5);
+		assertThat(groupMembers3.getFirst().username()).isEqualTo("member 38");
+		assertThat(groupMembers3.getLast().username()).isEqualTo("member 48");
 	}
 
 	@Test
