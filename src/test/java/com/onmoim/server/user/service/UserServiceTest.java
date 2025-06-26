@@ -58,6 +58,7 @@ public class UserServiceTest {
 	@DisplayName("회원가입 성공")
 	void signupSuccess() {
 		// given
+		Location location = locationRepository.save(Location.create("100000", "서울특별시", "강남구", "역삼동", null));
 		SignupRequestDto request = new SignupRequestDto("홍길동", "M", LocalDate.now(), 1L);
 
 		String signupToken = jwtProvider.createSignupToken("google", "1234567890", "test@test.com"); // signupToken 생성
@@ -87,6 +88,8 @@ public class UserServiceTest {
 	@DisplayName("관심사 저장 성공")
 	void createUserCategorySuccess() {
 		// given
+		Location location = locationRepository.save(Location.create("100000", "서울특별시", "강남구", "역삼동", null));
+
 		User user = userRepository.save(User.builder()
 			.oauthId("1234567890")
 			.provider("google")
@@ -94,7 +97,7 @@ public class UserServiceTest {
 			.name("홍길동")
 			.gender("F")
 			.birth(LocalDateTime.now())
-			.addressId(1L)
+			.location(location)
 			.build()
 		);
 
@@ -139,7 +142,7 @@ public class UserServiceTest {
 			.name("홍길동")
 			.gender("F")
 			.birth(LocalDateTime.now())
-			.addressId(location.getId())
+			.location(location)
 			.build()
 		);
 
@@ -154,7 +157,7 @@ public class UserServiceTest {
 
 		// then
 		assertEquals("홍길동", profile.getName());
-		assertEquals("역삼동", profile.getLocation());
+		assertEquals("역삼동", profile.getLocationName());
 	}
 
 }

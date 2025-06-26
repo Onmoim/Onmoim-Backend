@@ -1,5 +1,7 @@
 package com.onmoim.server.initializer;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -20,6 +22,7 @@ import net.datafaker.Faker;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
+import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.repository.LocationRepository;
 import com.onmoim.server.user.entity.User;
@@ -71,7 +74,7 @@ public class DataInitializer {
 	 * 유저 데이터 생성
 	 */
 	@Bean
-	@Order(2)
+	@Order(3)
 	public CommandLineRunner initDummyUsers() {
 		return args -> {
 			// User 데이터 존재할 경우 다시 들어가지 않도록 함
@@ -82,13 +85,16 @@ public class DataInitializer {
 
 			Faker faker = new Faker(new Locale("ko"));
 
+			Location location = locationRepository.findById(166L)
+				.orElseThrow(() -> new CustomException(LOCATION_NOT_FOUND));
+
 			// 1. 유저 생성
 			for (int i = 0; i < 100; i++) {
 				User user = User.builder()
 					.name(faker.name().fullName().replaceAll("\\s+", ""))
 					.gender(faker.gender().binaryTypes().equalsIgnoreCase("Male") ? "M" : "F")
 					.birth(LocalDateTime.now())
-					.addressId(faker.number().numberBetween(1L, 300L))
+					.location(location)
 					.build();
 
 				userRepository.save(user);
@@ -120,7 +126,7 @@ public class DataInitializer {
 	 * 지역 데이터 생성
 	 */
 	@Bean
-	@Order(3)
+	@Order(2)
 	public CommandLineRunner initLocations(LocationRepository locationRepository) {
 		return args -> {
 			// Location 데이터 존재할 경우 다시 들어가지 않도록 함

@@ -22,7 +22,8 @@ import com.onmoim.server.common.s3.service.FileStorageService;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupUserRepository;
-import com.onmoim.server.oauth.dto.OAuthResponseDto;
+import com.onmoim.server.location.entity.Location;
+import com.onmoim.server.location.repository.LocationRepository;
 import com.onmoim.server.oauth.dto.OAuthUserDto;
 import com.onmoim.server.oauth.service.OAuthService;
 import com.onmoim.server.oauth.service.RefreshTokenService;
@@ -50,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserServiceImpl implements UserService {
 
 	private final UserRepository userRepository;
+	private final LocationRepository locationRepository;
 	private final OAuthService oAuthService;
 	private final CategoryRepository categoryRepository;
 	private final UserCategoryRepository userCategoryRepository;
@@ -103,6 +105,9 @@ public class UserServiceImpl implements UserService {
 			throw new CustomException(ALREADY_EXISTS_USER);
 		}
 
+		Location location = locationRepository.findById(request.getLocationId())
+			.orElseThrow(() -> new CustomException(LOCATION_NOT_FOUND));
+
 		User user = User.builder()
 			.oauthId(oauthId)
 			.provider(provider)
@@ -110,7 +115,7 @@ public class UserServiceImpl implements UserService {
 			.name(request.getName())
 			.gender(request.getGender())
 			.birth(request.getBirth().atStartOfDay())
-			.addressId(request.getAddressId())
+			.location(location)
 			.build();
 
 		userRepository.save(user);
@@ -177,6 +182,9 @@ public class UserServiceImpl implements UserService {
 		User user = userRepository.findById(getCurrentUserId())
 			.orElseThrow(() -> new CustomException(USER_NOT_FOUND));
 
+		Location location = locationRepository.findById(request.getLocationId())
+			.orElseThrow(() -> new CustomException(LOCATION_NOT_FOUND));
+
 		// 0. 프로필 사진 첨부파일 있을 경우 먼저 S3에 업로드
 		FileUploadResponseDto fileUploadResponse = null;
 		if (profileImgFile != null) {
@@ -188,8 +196,8 @@ public class UserServiceImpl implements UserService {
 			user.updateProfile(
 				request.getName(),
 				request.getGender(),
-				request.getBirth(),
-				request.getAddressId(),
+				request.getBirth().atStartOfDay(),
+				location,
 				request.getIntroduction(),
 				fileUploadResponse.getFileUrl()
 			);
@@ -198,8 +206,8 @@ public class UserServiceImpl implements UserService {
 			user.updateProfile(
 				request.getName(),
 				request.getGender(),
-				request.getBirth(),
-				request.getAddressId(),
+				request.getBirth().atStartOfDay(),
+				location,
 				request.getIntroduction(),
 				request.getProfileImgUrl()
 			);

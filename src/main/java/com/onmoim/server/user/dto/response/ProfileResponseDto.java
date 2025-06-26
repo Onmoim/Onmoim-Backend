@@ -3,6 +3,8 @@ package com.onmoim.server.user.dto.response;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.onmoim.server.location.entity.Location;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,8 +24,11 @@ public class ProfileResponseDto {
 	@Schema(description = "이름")
 	private String name;
 
-	@Schema(description = "지역")
-	private String location;
+	@Schema(description = "지역 id")
+	private Long locationId;
+
+	@Schema(description = "지역명")
+	private String locationName;
 
 	@Schema(description = "생년월일")
 	private LocalDateTime birth;

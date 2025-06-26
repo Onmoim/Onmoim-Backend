@@ -26,6 +26,7 @@ public enum ErrorCode {
 
 	INVALID_LOCATION(BAD_REQUEST, "잘못된 위치 정보입니다."),
 	INVALID_CATEGORY(BAD_REQUEST, "잘못된 카테고리입니다."),
+	LOCATION_NOT_FOUND(BAD_REQUEST, "지역을 찾을 수 없습니다."),
 
 	FILE_NOT_FOUND(BAD_REQUEST, "삭제할 이미지가 이미 존재하지 않습니다."),
 
