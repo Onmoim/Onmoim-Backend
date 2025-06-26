@@ -262,12 +262,5 @@ public class Meeting extends BaseEntity {
 		}
 	}
 
-	// Helper methods for accessing IDs (backwards compatibility)
-	public Long getGroupId() {
-		return this.group != null ? this.group.getId() : null;
-	}
 
-	public Long getCreatorId() {
-		return this.creator != null ? this.creator.getId() : null;
-	}
 }

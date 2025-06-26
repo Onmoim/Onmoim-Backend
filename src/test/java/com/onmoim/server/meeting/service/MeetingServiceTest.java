@@ -101,7 +101,7 @@ class MeetingServiceTest {
 		assertThat(meeting.getTitle()).isEqualTo("정기모임일정_" + uniqueId);
 		assertThat(meeting.getType()).isEqualTo(MeetingType.REGULAR);
 		assertThat(meeting.getJoinCount()).isEqualTo(1); // 생성자 자동 참석
-		assertThat(meeting.getCreatorId()).isEqualTo(owner.getId());
+		assertThat(meeting.getCreator().getId()).isEqualTo(owner.getId());
 
 		// 생성자 자동 참석 확인
 		boolean isJoined = userMeetingRepository.existsByMeetingIdAndUserId(meetingId, owner.getId());
@@ -141,7 +141,7 @@ class MeetingServiceTest {
 		Meeting meeting = meetingQueryService.getById(meetingId);
 		assertThat(meeting.getTitle()).isEqualTo("번개모임일정_" + uniqueId);
 		assertThat(meeting.getType()).isEqualTo(MeetingType.FLASH);
-		assertThat(meeting.getCreatorId()).isEqualTo(member.getId());
+		assertThat(meeting.getCreator().getId()).isEqualTo(member.getId());
 
 		clearAuthContext();
 	}
@@ -282,7 +282,6 @@ class MeetingServiceTest {
 		meetingService.leaveMeeting(meetingToDelete.getId());
 
 		// then
-		// 모임이 삭제되었는지 확인 (Soft Delete)
 		Meeting foundMeeting = meetingRepository.findById(meetingToDelete.getId()).orElseThrow(
 			() -> new AssertionError("삭제된 모임을 찾을 수 없습니다.")
 		);
