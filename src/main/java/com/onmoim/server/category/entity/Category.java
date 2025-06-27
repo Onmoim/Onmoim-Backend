@@ -1,9 +1,7 @@
 package com.onmoim.server.category.entity;
 
-import java.time.LocalDateTime;
 
 import org.hibernate.annotations.Comment;
-
 import com.onmoim.server.common.BaseEntity;
 
 import jakarta.persistence.Column;
@@ -24,6 +22,7 @@ import lombok.NoArgsConstructor;
 public class Category extends BaseEntity {
 
 	@Id
+	@Column(name = "category_id")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 

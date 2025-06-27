@@ -20,10 +20,12 @@ import lombok.extern.slf4j.Slf4j;
 @Aspect
 @Component
 @RequiredArgsConstructor
-@Order(2)
+@Order(1)
 public class NamedLockAspect {
+
 	private static final int LOCK_TIMEOUT_SECOND = 3;
 	private final GroupRepository groupRepository;
+
 	@Transactional
 	@Around("@annotation(com.onmoim.server.group.aop.NamedLock)")
 	public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
