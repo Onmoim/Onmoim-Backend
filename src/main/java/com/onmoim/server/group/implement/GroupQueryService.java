@@ -2,6 +2,8 @@ package com.onmoim.server.group.implement;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
 
+import java.util.List;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -13,6 +15,8 @@ import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.S3FileStorageService;
+import com.onmoim.server.group.dto.GroupCommonInfo;
+import com.onmoim.server.group.dto.GroupCommonSummary;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.repository.GroupRepository;
@@ -24,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GroupQueryService {
 	private final GroupRepository groupRepository;
-	private final GroupUserQueryService groupUserQueryService;
 	private final S3FileStorageService s3FileStorageService;
 
 	public Group saveGroup(
@@ -47,11 +50,7 @@ public class GroupQueryService {
 			throw new CustomException(ALREADY_EXISTS_GROUP);
 		}
 	}
-	/**
-	 * group 존재 X -> CustomException
-	 * group 존재 O, deletedDate 존재 O -> CustomException
-	 * group 존재 O, deletedDate 존재 X -> group 반환
-	 */
+
 	public Group getById(Long groupId) {
 		return findActiveGroup(groupId);
 	}
@@ -96,6 +95,32 @@ public class GroupQueryService {
 			FileUploadResponseDto uploadResponse = s3FileStorageService.uploadFile(image, "group");
 			group.updateImage(uploadResponse.getFileUrl());
 		}
+	}
+
+	// 내 주변 인기 모임 조회
+	public List<GroupCommonSummary> readPopularGroupsNearMe(
+		Long locationId,
+		Long cursorId,
+		Long memberCount,
+		int size
+	)
+	{
+		return groupRepository.readPopularGroupsNearMe(
+			locationId,
+			cursorId,
+			memberCount,
+			size);
+	}
+
+	// 모임 공통 조회
+	public List<GroupCommonInfo> readGroupsCommonInfo(
+		List<Long> groupIds,
+		Long userId
+	)
+	{
+		return groupRepository.readGroupsCommonInfo(
+			groupIds,
+			userId);
 	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)

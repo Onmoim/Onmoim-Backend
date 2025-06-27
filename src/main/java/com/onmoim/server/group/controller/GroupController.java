@@ -3,6 +3,9 @@ package com.onmoim.server.group.controller;
 import static org.springframework.http.HttpStatus.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,16 +22,21 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.common.response.ResponseHandler;
+import com.onmoim.server.group.dto.GroupCommonInfo;
+import com.onmoim.server.group.dto.GroupCommonSummary;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.GroupMember;
-import com.onmoim.server.group.dto.ReadCondition;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.dto.request.MemberIdRequestDto;
-import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupDetailResponseDto;
+import com.onmoim.server.group.dto.response.GroupInfoResponseDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.dto.response.GroupStatisticsResponseDto;
+import com.onmoim.server.group.dto.response.cursor.CursorPageResponseDto;
+import com.onmoim.server.group.dto.response.cursor.CursorUtilClass;
+import com.onmoim.server.group.dto.response.cursor.MemberListCursor;
+import com.onmoim.server.group.dto.response.cursor.NearbyPopularGroupCursor;
 import com.onmoim.server.group.service.GroupService;
 import com.onmoim.server.meeting.dto.MeetingDetail;
 import com.onmoim.server.meeting.service.MeetingService;
@@ -200,25 +208,48 @@ public class GroupController {
 			responseCode = "200",
 			description = "모임 회원 조회 성공"),
 		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자 접근"),
+		@ApiResponse(
+			responseCode = "403",
+			description = "권한이 부족합니다. 모임원만 조회 가능"),
+		@ApiResponse(
 			responseCode = "404",
 			description = "존재하지 않는 모임")
 	})
 	@GetMapping("/v1/groups/{groupId}/members")
-	public ResponseEntity<ResponseHandler<CursorPageResponseDto<GroupMembersResponseDto>>> getGroupMembers(
+	public ResponseEntity<ResponseHandler<CursorPageResponseDto<GroupMembersResponseDto, MemberListCursor>>> getGroupMembers(
 		@Parameter(description = "모임 ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId,
 		@Parameter(description = "커서 ID (마지막 조회한 커서 ID)", in = ParameterIn.QUERY)
 		@RequestParam(required = false) Long cursorId,
 		@Parameter(description = "페이지 크기 (고정 크기 = 10)", in = ParameterIn.QUERY)
-		@RequestParam(required = false, defaultValue = "10") int size
+		@RequestParam(required = false, defaultValue = "10") int requestSize
 	)
 	{
-		List<GroupMember> groupMembers = groupService.getGroupMembers(groupId, cursorId, size);
-		Long totalCount = groupService.groupMemberCount(groupId);
+		// 모임 회원 조회
+		List<GroupMember> groupMembers = groupService.readGroupMembers(groupId, cursorId, requestSize);
+
+		// 모임 전체 회원 수 조회
+		Long totalMemberCount = groupService.groupMemberCount(groupId);
+
+		// 다음 페이지 유무
+		boolean hasNext = CursorUtilClass.hasNext(groupMembers, requestSize);
+
+		// 요청 크기에 맞게 가공
+		List<GroupMember> extractResult = CursorUtilClass.extractContent(groupMembers, hasNext, requestSize);
+
+		// 응답 DTO 변환
+		List<GroupMembersResponseDto> response = extractResult.stream()
+			.map(GroupMembersResponseDto::of).toList();
+
+		// 응답 커서 추출
+		MemberListCursor cursorInfo = MemberListCursor.of(hasNext, response, totalMemberCount);
+
 		return ResponseEntity.ok(ResponseHandler.response(CursorPageResponseDto.of(
-			groupMembers,
-			size,
-			totalCount)));
+			response,
+			cursorInfo
+		)));
 	}
 
 	@Operation(
@@ -404,7 +435,7 @@ public class GroupController {
 		@Parameter(description = "커서 ID (마지막 조회한 커서 ID)", in = ParameterIn.QUERY)
 		@RequestParam(required = false) Long cursorId,
 		@Parameter(description = "페이지 크기 (고정 크기 = 10)", in = ParameterIn.QUERY)
-		@RequestParam(required = false, defaultValue = "10") int size
+		@RequestParam(required = false, defaultValue = "10") int requestSize
 	)
 	{
 		return null;
@@ -423,15 +454,52 @@ public class GroupController {
 			description = "인증되지 않은 사용자 접근")
 	})
 	@GetMapping("/v1/groups/what2")
-	public ResponseEntity<ResponseHandler<CursorPageResponseDto<Void>>> getNearbyPopularGroups(
+	public ResponseEntity<ResponseHandler<CursorPageResponseDto<GroupInfoResponseDto, NearbyPopularGroupCursor>>> getNearbyPopularGroups(
 		@Parameter(description = "커서 ID (마지막 조회한 커서 ID)", in = ParameterIn.QUERY)
 		@RequestParam(required = false) Long cursorId,
 		@Parameter(description = "페이지 크기 (고정 크기 = 10)", in = ParameterIn.QUERY)
-		@RequestParam(required = false, defaultValue = "10") int size
+		@RequestParam(required = false, defaultValue = "10") int requestSize,
+		@Parameter(description = "회원 수 (마지막 조회한 회원 수)", in = ParameterIn.QUERY)
+		@RequestParam(required = false) Long memberCount
 	)
 	{
-		groupService.readNearbyPopularGroups(ReadCondition.of(cursorId, size));
-		return null;
+		// 인기 모임 조회
+		List<GroupCommonSummary> summaries = groupService.readPopularGroupsNearMe(
+			cursorId,
+			requestSize,
+			memberCount);
+
+		// 모임 ID 추출
+		List<Long> groupIds = summaries.stream()
+			.map(GroupCommonSummary::groupId)
+			.toList();
+
+		// 모임별 추가 정보 조회
+		List<GroupCommonInfo> commonInfos = groupService.readGroupsCommonInfo(groupIds);
+
+		// ID -> GroupCommonInfo 매핑
+		Map<Long, GroupCommonInfo> commonInfoMap = commonInfos.stream().collect(
+			Collectors.toMap(GroupCommonInfo::groupId, Function.identity()));
+
+		// 다음 페이지 유무
+		boolean hasNext = CursorUtilClass.hasNext(summaries, requestSize);
+
+		// 요청 크기에 맞게 가공
+		List<GroupCommonSummary> extractSummaries =
+			CursorUtilClass.extractContent(summaries, hasNext, requestSize);
+
+		// 응답 DTO 변환
+		List<GroupInfoResponseDto> response = extractSummaries.stream().map(
+			s -> GroupInfoResponseDto.of(s, commonInfoMap.get(s.groupId())))
+			.toList();
+
+		// 응답 커서 추출
+		NearbyPopularGroupCursor cursor = NearbyPopularGroupCursor.of(hasNext, response);
+
+		return ResponseEntity.ok(ResponseHandler.response(CursorPageResponseDto.of(
+			response,
+			cursor
+		)));
 	}
 
 	// todo: ing

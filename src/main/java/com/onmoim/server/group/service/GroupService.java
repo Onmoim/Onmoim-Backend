@@ -16,9 +16,10 @@ import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.chat.service.ChatMessageService;
 import com.onmoim.server.chat.service.ChatRoomService;
 import com.onmoim.server.group.aop.NamedLock;
+import com.onmoim.server.group.dto.GroupCommonInfo;
+import com.onmoim.server.group.dto.GroupCommonSummary;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.GroupMember;
-import com.onmoim.server.group.dto.ReadCondition;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -110,7 +111,7 @@ public class GroupService {
 
 	// 모임원 조회
 	@Transactional(readOnly = true)
-	public List<GroupMember> getGroupMembers(
+	public List<GroupMember> readGroupMembers(
 		Long groupId,
 		Long cursorId,
 		int size
@@ -232,7 +233,7 @@ public class GroupService {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
 		// 모임 조회
-		Group group = groupQueryService.getById(groupId);
+		groupQueryService.existsById(groupId);
 		// 모인원 확인
 		GroupUser member = groupUserQueryService.getById(groupId, user.getId());
 		member.checkGroupMember();
@@ -240,17 +241,40 @@ public class GroupService {
 		return groupQueryService.getGroupWithDetails(groupId);
 	}
 
-	// todo: 내 주변 인기 모임 조회 (인기의 기준)
+	// 내 주변 인기 모임 조회
 	@Transactional(readOnly = true)
-	public List<?> readNearbyPopularGroups(ReadCondition condition) {
+	public List<GroupCommonSummary> readPopularGroupsNearMe(
+		Long cursorId,
+		int size,
+		Long memberCount
+	)
+	{
 		// 유저 + 로케이션 조회
 		User user = userQueryService.findUserWithLocationById(getCurrentUserId());
 		Long locationId = user.getLocation().getId();
 
-		return null;
+		return 	groupQueryService.readPopularGroupsNearMe(
+			locationId,
+			cursorId,
+			memberCount,
+			size
+		);
 	}
 
 	// todo: 활동이 활발한 모임(위치 상관 X)
+
+
+	// 모임 공통 조회: 모임 id, 현재 사용자와 모임 관계, 모임 다가오는 일정 개수
+	@Transactional(readOnly = true)
+	public List<GroupCommonInfo> readGroupsCommonInfo(
+		List<Long> groupIds
+	)
+	{
+		return groupQueryService.readGroupsCommonInfo(
+			groupIds,
+			getCurrentUserId()
+		);
+	}
 
 	// 모임장 확인
 	@Transactional(readOnly = true)
