@@ -20,6 +20,7 @@ import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.user.entity.User;
 
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -156,11 +157,11 @@ public class GroupUserQueryService {
 	// fetch join 사용해서 모임 멤버 조회
 	public List<GroupMember> findGroupUserAndMembers(
 		Long groupId,
-		Long cursorId,
+		@Nullable Long lastGroupId,
 		int size
 	)
 	{
-		List<GroupUser> groupUsers = groupRepository.findGroupUsers(groupId, cursorId, size);
+		List<GroupUser> groupUsers = groupRepository.findGroupUsers(groupId, lastGroupId, size);
 		return groupUsers.stream().map(GroupMember::of).toList();
 	}
 }

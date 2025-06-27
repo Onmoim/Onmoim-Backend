@@ -13,7 +13,7 @@ public record MemberListCursor(
 	@Schema(description = "다음 페이지 존재 유무")
 	boolean hasNext,
 	@Schema(description = "[커서] ID, 마지막 회원 ID")
-	Long cursorId,
+	Long lastMemberId,
 	@Schema(description = "전체 회원 수")
 	Long groupMemberCount
 )

@@ -15,13 +15,17 @@ import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.S3FileStorageService;
-import com.onmoim.server.group.dto.GroupCommonInfo;
-import com.onmoim.server.group.dto.GroupCommonSummary;
+import com.onmoim.server.group.dto.ActiveGroup;
+import com.onmoim.server.group.dto.ActiveGroupDetail;
+import com.onmoim.server.group.dto.ActiveGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.location.entity.Location;
 
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -46,7 +50,8 @@ public class GroupQueryService {
 			.build();
 		try {
 			return groupRepository.save(group);
-		} catch (DataIntegrityViolationException e) {
+		}
+		catch (DataIntegrityViolationException e) {
 			throw new CustomException(ALREADY_EXISTS_GROUP);
 		}
 	}
@@ -98,30 +103,57 @@ public class GroupQueryService {
 	}
 
 	// 내 주변 인기 모임 조회
-	public List<GroupCommonSummary> readPopularGroupsNearMe(
+	public List<PopularGroupSummary> readPopularGroupsNearMe(
 		Long locationId,
-		Long cursorId,
-		Long memberCount,
+		@Nullable Long lastGroupId,
+		@Nullable Long memberCount,
 		int size
 	)
 	{
 		return groupRepository.readPopularGroupsNearMe(
 			locationId,
-			cursorId,
+			lastGroupId,
 			memberCount,
 			size);
 	}
 
-	// 모임 공통 조회
-	public List<GroupCommonInfo> readGroupsCommonInfo(
+	public List<PopularGroupRelation> readPopularGroupRelation(
 		List<Long> groupIds,
 		Long userId
 	)
 	{
-		return groupRepository.readGroupsCommonInfo(
+		return groupRepository.readPopularGroupRelation(
 			groupIds,
 			userId);
 	}
+
+	// 활동이 활발한 모임 조회
+	public List<ActiveGroup> readMostActiveGroups(
+		@Nullable Long lastGroupId,
+		@Nullable Long memberCount,
+		int size
+	)
+	{
+		return groupRepository.readMostActiveGroups(
+			lastGroupId,
+			memberCount,
+			size
+		);
+	}
+
+	public List<ActiveGroupDetail> readGroupsDetail(List<Long> groupIds) {
+		return groupRepository.readGroupDetails(groupIds);
+	}
+
+	public List<ActiveGroupRelation> readGroupsRelation(
+		List<Long> groupIds,
+		Long userId
+	)
+	{
+		return groupRepository.readGroupsRelation(groupIds, userId);
+	}
+
+
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void updateGeoPoint(

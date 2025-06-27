@@ -6,33 +6,29 @@ import com.onmoim.server.group.dto.response.GroupInfoResponseDto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-/**
- * 내 주변 인기 모임 조회용
- */
-public record NearbyPopularGroupCursor(
+public record ActiveGroupCursor (
 	@Schema(description = "다음 페이지 존재 유무")
 	boolean hasNext,
 	@Schema(description = "[커서] ID, 마지막 모임 ID")
 	Long lastGroupId,
-	@Schema(description = "[커서] 회원 수, 마지막 회원 수")
-	Long memberCount
+	@Schema(description = "[커서] 다가오는 일정 수, 마지막 일정 수")
+	Long meetingCount
 )
 {
-	public static NearbyPopularGroupCursor of(
+	public static ActiveGroupCursor of(
 		boolean hasNext,
 		List<GroupInfoResponseDto> response
 	)
 	{
 		if(hasNext){
 			GroupInfoResponseDto responseDto = extractInfo(response);
-			return new NearbyPopularGroupCursor(
+			return new ActiveGroupCursor(
 				hasNext,
 				responseDto.groupId(),
-				responseDto.memberCount()
+				responseDto.upcomingMeetingCount()
 			);
 		}
-
-		return new NearbyPopularGroupCursor(
+		return new ActiveGroupCursor(
 			hasNext,
 			null,
 			null
@@ -43,3 +39,4 @@ public record NearbyPopularGroupCursor(
 		return list.getLast();
 	}
 }
+

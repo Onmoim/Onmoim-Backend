@@ -1,7 +1,10 @@
 package com.onmoim.server.group.dto.response;
 
-import com.onmoim.server.group.dto.GroupCommonInfo;
-import com.onmoim.server.group.dto.GroupCommonSummary;
+import com.onmoim.server.group.dto.ActiveGroup;
+import com.onmoim.server.group.dto.ActiveGroupDetail;
+import com.onmoim.server.group.dto.ActiveGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.entity.Status;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -30,8 +33,8 @@ public record GroupInfoResponseDto(
 )
 {
 	public static GroupInfoResponseDto of(
-		GroupCommonSummary summary,
-		GroupCommonInfo commonInfo
+		PopularGroupSummary summary,
+		PopularGroupRelation commonInfo
 	)
 	{
 		return new GroupInfoResponseDto(
@@ -46,13 +49,28 @@ public record GroupInfoResponseDto(
 		);
 	}
 
+	public static GroupInfoResponseDto of(
+		ActiveGroup group,
+		ActiveGroupDetail groupDetail,
+		ActiveGroupRelation groupRelation
+	)
+	{
+		return new GroupInfoResponseDto(
+			group.groupId(),
+			groupDetail.imgUrl(),
+			groupDetail.name(),
+			groupDetail.memberCount(),
+			groupDetail.dong(),
+			groupDetail.category(),
+			convertStatus(groupRelation.status()),
+			group.upcomingMeetingCount()
+		);
+	}
+
 	private static String convertStatus(String status) {
 		if(status == null || status.equals(Status.PENDING.name())){
 			return "NONE";
 		}
 		return status;
 	}
-
-
-
 }

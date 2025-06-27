@@ -11,7 +11,7 @@ import java.util.List;
  * @param dong - 모임 지역
  * @param category - 모임 카테고리
  */
-public record GroupCommonSummary(
+public record PopularGroupSummary (
 	Long groupId,
 	String imageUrl,
 	String name,
@@ -20,22 +20,22 @@ public record GroupCommonSummary(
 	String category
 )
 {
-	private static GroupCommonSummary EMPTY_CURSOR = new GroupCommonSummary(
+	private static PopularGroupSummary EMPTY_CURSOR = new PopularGroupSummary(
 		0L, null, null, 0L, null, null);
 
 	/**
 	 * 회원 수 DESC, 모임 ID ASC (커서 추출)
 	 */
-	public static GroupCommonSummary extractCursor(List<GroupCommonSummary> list) {
+	public static PopularGroupSummary extractCursor(List<PopularGroupSummary> list) {
 		if (list.isEmpty()) return EMPTY_CURSOR;
 
 		long memberCountMin = list.stream()
-			.mapToLong(GroupCommonSummary::memberCount)
+			.mapToLong(PopularGroupSummary::memberCount)
 			.min().orElseThrow();
 
 		return list.stream()
 			.filter(gm -> gm.memberCount == memberCountMin)
-			.max(Comparator.comparing(GroupCommonSummary::groupId))
+			.max(Comparator.comparing(PopularGroupSummary::groupId))
 			.orElse(EMPTY_CURSOR);
 	}
 }

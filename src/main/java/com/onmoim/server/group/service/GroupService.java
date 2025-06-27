@@ -16,8 +16,11 @@ import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.chat.service.ChatMessageService;
 import com.onmoim.server.chat.service.ChatRoomService;
 import com.onmoim.server.group.aop.NamedLock;
-import com.onmoim.server.group.dto.GroupCommonInfo;
-import com.onmoim.server.group.dto.GroupCommonSummary;
+import com.onmoim.server.group.dto.ActiveGroup;
+import com.onmoim.server.group.dto.ActiveGroupDetail;
+import com.onmoim.server.group.dto.ActiveGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.entity.Group;
@@ -31,6 +34,7 @@ import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.service.UserQueryService;
 
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -113,7 +117,7 @@ public class GroupService {
 	@Transactional(readOnly = true)
 	public List<GroupMember> readGroupMembers(
 		Long groupId,
-		Long cursorId,
+		@Nullable Long lastGroupId,
 		int size
 	) {
 		// 유저 조회
@@ -123,7 +127,7 @@ public class GroupService {
 		// 모인원 확인
 		groupUserQueryService.checkJoined(groupId, user.getId());
 		// 모임원 조회
-		return groupUserQueryService.findGroupUserAndMembers(groupId, cursorId, size);
+		return groupUserQueryService.findGroupUserAndMembers(groupId, lastGroupId, size);
 	}
 
 	// 모임 전체 회원 수 조회
@@ -243,10 +247,10 @@ public class GroupService {
 
 	// 내 주변 인기 모임 조회
 	@Transactional(readOnly = true)
-	public List<GroupCommonSummary> readPopularGroupsNearMe(
-		Long cursorId,
+	public List<PopularGroupSummary> readPopularGroupsNearMe(
+		@Nullable Long lastGroupId,
 		int size,
-		Long memberCount
+		@Nullable Long memberCount
 	)
 	{
 		// 유저 + 로케이션 조회
@@ -255,25 +259,40 @@ public class GroupService {
 
 		return 	groupQueryService.readPopularGroupsNearMe(
 			locationId,
-			cursorId,
+			lastGroupId,
 			memberCount,
 			size
 		);
 	}
 
-	// todo: 활동이 활발한 모임(위치 상관 X)
-
-
-	// 모임 공통 조회: 모임 id, 현재 사용자와 모임 관계, 모임 다가오는 일정 개수
+	// 모임 id, 현재 사용자와 모임 관계, 모임 다가오는 일정 개수 조회
 	@Transactional(readOnly = true)
-	public List<GroupCommonInfo> readGroupsCommonInfo(
+	public List<PopularGroupRelation> readGroupsCommonInfo(
 		List<Long> groupIds
 	)
 	{
-		return groupQueryService.readGroupsCommonInfo(
-			groupIds,
-			getCurrentUserId()
-		);
+		return groupQueryService.readPopularGroupRelation(groupIds, getCurrentUserId());
+	}
+
+	// 활동이 활발한 모임
+	@Transactional(readOnly = true)
+	public List<ActiveGroup> readMostActiveGroups(
+		@Nullable Long lastGroupId,
+		@Nullable Long memberCount,
+		int size
+	)
+	{
+		return groupQueryService.readMostActiveGroups(lastGroupId, memberCount, size);
+	}
+
+	@Transactional(readOnly = true)
+	public List<ActiveGroupDetail> readGroupsDetail(List<Long> groupIds) {
+		return groupQueryService.readGroupsDetail(groupIds);
+	}
+
+	@Transactional(readOnly = true)
+	public List<ActiveGroupRelation> readGroupsRelation(List<Long> groupIds) {
+		return groupQueryService.readGroupsRelation(groupIds, getCurrentUserId());
 	}
 
 	// 모임장 확인
