@@ -27,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ChatMessageFacade {
 
-	// private final ChatRoomMemberQueryService chatRoomMemberQueryService;
 	private final UserQueryService userQueryService;
 	private final GroupQueryService groupQueryService;
 	private final GroupUserQueryService groupUserQueryService;
@@ -39,8 +38,6 @@ public class ChatMessageFacade {
 	@Transactional
 	public void sendMessage(ChatMessageDto message, Long userId) {
 		log.debug("messageDto : {}, sender : {}", message, userId);
-
-		// chatRoomMemberQueryService.getByChatRoomIdAndUserId(roomId, userId);
 
 		// 메시지에 인증된 사용자 ID 설정
 		User user = userQueryService.findById(userId);
