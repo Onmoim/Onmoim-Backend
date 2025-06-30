@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -58,6 +60,15 @@ class ConcurrencyTest {
 			null
 		);
 		SecurityContextHolder.getContext().setAuthentication(authenticated);
+	}
+
+	@Test
+	@DisplayName("네임드 락 커넥션 확인 테스트")
+	@Transactional
+	void check() {
+		setSecurityContext(1L);
+		assertThatThrownBy(() -> groupService.joinGroup(1L))
+			.isInstanceOf(CustomException.class);
 	}
 
 	@Test

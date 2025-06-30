@@ -83,10 +83,6 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 		int size
 	)
 	{
-		BooleanBuilder having = new BooleanBuilder();
-		having.and(groupUser.count().lt(memberCount));
-		having.or(groupUser.count().eq(memberCount).and(groupUser.group.id.gt(lastGroupId)));
-
 		return queryFactory
 			.select(Projections.constructor(
 				PopularGroupSummary.class,
@@ -103,10 +99,24 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 			.leftJoin(groupUser).on(group.id.eq(groupUser.group.id), groupUser.status.in(GROUP_MEMBER))
 			.where(group.deletedDate.isNull(), group.location.id.eq(locationId))
 			.groupBy(group.id)
-			.having(memberCountLt(lastGroupId), memberCountEqAndGroupIdGt(memberCount, lastGroupId))
+			.having(popularReadCondition(lastGroupId, memberCount))
 			.orderBy(groupUser.count().desc(), group.id.asc())
 			.limit(size + 1)
 			.fetch();
+	}
+
+	private BooleanExpression popularReadCondition(
+		@Nullable Long lastGroupId,
+		@Nullable Long memberCount
+	)
+	{
+		return memberCountLt(memberCount)
+			.or(memberCountEq(memberCount).and(groupIdGt(lastGroupId)));
+	}
+
+	private BooleanExpression groupIdGt(@Nullable Long lastGroupId) {
+		if(lastGroupId == null) return null;
+		return groupUser.group.id.gt(lastGroupId);
 	}
 
 	private BooleanExpression memberCountLt(@Nullable Long memberCount) {
@@ -114,13 +124,9 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 		return groupUser.count().lt(memberCount);
 	}
 
-	private BooleanExpression memberCountEqAndGroupIdGt(
-		@Nullable Long memberCount,
-		@Nullable Long cursorId
-	)
-	{
-		if(memberCount == null || cursorId == null) return null;
-		return groupUser.count().eq(memberCount).and(groupUser.group.id.gt(cursorId));
+	private BooleanExpression memberCountEq(@Nullable Long memberCount) {
+		if(memberCount == null) return null;
+		return groupUser.count().eq(memberCount);
 	}
 
 	@Override
@@ -152,7 +158,6 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 
 	/**
 	 * 활동이 활발한 모임 조회
-	 * 다가오는 일정 상태 상관 X + start_at > NOW() 개수
 	 */
 	@Override
 	public List<ActiveGroup> readMostActiveGroups(
@@ -176,11 +181,31 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 				meeting.startAt.gt(LocalDateTime.now()))
 			.where(group.deletedDate.isNull())
 			.groupBy(group.id)
-			.having(having)
+			.having(activeReadCondition(lastGroupId, meetingCount))
 			.orderBy(meeting.count().desc(), group.id.asc())
 			.limit(size + 1)
 			.fetch();
 	}
+
+	private BooleanExpression activeReadCondition(
+		@Nullable Long lastGroupId,
+		@Nullable Long meetingCount
+	)
+	{
+		return meetingCountLt(meetingCount)
+			.or(meetingCountEq(meetingCount).and(groupIdGt(lastGroupId)));
+	}
+
+	private BooleanExpression meetingCountLt(@Nullable Long meetingCount) {
+		if(meetingCount == null) return null;
+		return groupUser.count().lt(meetingCount);
+	}
+
+	private BooleanExpression meetingCountEq(@Nullable Long meetingCount) {
+		if(meetingCount == null) return null;
+		return groupUser.count().eq(meetingCount);
+	}
+
 
 	@Override
 	public List<ActiveGroupDetail> readGroupDetails(List<Long> groupIds) {

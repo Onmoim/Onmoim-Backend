@@ -1,8 +1,13 @@
 package com.onmoim.server.group.service;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 
+import javax.sql.DataSource;
+
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -82,7 +87,7 @@ public class GroupService {
 
 	// 모임 가입
 	@NamedLock
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional
 	public void joinGroup(Long groupId) {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
@@ -153,7 +158,7 @@ public class GroupService {
 
 	// 모임 탈퇴
 	@NamedLock
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional
 	public void leaveGroup(Long groupId) {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
@@ -307,7 +312,7 @@ public class GroupService {
 		owner.checkOwner();
 	}
 
-	// 현재 사용자
+	// 현재 사용자 getPrincipal -> NPE
 	private Long getCurrentUserId() {
 		CustomUserDetails principal = (CustomUserDetails) SecurityContextHolder.getContextHolderStrategy()
 			.getContext()
