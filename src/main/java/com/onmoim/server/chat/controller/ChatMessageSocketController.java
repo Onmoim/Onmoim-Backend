@@ -32,10 +32,9 @@ public class ChatMessageSocketController {
 		@Payload ChatMessageDto chatMessage,
 		Principal principal) {
 		System.out.println("ChatMessageSocketController.sendMessage");
-		// Long userId = getCurrentUserId();
-		Long userId = 102L;
+		Long userId = getCurrentUserId();
 		chatMessage.setSenderId(userId);
-		// Facade를 통한 메시지 전송
+
 		chatMessageFacade.sendMessage(chatMessage, userId);
 	}
 
