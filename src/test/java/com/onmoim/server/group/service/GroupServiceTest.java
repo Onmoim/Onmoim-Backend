@@ -287,6 +287,7 @@ class GroupServiceTest {
 		Long groupId = response.getGroupId();
 
 		// then
+		System.out.println("response.getGroupId()="+response.getGroupId());
 		Group group = groupRepository.getById(groupId);
 		assertThat(group.getName()).isEqualTo(name);
 		assertThat(group.getDescription()).isEqualTo(description);

@@ -3,6 +3,7 @@ package com.onmoim.server.group.controller;
 import static org.springframework.http.HttpStatus.*;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -67,8 +68,7 @@ public class GroupController {
 	@PostMapping("/v1/groups")
 	public ResponseEntity<ResponseHandler<ChatRoomResponse>> createGroup(
 		@RequestBody @Valid GroupCreateRequestDto request
-	)
-	{
+	) {
 		ChatRoomResponse response = groupService.createGroup(
 			request.categoryId(),
 			request.locationId(),
@@ -111,8 +111,7 @@ public class GroupController {
 		@Valid @RequestPart(value = "request") GroupUpdateRequestDto request,
 		@Parameter(description = "이미지 파일")
 		@RequestPart(value = "file", required = false) MultipartFile file
-	)
-	{
+	) {
 		groupService.updateGroup(groupId, request.description(), request.capacity(), file);
 		return ResponseEntity.ok(ResponseHandler.response("수정 성공"));
 	}
@@ -142,15 +141,15 @@ public class GroupController {
 			description = "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
 	})
 	@PostMapping("/v1/groups/{groupId}/join")
-	public ResponseEntity<ResponseHandler<String>> joinGroup(
+	public ResponseEntity<ResponseHandler<Map<String, String>>> joinGroup(
 		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId
-	)
-	{
-		groupService.joinGroup(groupId);
+	) {
+		String subscribeDestination = groupService.joinGroup(groupId);
+		Map<String, String> response = Map.of("destination", subscribeDestination);
 		return ResponseEntity
 			.status(CREATED)
-			.body(ResponseHandler.response("모임 가입 성공"));
+			.body(ResponseHandler.response(response));
 	}
 
 	@Operation(
@@ -178,8 +177,7 @@ public class GroupController {
 	public ResponseEntity<ResponseHandler<Void>> likeGroup(
 		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId
-	)
-	{
+	) {
 		groupService.likeGroup(groupId);
 		return ResponseEntity.ok(ResponseHandler.response(null));
 	}
@@ -204,8 +202,7 @@ public class GroupController {
 		@RequestParam(required = false) Long cursorId,
 		@Parameter(description = "페이지 크기 (고정 크기 = 10)", in = ParameterIn.QUERY)
 		@RequestParam(required = false, defaultValue = "10") int size
-	)
-	{
+	) {
 		List<GroupUser> groupMembers = groupService.getGroupMembers(groupId, cursorId, size);
 		Long totalCount = groupService.groupMemberCount(groupId);
 		return ResponseEntity.ok(ResponseHandler.response(CursorPageResponseDto.of(
@@ -236,8 +233,7 @@ public class GroupController {
 	public ResponseEntity<ResponseHandler<String>> deleteGroup(
 		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId
-	)
-	{
+	) {
 		groupService.deleteGroup(groupId);
 		return ResponseEntity.ok(ResponseHandler.response("모임 삭제 성공"));
 	}
@@ -267,8 +263,7 @@ public class GroupController {
 	public ResponseEntity<ResponseHandler<String>> leaveGroup(
 		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId
-	)
-	{
+	) {
 		groupService.leaveGroup(groupId);
 		return ResponseEntity.ok(ResponseHandler.response("모임 탍퇴 성공"));
 	}
@@ -302,8 +297,7 @@ public class GroupController {
 		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId,
 		@Valid @RequestBody MemberIdRequestDto request
-	)
-	{
+	) {
 		groupService.transferOwnership(groupId, request.memberId());
 		return ResponseEntity.ok(ResponseHandler.response("모임장 변경 성공"));
 	}
@@ -337,8 +331,7 @@ public class GroupController {
 		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId,
 		@Valid @RequestBody MemberIdRequestDto request
-	)
-	{
+	) {
 		groupService.banMember(groupId, request.memberId());
 		return ResponseEntity.ok(ResponseHandler.response("모임원 강퇴 성공"));
 	}

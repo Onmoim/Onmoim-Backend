@@ -1,5 +1,8 @@
 package com.onmoim.server.group.service;
 
+import static com.onmoim.server.chat.entity.SubscribeRegistry.*;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -11,6 +14,16 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.service.CategoryQueryService;
+import com.onmoim.server.chat.dto.ChatMessageDto;
+import com.onmoim.server.chat.dto.ChatUserDto;
+import com.onmoim.server.chat.entity.ChatRoomMessage;
+import com.onmoim.server.chat.entity.ChatRoomMessageId;
+import com.onmoim.server.chat.entity.DeliveryStatus;
+import com.onmoim.server.chat.entity.MessageType;
+import com.onmoim.server.chat.repository.ChatMessageRepository;
+import com.onmoim.server.chat.service.MessageSendEvent;
+import com.onmoim.server.chat.service.RoomChatMessageIdGenerator;
+import com.onmoim.server.chat.service.RoomListService;
 import com.onmoim.server.common.kakaomap.GeoPointUpdateEvent;
 import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.chat.service.ChatMessageService;
@@ -40,8 +53,10 @@ public class GroupService {
 	private final UserQueryService userQueryService;
 	private final LocationQueryService locationQueryService;
 	private final CategoryQueryService categoryQueryService;
-
+	private final ChatMessageRepository chatMessageRepository;
 	private final ApplicationEventPublisher eventPublisher;
+	private final RoomChatMessageIdGenerator roomChatMessageIdGenerator;
+	private final RoomListService roomListService;
 
 	private final ChatRoomService chatRoomService;
 	private final ChatMessageService chatMessageService;
@@ -60,9 +75,8 @@ public class GroupService {
 		Location location = locationQueryService.getById(locationId);
 
 		Group group = groupQueryService.saveGroup(category, location, name, description, capacity);
-
 		ChatRoomResponse room = chatRoomService.createRoom(group.getId(), name, description, user.getId());
-		chatMessageService.sendSystemMessage(room.getGroupId(), "채팅방이 생성되었습니다.");
+		chatMessageService.sendSystemMessage(group.getId(), "채팅방이 생성되었습니다.");
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
 		groupUserQueryService.save(groupUser);
@@ -83,7 +97,7 @@ public class GroupService {
 	@Retry
 	@NamedLock
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public void joinGroup(Long groupId) {
+	public String joinGroup(Long groupId) {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
 		// 모임 조회
@@ -99,7 +113,45 @@ public class GroupService {
 		// 모임 검사
 		groupUserQueryService.joinGroup(groupUser);
 		// 모임 가입 안내 메시지
-		chatMessageService.sendSystemMessage(groupId, "'"+user.getName()+"'님이 가입했습니다.");
+		String subscirbeDestination = sendJoinSystemMessage(group, user);
+		return subscirbeDestination;
+	}
+
+	/**
+	 * NameLock으로 인해
+	 * @param group
+	 * @param user
+	 * @return
+	 */
+	private String sendJoinSystemMessage(Group group, User user) {
+		Long roomId = group.getId();
+		String content = "'" + user.getName() + "'님이 가입했습니다.";
+		ChatRoomMessage systemMessage = ChatRoomMessage.systemMessageCreate(
+			ChatRoomMessageId.create(roomId, roomChatMessageIdGenerator.getSequence(roomId)),
+			content,
+			LocalDateTime.now(),
+			MessageType.SYSTEM,
+			DeliveryStatus.PENDING
+		);
+
+		// 데이터베이스에 저장
+		chatMessageRepository.save(systemMessage);
+
+		// 시스템 메시지 브로드캐스트
+		// com.onmoim.server.chat.service.ChatMessageEventHandler 처리
+		String destination = CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
+		ChatMessageDto message = ChatMessageDto.of(systemMessage, ChatUserDto.createSystem());
+		eventPublisher.publishEvent(
+			new MessageSendEvent(
+				destination,
+				message
+			)
+		);
+
+		roomListService.chatListUpdate(roomId, message);
+		log.debug("시스템 메시지 전송 완료: 방ID: {}, 내용: {}", roomId, content);
+
+		return CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
 	}
 
 	// 모임 찜 또는 찜 취소

@@ -1,5 +1,6 @@
 package com.onmoim.server.group.controller;
 
+import static com.onmoim.server.chat.entity.SubscribeRegistry.*;
 import static com.onmoim.server.common.exception.ErrorCode.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
@@ -22,12 +23,12 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import com.onmoim.server.chat.dto.ChatRoomResponse;
-import com.onmoim.server.chat.entity.SubscribeRegistry;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.onmoim.server.TestSecurityConfig;
+import com.onmoim.server.chat.dto.ChatRoomResponse;
+import com.onmoim.server.chat.entity.SubscribeRegistry;
 import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.response.Message;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
@@ -251,13 +252,13 @@ class GroupControllerTest {
 	@WithMockUser(roles = "USER")
 	void joinGroupSuccess() throws Exception {
 		// given
-		doNothing().when(groupService).joinGroup(anyLong());
+		when(groupService.joinGroup(anyLong())).thenReturn(CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination()+"1");
 
 		// expected
 		mvc.perform(post("/api/v1/groups/{groupId}/join", 1L))
 			.andExpect(status().is2xxSuccessful())
 			.andExpect(jsonPath("$.message").value(Message.SUCCESS.getDescription()))
-			.andExpect(jsonPath("$.data").value("모임 가입 성공"))
+			.andExpect(jsonPath("$.data.destination").value(CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination()+"1"))
 			.andDo(print());
 	}
 

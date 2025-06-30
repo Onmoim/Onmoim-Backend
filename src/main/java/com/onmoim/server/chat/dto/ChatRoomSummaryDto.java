@@ -29,7 +29,7 @@ public class ChatRoomSummaryDto {
 			group.getId(),
 			group.getName(),
 			message.getContent(),
-			user.getName(),
+			user!=null ? user.getName(): "",
 			message.getTimestamp()
 		) ;
 	}

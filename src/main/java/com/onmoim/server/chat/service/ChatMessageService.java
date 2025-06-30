@@ -27,15 +27,13 @@ public class ChatMessageService {
 	private final ChatMessageRepository chatMessageRepository;
 	private final ApplicationEventPublisher eventPublisher;
 	private final RoomChatMessageIdGenerator roomChatMessageIdGenerator;
-	private final RoomListService roomListService;
-
 	/**
 	 * 시스템 메시지 전송
 	 */
 	@Transactional
-	public ChatRoomMessageId sendSystemMessage(Long roomId, String content) {
+	public ChatRoomMessageId sendSystemMessage(Long groupId, String content) {
 		ChatRoomMessage systemMessage = ChatRoomMessage.systemMessageCreate(
-			ChatRoomMessageId.create(roomId, roomChatMessageIdGenerator.getSequence(roomId)),
+			ChatRoomMessageId.create(groupId, roomChatMessageIdGenerator.getSequence(groupId)),
 			content,
 			LocalDateTime.now(),
 			MessageType.SYSTEM,
@@ -47,7 +45,7 @@ public class ChatMessageService {
 
 		// 시스템 메시지 브로드캐스트
 		// com.onmoim.server.chat.service.ChatMessageEventHandler 처리
-		String destination = SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
+		String destination = SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + groupId;
 		ChatMessageDto message = ChatMessageDto.of(systemMessage, ChatUserDto.createSystem());
 		eventPublisher.publishEvent(
 			new MessageSendEvent(
@@ -56,11 +54,13 @@ public class ChatMessageService {
 			)
 		);
 
-		roomListService.chatListUpdate(roomId, message);
+		roomListService.chatListUpdate(groupId, message);
 
-		log.debug("시스템 메시지 전송 완료: 방ID: {}, 내용: {}", roomId, content);
+		log.debug("시스템 메시지 전송 완료: 방ID: {}, 내용: {}", groupId, content);
 		return systemMessage.getId();
 	}
+
+	private final RoomListService roomListService;
 
 	@Transactional
 	public void sendMessage(ChatMessageDto message) {

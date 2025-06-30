@@ -7,7 +7,7 @@ import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.chat.entity.ChatRoom;
 import com.onmoim.server.chat.entity.SubscribeRegistry;
 import com.onmoim.server.chat.repository.ChatRoomRepository;
-import com.onmoim.server.group.service.GroupUserQueryService;
+import com.onmoim.server.group.implement.GroupUserQueryService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ public class ChatRoomService {
 		log.debug("채팅방이 생성되었습니다. roomId: {}, name: {}, creatorId: {}",
 			groupId, name, creatorId);
 
-		return ChatRoomResponse.fromChatRoom(room, groupUserQueryService.countGroupMembers(groupId),
+		return ChatRoomResponse.fromChatRoom(room, groupUserQueryService.countMembers(groupId),
 			SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + groupId);
 	}
 }

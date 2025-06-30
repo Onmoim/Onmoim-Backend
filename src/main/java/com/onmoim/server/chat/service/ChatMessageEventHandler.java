@@ -28,7 +28,7 @@ public class ChatMessageEventHandler {
 	private final RoomListService roomListService;
 
 	@Async
-	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+	@TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
 	public void handleMessageSend(MessageSendEvent event) {
 		ChatMessageDto message = event.message();
 		ChatRoomMessageId messageId = ChatRoomMessageId.create(message.getRoomId(),message.getMessageSequence());
@@ -37,7 +37,8 @@ public class ChatMessageEventHandler {
 		try {
 			// WebSocket을 통해 메시지 전송
 			messagingTemplate.convertAndSend(destination, message);
-			roomListService.chatListUpdate(message.getRoomId(), message);
+			roomListService.
+				chatListUpdate(message.getRoomId(), message);
 
 			// 전송 성공 시 SENT 상태 업데이트
 			chatMessageService.updateMessageDeliveryStatus(messageId, DeliveryStatus.SENT);
@@ -50,6 +51,7 @@ public class ChatMessageEventHandler {
 
 			// 실패 재시도 처리
 			chatMessageRetryService.failedProcess(message, destination);
+			e.printStackTrace();
 		}
 	}
 

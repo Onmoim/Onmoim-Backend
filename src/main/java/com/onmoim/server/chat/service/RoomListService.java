@@ -13,8 +13,10 @@ import com.onmoim.server.chat.dto.ChatRoomListUpdateDto;
 import com.onmoim.server.chat.dto.ChatRoomSummaryDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
 import com.onmoim.server.group.entity.Group;
-import com.onmoim.server.group.service.GroupQueryService;
-import com.onmoim.server.group.service.GroupUserQueryService;
+
+import com.onmoim.server.group.entity.GroupUser;
+import com.onmoim.server.group.implement.GroupQueryService;
+import com.onmoim.server.group.implement.GroupUserQueryService;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.service.UserQueryService;
 
@@ -33,22 +35,24 @@ public class RoomListService {
 	public void chatListUpdate(Long groupId, ChatMessageDto chatMessageDto){
 
 		//일단 모든 채팅방 멤버를 가져오도록 구성 TODO, 리팩토링 대상
-		int size = Integer.parseInt(groupUserQueryService.countGroupMembers(groupId).toString());
-		var groupUserAndMembers = groupUserQueryService
+		int size = Integer.parseInt(groupUserQueryService.countMembers(groupId).toString());
+		List<GroupUser> groupUserAndMembers = groupUserQueryService
 			.findGroupUserAndMembers(groupId, null, size);
 
 		Group group = groupQueryService.getById(groupId);
 
 		Long senderId = chatMessageDto.getSenderId();
 
-		User user = userQueryService.findById(senderId);
+		User user = null;
+		if(!senderId.equals(-1L)) //System.userId
+			user = userQueryService.findById(senderId);
 
 		/**
 		 *
 		 * {"type":"CHAT_LIST_UPDATE","rooms":[{"roomId":4,"roomName":"소규모 모임","lastMessage":"안녕하세요! 오늘 날씨가 정말 좋네요.","lastSenderName":"홍석준","lastMessageTime":[2025,6,12,22,53,48,414507000]}]}
 		 */
-		for (GroupMembersResponseDto dto : groupUserAndMembers.getContent()) {
-			String destination = CHAT_ROOM_LIST_SUBSCRIBE_PREFIX.getDestination() + dto.getUserId();
+		for (GroupUser groupUser : groupUserAndMembers) {
+			String destination = CHAT_ROOM_LIST_SUBSCRIBE_PREFIX.getDestination() + groupUser.getUser().getId();
 			ChatRoomSummaryDto chatRoomSummaryDto = ChatRoomSummaryDto.create(group, user, chatMessageDto);
 			eventPublisher.publishEvent(
 				new RoomListSendEvent(
