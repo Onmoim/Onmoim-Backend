@@ -113,45 +113,9 @@ public class GroupService {
 		// 모임 검사
 		groupUserQueryService.joinGroup(groupUser);
 		// 모임 가입 안내 메시지
-		String subscirbeDestination = sendJoinSystemMessage(group, user);
-		return subscirbeDestination;
-	}
-
-	/**
-	 * NameLock으로 인해
-	 * @param group
-	 * @param user
-	 * @return
-	 */
-	private String sendJoinSystemMessage(Group group, User user) {
-		Long roomId = group.getId();
 		String content = "'" + user.getName() + "'님이 가입했습니다.";
-		ChatRoomMessage systemMessage = ChatRoomMessage.systemMessageCreate(
-			ChatRoomMessageId.create(roomId, roomChatMessageIdGenerator.getSequence(roomId)),
-			content,
-			LocalDateTime.now(),
-			MessageType.SYSTEM,
-			DeliveryStatus.PENDING
-		);
-
-		// 데이터베이스에 저장
-		chatMessageRepository.save(systemMessage);
-
-		// 시스템 메시지 브로드캐스트
-		// com.onmoim.server.chat.service.ChatMessageEventHandler 처리
-		String destination = CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
-		ChatMessageDto message = ChatMessageDto.of(systemMessage, ChatUserDto.createSystem());
-		eventPublisher.publishEvent(
-			new MessageSendEvent(
-				destination,
-				message
-			)
-		);
-
-		roomListService.chatListUpdate(roomId, message);
-		log.debug("시스템 메시지 전송 완료: 방ID: {}, 내용: {}", roomId, content);
-
-		return CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
+		chatMessageService.sendSystemMessage(group.getId(), content);
+		return CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + group.getId();
 	}
 
 	// 모임 찜 또는 찜 취소
