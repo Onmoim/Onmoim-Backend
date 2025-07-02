@@ -7,7 +7,7 @@
 <body>
 <h2>Google Login</h2>
 <div id="g_id_onload"
-     data-client_id="809915801803-l0arqjqgcovj4fer2g8cegod5hc14mv8.apps.googleusercontent.com"
+     data-client_id="809915801803-pfg8ovd4klni224eom2nsjrcu7k7sfgf.apps.googleusercontent.com"
      data-callback="handleCredentialResponse"
      data-auto_prompt="false">
 </div>
@@ -19,26 +19,26 @@
         console.log("ID Token:", idToken);
 
         // 백엔드로 POST 요청
-        fetch(`${window.location.origin}/api/v1/auth/oauth`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                provider: "google",
-                token: idToken
-            })
-        })
-            .then(res => {
-                console.log("raw response:", res);
-                return res.json();
-            })
-            .then(data => {
-                console.log("response:", data);
-                console.log("keys:", Object.keys(data));
-                alert("token: " + idToken);
-            })
-            .catch(err => {
-                console.error("🚨 fetch or JSON parse error:", err);
-            });
+        // fetch(`${window.location.origin}/api/v1/auth/oauth`, {
+        //     method: "POST",
+        //     headers: { "Content-Type": "application/json" },
+        //     body: JSON.stringify({
+        //         provider: "google",
+        //         token: idToken
+        //     })
+        // })
+        //     .then(res => {
+        //         console.log("raw response:", res);
+        //         return res.json();
+        //     })
+        //     .then(data => {
+        //         console.log("response:", data);
+        //         console.log("keys:", Object.keys(data));
+        //         alert("token: " + idToken);
+        //     })
+        //     .catch(err => {
+        //         console.error("🚨 fetch or JSON parse error:", err);
+        //     });
     }
 </script>
 </body>

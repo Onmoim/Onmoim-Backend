@@ -2,21 +2,17 @@ package com.onmoim.server.oauth.service.provider;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
 
-import java.util.Map;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.RestTemplate;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.oauth.dto.OAuthUserDto;
 
@@ -30,71 +26,35 @@ public class GoogleOAuthProvider implements OAuthProvider {
 	@Value("${spring.security.oauth2.client.registration.google.client-id}")
 	private String clientId;
 
-	@Value("${spring.security.oauth2.client.registration.google.client-secret}")
-	private String clientSecret;
-
-	@Value("${spring.security.oauth2.client.registration.google.redirect-uri}")
-	private String redirectUri;
-
-	@Value("${spring.security.oauth2.client.registration.google.token-uri}")
-	private String tokenUri;
-
-	@Value("${spring.security.oauth2.client.registration.google.user-info-uri}")
-	private String userInfoUri;
-
-	private final RestTemplate restTemplate = new RestTemplate();
-
 	@Override
 	public String getProviderName() {
 		return "google";
 	}
 
-	@Override
-	public OAuthUserDto getUserInfoByToken(String code) {
+	public OAuthUserDto getUserInfoByToken(String idTokenString) {
+
+		GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), JacksonFactory.getDefaultInstance())
+			.setAudience(Collections.singletonList(clientId))
+			.build();
 
 		try {
-			// 1. Authorization Code로 Access Token 요청
-			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+			// 클라이언트에서 받은 idToken을 검증
+			GoogleIdToken idToken = verifier.verify(idTokenString);
 
-			MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-			params.add("code", code);
-			params.add("client_id", clientId);
-			params.add("client_secret", clientSecret);
-			params.add("redirect_uri", redirectUri);
-			params.add("grant_type", "authorization_code");
+			if (idToken != null) {
+				GoogleIdToken.Payload payload = idToken.getPayload();
+				String sub = payload.getSubject();
+				String email = payload.getEmail();
+				log.info("email = {}", email);
 
-			HttpEntity<?> request = new HttpEntity<>(params, headers);
-
-			ResponseEntity<Map> response = restTemplate.postForEntity(
-				tokenUri,
-				request,
-				Map.class
-			);
-
-			System.out.println("response = " + response.getStatusCode());
-			System.out.println("body = " + response.getBody());
-
-			String accessToken = (String) response.getBody().get("access_token");
-
-			// 2. Access Token으로 사용자 정보 요청
-			HttpHeaders userHeaders = new HttpHeaders();
-			userHeaders.setBearerAuth(accessToken);
-
-			HttpEntity<?> userInfoRequest = new HttpEntity<>(userHeaders);
-			ResponseEntity<Map> userInfoResponse = restTemplate.exchange(
-				userInfoUri,
-				HttpMethod.GET,
-				userInfoRequest,
-				Map.class
-			);
-
-			Map<String, Object> userInfo = userInfoResponse.getBody();
-			return new OAuthUserDto("google", (String) userInfo.get("id"), (String) userInfo.get("email"));
-		} catch (Exception e) {
+				return new OAuthUserDto("google", sub, email);
+			} else {
+				throw new CustomException(INVALID_OAUTH_ID_TOKEN);
+			}
+		} catch (GeneralSecurityException | IOException e) {
+			log.error("Google ID token verification failed", e);
 			throw new CustomException(OAUTH_PROVIDER_ERROR);
 		}
-
 	}
 
 }
