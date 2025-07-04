@@ -1,16 +1,10 @@
 package com.onmoim.server.group.service;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 
-import javax.sql.DataSource;
-
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,6 +27,7 @@ import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.implement.GroupQueryService;
 import com.onmoim.server.group.implement.GroupUserQueryService;
+import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.service.LocationQueryService;
 import com.onmoim.server.security.CustomUserDetails;
