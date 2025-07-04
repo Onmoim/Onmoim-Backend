@@ -1,5 +1,6 @@
 package com.onmoim.server.group.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.onmoim.server.group.dto.ActiveGroup;
@@ -17,4 +18,6 @@ public interface GroupRepositoryCustom {
 	List<ActiveGroup> readMostActiveGroups(Long lastGroupId, Long memberCount, int size);
 	List<ActiveGroupDetail> readGroupDetails(List<Long> groupIds);
 	List<ActiveGroupRelation> readGroupsRelation(List<Long> groupIds, Long userId);
+	Long readAnnualScheduleCount (Long groupId, LocalDateTime now);
+	Long readMonthlyScheduleCount (Long groupId, LocalDateTime now);
 }

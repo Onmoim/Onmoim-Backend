@@ -2,6 +2,7 @@ package com.onmoim.server.group.implement;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -153,7 +154,15 @@ public class GroupQueryService {
 		return groupRepository.readGroupsRelation(groupIds, userId);
 	}
 
+	// 모임 연간 일정 개수
+	public Long readAnnualScheduleCount(Long groupId, LocalDateTime now) {
+		return groupRepository.readAnnualScheduleCount(groupId, now);
+	}
 
+	// 모임 월간 일전 개수
+	public Long readMonthlyScheduleCount(Long groupId, LocalDateTime now) {
+		return groupRepository.readMonthlyScheduleCount(groupId, now);
+	}
 
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void updateGeoPoint(

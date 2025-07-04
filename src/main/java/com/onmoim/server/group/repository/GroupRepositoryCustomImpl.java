@@ -244,4 +244,35 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 		.fetch();
 	}
 
+	// 모임 년간 일정 개수
+	@Override
+	public Long readAnnualScheduleCount(Long groupId, LocalDateTime now) {
+		int year = now.getYear();
+		LocalDateTime startOfYear = LocalDateTime.of(year, 1, 1, 0, 0, 0);
+
+		return queryFactory.select(meeting.count())
+			.from(meeting)
+			.where(
+				meeting.group.id.eq(groupId),
+				meeting.startAt.goe(startOfYear),
+				meeting.startAt.lt(startOfYear.plusYears(1))
+			)
+			.fetchOne();
+	}
+
+	// 모임 월간 일정 개수
+	@Override
+	public Long readMonthlyScheduleCount(Long groupId, LocalDateTime now) {
+		int year = now.getYear();
+		int month = now.getMonthValue();
+		LocalDateTime startOfMonth = LocalDateTime.of(year, month, 1, 0, 0, 0);
+		return queryFactory.select(meeting.count())
+			.from(meeting)
+			.where(
+				meeting.group.id.eq(groupId),
+				meeting.startAt.goe(startOfMonth),
+				meeting.startAt.lt(startOfMonth.plusMonths(1))
+			)
+			.fetchOne();
+	}
 }

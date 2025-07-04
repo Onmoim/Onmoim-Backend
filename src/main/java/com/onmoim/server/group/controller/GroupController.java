@@ -2,6 +2,7 @@ package com.onmoim.server.group.controller;
 
 import static org.springframework.http.HttpStatus.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -422,10 +423,6 @@ public class GroupController {
 		));
 	}
 
-	/**
-	 * 활동이 활발한 모임
-	 * 다가오는 일정 조회 기준 -> 상태 상관 X, start_date > NOW() ?
-	 */
 	@Operation(
 		summary = "인기: 활동이 활발한 모임 조회",
 		description = "활동이 활발한 모임 조회"
@@ -493,10 +490,6 @@ public class GroupController {
 		)));
 	}
 
-	/**
-	 * 인기의 기준: 멤버 수
-	 * 다가오는 일정 조회 기준 -> 상태 상관 X, start_date > NOW() ?
-	 */
 	@Operation(
 		summary = "인기: 내 주변 인기 모임 조회",
 		description = "내 주변 인기 모임 조회"
@@ -558,7 +551,6 @@ public class GroupController {
 		)));
 	}
 
-	// todo: ing
 	@Operation(
 		summary = "모임 통계 조회",
 		description = "모임 연간 일정, 모임 월간 일정"
@@ -583,12 +575,17 @@ public class GroupController {
 		@PathVariable Long groupId
 	)
 	{
+		// 모임장 확인
 		groupService.checkOwner(groupId);
+
+		LocalDateTime now = LocalDateTime.now();
+		Long annualSchedule = groupService.readAnnualScheduleCount(groupId, now);
+		Long monthlySchedule = groupService.readMonthlyScheduleCount(groupId, now);
 
 		return ResponseEntity.ok(ResponseHandler.response(
 			GroupStatisticsResponseDto.of(
-				1L,
-				2L
+				annualSchedule,
+				monthlySchedule
 			)
 		));
 	}

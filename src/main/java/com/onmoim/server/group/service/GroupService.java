@@ -1,5 +1,6 @@
 package com.onmoim.server.group.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -305,6 +306,14 @@ public class GroupService {
 		// 모임장 확인
 		GroupUser owner = groupUserQueryService.getById(groupId, user.getId());
 		owner.checkOwner();
+	}
+
+	public Long readAnnualScheduleCount(Long groupId, LocalDateTime now) {
+		return groupQueryService.readAnnualScheduleCount(groupId, now);
+	}
+
+	public Long readMonthlyScheduleCount(Long groupId, LocalDateTime now) {
+		return groupQueryService.readMonthlyScheduleCount(groupId, now);
 	}
 
 	// 현재 사용자 getPrincipal -> NPE
