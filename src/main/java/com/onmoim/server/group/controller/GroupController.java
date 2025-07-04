@@ -2,7 +2,11 @@ package com.onmoim.server.group.controller;
 
 import static org.springframework.http.HttpStatus.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,14 +23,25 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.common.response.ResponseHandler;
+import com.onmoim.server.group.dto.ActiveGroup;
+import com.onmoim.server.group.dto.ActiveGroupDetail;
+import com.onmoim.server.group.dto.ActiveGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.dto.request.MemberIdRequestDto;
-import com.onmoim.server.group.dto.response.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupDetailResponseDto;
+import com.onmoim.server.group.dto.response.GroupInfoResponseDto;
 import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
+import com.onmoim.server.group.dto.response.GroupStatisticsResponseDto;
+import com.onmoim.server.group.dto.response.cursor.ActiveGroupCursor;
+import com.onmoim.server.group.dto.response.cursor.CursorPageResponseDto;
+import com.onmoim.server.group.dto.response.cursor.CursorUtilClass;
+import com.onmoim.server.group.dto.response.cursor.MemberListCursor;
+import com.onmoim.server.group.dto.response.cursor.NearbyPopularGroupCursor;
 import com.onmoim.server.group.service.GroupService;
 import com.onmoim.server.meeting.dto.MeetingDetail;
 import com.onmoim.server.meeting.service.MeetingService;
@@ -198,25 +213,48 @@ public class GroupController {
 			responseCode = "200",
 			description = "모임 회원 조회 성공"),
 		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자 접근"),
+		@ApiResponse(
+			responseCode = "403",
+			description = "권한이 부족합니다. 모임원만 조회 가능"),
+		@ApiResponse(
 			responseCode = "404",
 			description = "존재하지 않는 모임")
 	})
 	@GetMapping("/v1/groups/{groupId}/members")
-	public ResponseEntity<ResponseHandler<CursorPageResponseDto<GroupMembersResponseDto>>> getGroupMembers(
+	public ResponseEntity<ResponseHandler<CursorPageResponseDto<GroupMembersResponseDto, MemberListCursor>>> getGroupMembers(
 		@Parameter(description = "모임 ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId,
-		@Parameter(description = "커서 ID (마지막 조회한 커서 ID)", in = ParameterIn.QUERY)
-		@RequestParam(required = false) Long cursorId,
+		@Parameter(description = "마지막 회원 ID(커서 용도)", in = ParameterIn.QUERY)
+		@RequestParam(required = false) Long lastMemberId,
 		@Parameter(description = "페이지 크기 (고정 크기 = 10)", in = ParameterIn.QUERY)
-		@RequestParam(required = false, defaultValue = "10") int size
+		@RequestParam(required = false, defaultValue = "10") int requestSize
 	)
 	{
-		List<GroupMember> groupMembers = groupService.getGroupMembers(groupId, cursorId, size);
-		Long totalCount = groupService.groupMemberCount(groupId);
+		// 모임 회원 조회
+		List<GroupMember> groupMembers = groupService.readGroupMembers(groupId, lastMemberId, requestSize);
+
+		// 모임 전체 회원 수 조회
+		Long totalMemberCount = groupService.groupMemberCount(groupId);
+
+		// 다음 페이지 유무
+		boolean hasNext = CursorUtilClass.hasNext(groupMembers, requestSize);
+
+		// 요청 크기에 맞게 가공
+		List<GroupMember> extractResult = CursorUtilClass.extractContent(groupMembers, hasNext, requestSize);
+
+		// 응답 DTO 변환
+		List<GroupMembersResponseDto> response = extractResult.stream()
+			.map(GroupMembersResponseDto::of).toList();
+
+		// 응답 커서 추출
+		MemberListCursor cursorInfo = MemberListCursor.of(hasNext, response, totalMemberCount);
+
 		return ResponseEntity.ok(ResponseHandler.response(CursorPageResponseDto.of(
-			groupMembers,
-			size,
-			totalCount)));
+			response,
+			cursorInfo
+		)));
 	}
 
 	@Operation(
@@ -385,4 +423,170 @@ public class GroupController {
 		));
 	}
 
+	@Operation(
+		summary = "인기: 활동이 활발한 모임 조회",
+		description = "활동이 활발한 모임 조회"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "활동이 활발한 모임 조회"),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자 접근")
+	})
+	@GetMapping("/v1/groups/active/popular")
+	public ResponseEntity<ResponseHandler<CursorPageResponseDto<GroupInfoResponseDto, ActiveGroupCursor>>> get(
+		@Parameter(description = "마지막 모임 ID (커서 용도)", in = ParameterIn.QUERY)
+		@RequestParam(required = false) Long lastGroupId,
+		@Parameter(description = "페이지 크기 (고정 크기 = 10)", in = ParameterIn.QUERY)
+		@RequestParam(required = false, defaultValue = "10") int requestSize,
+		@Parameter(description = "마지막 다가오는 일정 수 (커서 용도)", in = ParameterIn.QUERY)
+		@RequestParam(required = false) Long meetingCount
+	)
+	{
+		// 활동이 활발한 모임 조회
+		List<ActiveGroup> activeGroups = groupService.readMostActiveGroups(lastGroupId, meetingCount, requestSize);
+
+		// 모임 ID 추출
+		List<Long> groupIds = activeGroups.stream()
+			.map(ActiveGroup::groupId)
+			.toList();
+
+		// 모임 관련 정보 조회
+		List<ActiveGroupDetail> activeGroupDetails = groupService.readGroupsDetail(groupIds);
+
+		// 현재 사용자와 모임들 관계 조회
+		List<ActiveGroupRelation> activeGroupRelations = groupService.readGroupsRelation(groupIds);
+
+		// List -> Map
+		Map<Long, ActiveGroupDetail> detailMap = activeGroupDetails.stream().collect(Collectors.toMap(
+			ActiveGroupDetail::groupId,
+			Function.identity()
+		));
+		Map<Long, ActiveGroupRelation> relationMap = activeGroupRelations.stream().collect(Collectors.toMap(
+			ActiveGroupRelation::groupId,
+			Function.identity()
+		));
+
+		// 다음 페이지 유무
+		boolean hasNext = CursorUtilClass.hasNext(activeGroups, requestSize);
+
+		// 요청 크기에 맞게 가공
+		List<ActiveGroup> extractContent =
+			CursorUtilClass.extractContent(activeGroups, hasNext, requestSize);
+
+		// 응답 DTO 변환
+		List<GroupInfoResponseDto> response = extractContent.stream()
+			.map(g -> GroupInfoResponseDto.of(g, detailMap.get(g.groupId()), relationMap.get(g.groupId()))
+			).toList();
+
+		// 응답 커서 추출
+		ActiveGroupCursor cursor = ActiveGroupCursor.of(hasNext, response);
+
+		return ResponseEntity.ok(ResponseHandler.response(CursorPageResponseDto.of(
+			response,
+			cursor
+		)));
+	}
+
+	@Operation(
+		summary = "인기: 내 주변 인기 모임 조회",
+		description = "내 주변 인기 모임 조회"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "내 주변 인기 모임 조회"),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자 접근")
+	})
+	@GetMapping("/v1/groups/nearby/popular")
+	public ResponseEntity<ResponseHandler<CursorPageResponseDto<GroupInfoResponseDto, NearbyPopularGroupCursor>>> getNearbyPopularGroups(
+		@Parameter(description = "마지막 모임 ID (커서 용도)", in = ParameterIn.QUERY)
+		@RequestParam(required = false) Long lastGroupId,
+		@Parameter(description = "페이지 크기 (고정 크기 = 10)", in = ParameterIn.QUERY)
+		@RequestParam(required = false, defaultValue = "10") int requestSize,
+		@Parameter(description = "마지막 회원 수 (커서 용도)", in = ParameterIn.QUERY)
+		@RequestParam(required = false) Long memberCount
+	)
+	{
+		// 인기 모임 조회
+		List<PopularGroupSummary> summaries = groupService.readPopularGroupsNearMe(
+			lastGroupId,
+			requestSize,
+			memberCount);
+
+		// 모임 ID 추출
+		List<Long> groupIds = summaries.stream()
+			.map(PopularGroupSummary::groupId)
+			.toList();
+
+		// 모임별 추가 정보 조회
+		List<PopularGroupRelation> commonInfos = groupService.readGroupsCommonInfo(groupIds);
+
+		// ID -> PopularGroupRelation 매핑
+		Map<Long, PopularGroupRelation> commonInfoMap = commonInfos.stream().collect(
+			Collectors.toMap(PopularGroupRelation::groupId, Function.identity()));
+
+		// 다음 페이지 유무
+		boolean hasNext = CursorUtilClass.hasNext(summaries, requestSize);
+
+		// 요청 크기에 맞게 가공
+		List<PopularGroupSummary> extractSummaries =
+			CursorUtilClass.extractContent(summaries, hasNext, requestSize);
+
+		// 응답 DTO 변환
+		List<GroupInfoResponseDto> response = extractSummaries.stream().map(
+			s -> GroupInfoResponseDto.of(s, commonInfoMap.get(s.groupId())))
+			.toList();
+
+		// 응답 커서 추출
+		NearbyPopularGroupCursor cursor = NearbyPopularGroupCursor.of(hasNext, response);
+
+		return ResponseEntity.ok(ResponseHandler.response(CursorPageResponseDto.of(
+			response,
+			cursor
+		)));
+	}
+
+	@Operation(
+		summary = "모임 통계 조회",
+		description = "모임 연간 일정, 모임 월간 일정"
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "모임 통계 조회 성공"),
+		@ApiResponse(
+			responseCode = "401",
+			description = "인증되지 않은 사용자 접근"),
+		@ApiResponse(
+			responseCode = "403",
+			description = "현재 사용자가 해당 모임장이 아닌 경우"),
+		@ApiResponse(
+			responseCode = "404",
+			description = "존재하지 않는 모임")
+	})
+	@GetMapping("/v1/groups/{groupId}/statistics")
+	public ResponseEntity<ResponseHandler<GroupStatisticsResponseDto>> getGroupStatistics(
+		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
+		@PathVariable Long groupId
+	)
+	{
+		// 모임장 확인
+		groupService.checkOwner(groupId);
+
+		LocalDateTime now = LocalDateTime.now();
+		Long annualSchedule = groupService.readAnnualScheduleCount(groupId, now);
+		Long monthlySchedule = groupService.readMonthlyScheduleCount(groupId, now);
+
+		return ResponseEntity.ok(ResponseHandler.response(
+			GroupStatisticsResponseDto.of(
+				annualSchedule,
+				monthlySchedule
+			)
+		));
+	}
 }

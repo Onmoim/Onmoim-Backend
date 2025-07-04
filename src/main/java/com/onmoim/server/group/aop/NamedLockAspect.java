@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.repository.GroupRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -20,10 +19,12 @@ import lombok.extern.slf4j.Slf4j;
 @Aspect
 @Component
 @RequiredArgsConstructor
-@Order(2)
+@Order(1)
 public class NamedLockAspect {
+
 	private static final int LOCK_TIMEOUT_SECOND = 3;
 	private final GroupRepository groupRepository;
+
 	@Transactional
 	@Around("@annotation(com.onmoim.server.group.aop.NamedLock)")
 	public Object around(ProceedingJoinPoint joinPoint) throws Throwable {

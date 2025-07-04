@@ -2,6 +2,9 @@ package com.onmoim.server.group.implement;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -13,20 +16,23 @@ import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
 import com.onmoim.server.common.s3.service.S3FileStorageService;
+import com.onmoim.server.group.dto.ActiveGroup;
+import com.onmoim.server.group.dto.ActiveGroupDetail;
+import com.onmoim.server.group.dto.ActiveGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.entity.Group;
-import com.onmoim.server.group.entity.GroupUser;
-import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.location.entity.Location;
 
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class GroupQueryService {
 	private final GroupRepository groupRepository;
-	private final GroupUserQueryService groupUserQueryService;
 	private final S3FileStorageService s3FileStorageService;
 
 	public Group saveGroup(
@@ -45,15 +51,12 @@ public class GroupQueryService {
 			.build();
 		try {
 			return groupRepository.save(group);
-		} catch (DataIntegrityViolationException e) {
+		}
+		catch (DataIntegrityViolationException e) {
 			throw new CustomException(ALREADY_EXISTS_GROUP);
 		}
 	}
-	/**
-	 * group 존재 X -> CustomException
-	 * group 존재 O, deletedDate 존재 O -> CustomException
-	 * group 존재 O, deletedDate 존재 X -> group 반환
-	 */
+
 	public Group getById(Long groupId) {
 		return findActiveGroup(groupId);
 	}
@@ -88,7 +91,7 @@ public class GroupQueryService {
 		MultipartFile image
 	) {
 		// 현재 모임원 숫자
-		Long currentMember = groupUserQueryService.countMembers(group.getId());
+		Long currentMember = groupRepository.countGroupMembers(group.getId());
 
 		// 모임 설명, 모임 정원 변경
 		group.update(description, capacity, currentMember);
@@ -100,6 +103,67 @@ public class GroupQueryService {
 		}
 	}
 
+	// 내 주변 인기 모임 조회
+	public List<PopularGroupSummary> readPopularGroupsNearMe(
+		Long locationId,
+		@Nullable Long lastGroupId,
+		@Nullable Long memberCount,
+		int size
+	)
+	{
+		return groupRepository.readPopularGroupsNearMe(
+			locationId,
+			lastGroupId,
+			memberCount,
+			size);
+	}
+
+	public List<PopularGroupRelation> readPopularGroupRelation(
+		List<Long> groupIds,
+		Long userId
+	)
+	{
+		return groupRepository.readPopularGroupRelation(
+			groupIds,
+			userId);
+	}
+
+	// 활동이 활발한 모임 조회
+	public List<ActiveGroup> readMostActiveGroups(
+		@Nullable Long lastGroupId,
+		@Nullable Long memberCount,
+		int size
+	)
+	{
+		return groupRepository.readMostActiveGroups(
+			lastGroupId,
+			memberCount,
+			size
+		);
+	}
+
+	public List<ActiveGroupDetail> readGroupsDetail(List<Long> groupIds) {
+		return groupRepository.readGroupDetails(groupIds);
+	}
+
+	public List<ActiveGroupRelation> readGroupsRelation(
+		List<Long> groupIds,
+		Long userId
+	)
+	{
+		return groupRepository.readGroupsRelation(groupIds, userId);
+	}
+
+	// 모임 연간 일정 개수
+	public Long readAnnualScheduleCount(Long groupId, LocalDateTime now) {
+		return groupRepository.readAnnualScheduleCount(groupId, now);
+	}
+
+	// 모임 월간 일전 개수
+	public Long readMonthlyScheduleCount(Long groupId, LocalDateTime now) {
+		return groupRepository.readMonthlyScheduleCount(groupId, now);
+	}
+
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void updateGeoPoint(
 		Long groupId,
@@ -107,9 +171,5 @@ public class GroupQueryService {
 	) {
 		Group group = getById(groupId);
 		group.updateLocation(geoPoint);
-	}
-
-	public void banMember(GroupUser user) {
-		user.updateStatus(Status.BAN);
 	}
 }

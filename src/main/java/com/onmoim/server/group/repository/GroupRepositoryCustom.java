@@ -1,7 +1,23 @@
 package com.onmoim.server.group.repository;
 
-/**
- * 추후 Querydsl 기능 확장용 인터페이스
- */
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.onmoim.server.group.dto.ActiveGroup;
+import com.onmoim.server.group.dto.ActiveGroupDetail;
+import com.onmoim.server.group.dto.ActiveGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupSummary;
+import com.onmoim.server.group.entity.GroupUser;
+
 public interface GroupRepositoryCustom {
+	Long countGroupMembers(Long groupId);
+	List<GroupUser> findGroupUsers(Long groupId, Long lastMemberId, int size);
+	List<PopularGroupSummary> readPopularGroupsNearMe(Long locationId, Long lastGroupId, Long memberCount, int size);
+	List<PopularGroupRelation> readPopularGroupRelation(List<Long> groupIds, Long userId);
+	List<ActiveGroup> readMostActiveGroups(Long lastGroupId, Long memberCount, int size);
+	List<ActiveGroupDetail> readGroupDetails(List<Long> groupIds);
+	List<ActiveGroupRelation> readGroupsRelation(List<Long> groupIds, Long userId);
+	Long readAnnualScheduleCount (Long groupId, LocalDateTime now);
+	Long readMonthlyScheduleCount (Long groupId, LocalDateTime now);
 }
