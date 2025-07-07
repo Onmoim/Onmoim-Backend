@@ -35,6 +35,9 @@ public class S3FileStorageService implements FileStorageService {
 	@Value("${cloud.aws.s3.bucket}")
 	private String bucket;
 
+	@Value("${cloud.aws.cloudfront.domain}")
+	private String domain;
+
 	@Override
 	public FileUploadResponseDto uploadFile(MultipartFile file, String directory) {
 		// 파일 유효성 검증
@@ -53,6 +56,8 @@ public class S3FileStorageService implements FileStorageService {
 				? directory + "/" + storedFileName
 				: storedFileName;
 
+		log.info("keyName = {}", keyName);
+
 		try {
 			// 메타데이터 설정
 			ObjectMetadata metadata = new ObjectMetadata();
@@ -68,7 +73,8 @@ public class S3FileStorageService implements FileStorageService {
 			));
 
 			// 업로드된 파일의 URL 가져오기
-			String fileUrl = amazonS3.getUrl(bucket, keyName).toString();
+			String pathWithoutPrefix = keyName.replaceFirst("^images/", "");
+			String fileUrl = domain + "/" + pathWithoutPrefix;
 
 			log.info("파일 업로드 성공: {}", fileUrl);
 
