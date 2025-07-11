@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,7 +29,6 @@ import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.implement.GroupQueryService;
 import com.onmoim.server.group.implement.GroupUserQueryService;
-import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.service.LocationQueryService;
 import com.onmoim.server.security.CustomUserDetails;
@@ -83,7 +83,7 @@ public class GroupService {
 
 	// 모임 가입
 	@NamedLock
-	@Transactional
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void joinGroup(Long groupId) {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
@@ -154,7 +154,7 @@ public class GroupService {
 
 	// 모임 탈퇴
 	@NamedLock
-	@Transactional
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void leaveGroup(Long groupId) {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
@@ -214,7 +214,7 @@ public class GroupService {
 
 	// 모임 수정
 	@NamedLock
-	@Transactional
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void updateGroup(
 		Long groupId,
 		String description,
