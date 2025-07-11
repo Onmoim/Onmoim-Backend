@@ -3,17 +3,17 @@ package com.onmoim.server.group.service;
 import static com.onmoim.server.common.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.category.entity.Category;
@@ -54,6 +54,16 @@ class GroupServiceTest {
 	private GroupUserQueryService groupUserQueryService;
 	@Autowired
 	private GroupQueryService groupQueryService;
+
+	@AfterEach
+	void tearDown() {
+		groupUserRepository.deleteAll();
+		groupRepository.deleteAll();
+		userRepository.deleteAll();
+		locationRepository.deleteAll();
+		categoryRepository.deleteAll();
+		SecurityContextHolder.clearContext();
+	}
 
 	private void setSecurityContext(Long userId) {
 		var detail = new CustomUserDetails(
@@ -289,6 +299,9 @@ class GroupServiceTest {
 
 		groupUserRepository.save(GroupUser.create(group, user, Status.OWNER));
 
+		TestTransaction.flagForCommit();
+		TestTransaction.end();
+
 		final Long groupId = group.getId();
 		setSecurityContext(user.getId());
 
@@ -318,6 +331,9 @@ class GroupServiceTest {
 		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
 		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
 
+		TestTransaction.flagForCommit();
+		TestTransaction.end();
+
 		final Long groupId = group.getId();
 		setSecurityContext(member.getId());
 
@@ -343,6 +359,9 @@ class GroupServiceTest {
 
 		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
 		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
+
+		TestTransaction.flagForCommit();
+		TestTransaction.end();
 
 		final Long groupId = group.getId();
 		setSecurityContext(owner.getId());
@@ -512,7 +531,6 @@ class GroupServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("모임 탈퇴 성공: 모임원 (MEMBER -> PENDING)")
 	void leaveGroupSuccess1() {
 		User owner = User.builder().name("owner").build();
@@ -528,6 +546,9 @@ class GroupServiceTest {
 		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
 		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
 
+		TestTransaction.flagForCommit();
+		TestTransaction.end();
+
 		final Long groupId = group.getId();
 		setSecurityContext(member.getId());
 
@@ -542,7 +563,6 @@ class GroupServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("모임 탈퇴 성공 + 모임 삭제: 모임장 + 모임원 = 1명")
 	void leaveGroupSuccess2() {
 		User owner = User.builder().name("owner").build();
@@ -555,6 +575,9 @@ class GroupServiceTest {
 			.build());
 
 		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+
+		TestTransaction.flagForCommit();
+		TestTransaction.end();
 
 		final Long groupId = group.getId();
 		setSecurityContext(owner.getId());
@@ -569,7 +592,6 @@ class GroupServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("모임 탈퇴 실패: 모임장 + 모임원 = 2명")
 	void leaveGroupFailure1() {
 		User owner = User.builder().name("owner").build();
@@ -585,6 +607,9 @@ class GroupServiceTest {
 		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
 		groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
 
+		TestTransaction.flagForCommit();
+		TestTransaction.end();
+
 		final Long groupId = group.getId();
 		setSecurityContext(owner.getId());
 
@@ -595,7 +620,6 @@ class GroupServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("모임 탈퇴 실패: 모임원 아닌 사용자 탈퇴 시도")
 	void leaveGroupFailure2() {
 		User owner = User.builder().name("owner").build();
@@ -609,6 +633,10 @@ class GroupServiceTest {
 			.build());
 
 		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
+
+		TestTransaction.flagForCommit();
+		TestTransaction.end();
+
 		final Long groupId = group.getId();
 		setSecurityContext(member.getId());
 
@@ -701,56 +729,5 @@ class GroupServiceTest {
 		assertThatThrownBy(() -> groupService.transferOwnership(groupId, member.getId()))
 			.isInstanceOf(CustomException.class)
 			.hasMessage(GROUP_FORBIDDEN.getDetail());
-	}
-
-	@Test
-	@Disabled
-	@DisplayName("내 주변 인기 모임 조회 - 회원 수 내림차순 정렬 및 다양한 location, group, groupUser 정보")
-	void readPopularGroupsNearMe() {
-		// given
-		Location location1 = Location.create("1111", "서울특별시", "종로구", "청운동", null);
-		Location location2 = Location.create("1112", "서울특별시", "강남구", "역삼동", null);
-		Location location3 = Location.create("1113", "부산광역시", "해운대구", "우동", null);
-		locationRepository.save(location1);
-		locationRepository.save(location2);
-		locationRepository.save(location3);
-
-		User user = User.builder().name("test").location(location1).build();
-		userRepository.save(user);
-
-		setSecurityContext(user.getId());
-
-		// location1에 6개, location2에 2개, location3에 1개 모임 생성
-		List<Group> groups = new ArrayList<>();
-		groups.add(Group.builder().name("종로 인기 모임 1").description("설명1").capacity(100).location(location1).build());
-		groups.add(Group.builder().name("종로 인기 모임 2").description("설명2").capacity(100).location(location1).build());
-		groups.add(Group.builder().name("종로 인기 모임 3").description("설명3").capacity(100).location(location1).build());
-		groups.add(Group.builder().name("강남 인기 모임 1").description("설명4").capacity(100).location(location2).build());
-		groups.add(Group.builder().name("강남 인기 모임 2").description("설명5").capacity(100).location(location2).build());
-		groups.add(Group.builder().name("해운대 인기 모임 1").description("설명6").capacity(100).location(location3).build());
-		groups.add(Group.builder().name("종로 인기 모임 4").description("설명7").capacity(100).location(location1).build());
-		groups.add(Group.builder().name("종로 인기 모임 5").description("설명8").capacity(100).location(location1).build());
-		groups.add(Group.builder().name("종로 인기 모임 6").description("설명9").capacity(100).location(location1).build());
-		groupRepository.saveAll(groups);
-
-
-		for (int i = 0; i < groups.size(); i++) {
-			Group group = groups.get(i);
-			// 각 모임 모임장 저장
-			User owner = User.builder().name("owner" + i).location(location1).build();
-			userRepository.save(owner);
-			groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
-			if(!group.getName().contains("종로")) continue;
-			// 종로 모임에만 회원 추가
-			int memberCount = 3 + i;
-			for (int j = 0; j < memberCount; j++) {
-				User member = User.builder().name("member" + i + j).location(location1).build();
-				userRepository.save(member);
-				groupUserRepository.save(GroupUser.create(group, member, Status.MEMBER));
-			}
-		}
-
-
-
 	}
 }
