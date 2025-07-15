@@ -6,13 +6,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.onmoim.server.chat.dto.ChatMessageDto;
 import com.onmoim.server.chat.dto.ChatUserDto;
 import com.onmoim.server.chat.service.ChatMessageService;
-import com.onmoim.server.chat.service.ChatRoomMemberQueryService;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.implement.GroupQueryService;
-import com.onmoim.server.group.service.GroupService;
 import com.onmoim.server.group.implement.GroupUserQueryService;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.service.UserQueryService;
@@ -28,10 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ChatMessageFacade {
 
-	private final ChatRoomMemberQueryService chatRoomMemberQueryService;
+	private final GroupUserQueryService groupUserQueryService;
 	private final UserQueryService userQueryService;
 	private final GroupQueryService groupQueryService;
-	private final GroupUserQueryService groupUserQueryService;
 	private final ChatMessageService chatMessageService;
 
 	/**
@@ -42,7 +39,7 @@ public class ChatMessageFacade {
 		Long roomId = message.getRoomId();
 		log.debug("messageDto : {}, sender : {}", message, userId);
 
-		chatRoomMemberQueryService.getByChatRoomIdAndUserId(roomId, userId);
+		isExistsOrThrow(message.getGroupId());
 
 		// 메시지에 인증된 사용자 ID 설정
 		User user = userQueryService.findById(userId);
@@ -55,6 +52,10 @@ public class ChatMessageFacade {
 
 		// 메시지 전송 서비스 호출
 		chatMessageService.sendMessage(message);
+	}
+
+	private void isExistsOrThrow(Long groupId) {
+		groupQueryService.existsById(groupId);
 	}
 
 }

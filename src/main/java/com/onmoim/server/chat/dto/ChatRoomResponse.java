@@ -27,11 +27,11 @@ public class ChatRoomResponse {
 	@Schema(description = "카테고리 ID")
 	private Long creatorId;
 	@Schema(description = "모임 인원 수")
-	private int memberCount;
+	private Long memberCount;
 	@Schema(description = "채팅방 구독 destination")
 	private String subscribeDestination;
 
-	public static ChatRoomResponse fromChatRoom(ChatRoom chatRoom, int memberCount, String subscribeDestination) {
+	public static ChatRoomResponse fromChatRoom(ChatRoom chatRoom, Long memberCount, String subscribeDestination) {
 		return ChatRoomResponse.builder()
 			.groupId(chatRoom.getId())
 			.name(chatRoom.getName())

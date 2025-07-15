@@ -1,15 +1,12 @@
 package com.onmoim.server.chat.domain;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.onmoim.server.common.BaseEntity;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,12 +34,4 @@ public class ChatRoom extends BaseEntity {
     
     @Column(name = "creator_id", nullable = false)
     private Long creatorId;
-
-    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<ChatRoomMember> chatRoomMembers = new HashSet<>();
-    
-    public void addMember(ChatRoomMember member) {
-        chatRoomMembers.add(member);
-        member.setChatRoom(this);
-    }
 }
