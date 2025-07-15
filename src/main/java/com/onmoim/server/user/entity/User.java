@@ -99,8 +99,8 @@ public class User extends BaseEntity {
 		this.gender = gender;
 		this.birth = birth;
 		this.location = location;
-		this.introduction = introduction;
 		this.profileImgUrl = profileImgUrl;
+		this.introduction = introduction;
 	}
 
 	public void leaveUser() {
@@ -111,8 +111,8 @@ public class User extends BaseEntity {
 		this.gender = null;
 		this.birth = null;
 		this.location = null;
-		this.introduction = null;
 		this.profileImgUrl = null;
+		this.introduction = null;
 		this.softDelete();
 	}
 }

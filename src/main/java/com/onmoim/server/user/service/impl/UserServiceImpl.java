@@ -199,14 +199,16 @@ public class UserServiceImpl implements UserService {
 			fileUploadResponse = fileStorageService.uploadFile(profileImgFile, directory);
 			log.info("fileUrl = {}", fileUploadResponse.getFileUrl());
 
+			// TODO: 이미지 삭제 로직 추가 필요
+
 			// 1. user 테이블 update(사진 등록/교체하는 경우)
 			user.updateProfile(
 				request.getName(),
 				request.getGender(),
 				request.getBirth().atStartOfDay(),
 				location,
-				request.getIntroduction(),
-				fileUploadResponse.getFileUrl()
+				fileUploadResponse.getFileUrl(),
+				request.getIntroduction()
 			);
 		} else {
 			// 1. user 테이블 update(기존 사진 교체 없는 경우)
@@ -215,8 +217,8 @@ public class UserServiceImpl implements UserService {
 				request.getGender(),
 				request.getBirth().atStartOfDay(),
 				location,
-				request.getIntroduction(),
-				request.getProfileImgUrl()
+				request.getProfileImgUrl(),
+				request.getIntroduction()
 			);
 		}
 
