@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.category.entity.Category;
@@ -199,7 +200,10 @@ public class UserServiceImpl implements UserService {
 			fileUploadResponse = fileStorageService.uploadFile(profileImgFile, directory);
 			log.info("fileUrl = {}", fileUploadResponse.getFileUrl());
 
-			// TODO: 이미지 삭제 로직 추가 필요
+			// 기존 이미지가 있을 경우 삭제
+			if (StringUtils.hasText(user.getProfileImgUrl())) {
+				fileStorageService.deleteFile(user.getProfileImgUrl());
+			}
 
 			// 1. user 테이블 update(사진 등록/교체하는 경우)
 			user.updateProfile(
