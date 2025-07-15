@@ -7,10 +7,12 @@ import static org.mockito.Mockito.*;
 import java.io.IOException;
 import java.net.URL;
 
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -67,7 +69,7 @@ class S3FileStorageServiceTest {
 	}
 
 	@Test
-	@DisplayName("파일 업로드 성공 테스트")
+	@DisplayName("파일 업로드 성공 테스트 - CloudFront url 기반")
 	void uploadFileSuccess() throws Exception {
 
 		String directory = "images/test-directory";
@@ -129,33 +131,48 @@ class S3FileStorageServiceTest {
 		when(errorFile.getInputStream()).thenThrow(new IOException("테스트 예외"));
 
 
-		assertThrows(CustomException.class, () -> {
+		CustomException exception = assertThrows(CustomException.class, () -> {
 			s3FileStorageService.uploadFile(errorFile, "test-directory");
 		});
 
+		assertEquals(ErrorCode.FILE_UPLOAD_FAILED, exception.getErrorCode());
+
 		verify(fileValidator).validate(errorFile);
-		verify(amazonS3, never()).getUrl(anyString(), anyString());
+		verify(amazonS3, never()).putObject(any(PutObjectRequest.class));
 	}
 
 	@Test
-	@DisplayName("파일 삭제 성공 테스트")
+	@DisplayName("파일 삭제 성공 테스트 - CloudFront url 기반")
 	void deleteFileSuccess() throws Exception {
+		String directory = "images/test-directory";
+		String keyName = directory + "/" + testFileName;
+		String fileUrl = testDomain + "/" + keyName.replaceFirst("^images/", "");
+
 		doNothing().when(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 
 		assertDoesNotThrow(() -> {
-			s3FileStorageService.deleteFile(testUrl);
+			s3FileStorageService.deleteFile(fileUrl);
 		});
 
-		verify(amazonS3).deleteObject(any(DeleteObjectRequest.class));
+		ArgumentCaptor<DeleteObjectRequest> captor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
+		verify(amazonS3).deleteObject(captor.capture());
+
+		DeleteObjectRequest deleteRequest = captor.getValue();
+		assertEquals(keyName, deleteRequest.getKey());
 	}
 
 	@Test
-	@DisplayName("파일 삭제 실패 테스트")
+	@DisplayName("파일 삭제 실패 테스트 - CloudFront url 기반")
 	void deleteFileFailure() throws Exception {
+
+		String directory = "images/test-directory";
+		String keyName = directory + "/" + testFileName;
+		String fileUrl = testDomain + "/" + keyName.replaceFirst("^images/", "");
+
 		doThrow(new RuntimeException("삭제 실패")).when(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 
 		CustomException exception = assertThrows(CustomException.class, () -> {
-			s3FileStorageService.deleteFile(testUrl);
+			s3FileStorageService.deleteFile(fileUrl);
 		});
 
 		assertEquals(ErrorCode.FILE_DELETE_FAILED, exception.getErrorCode());
