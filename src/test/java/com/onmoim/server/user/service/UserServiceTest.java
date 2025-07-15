@@ -6,6 +6,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.group.entity.GroupUser;
+import com.onmoim.server.group.entity.Status;
+import com.onmoim.server.group.implement.GroupQueryService;
+import com.onmoim.server.group.repository.GroupUserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,11 +61,27 @@ public class UserServiceTest {
 	@Autowired
 	private LocationRepository locationRepository;
 
+	@Autowired
+	private GroupQueryService groupQueryService;
+
+	@Autowired
+	private GroupUserRepository groupUserRepository;
+
+	private Location location;
+	private Category category1;
+	private Category category2;
+
+	@BeforeEach
+	void setUp() {
+		location = locationRepository.save(Location.create("100000", "서울특별시", "강남구", "역삼동", null));
+		category1 = categoryRepository.save(Category.create("운동/스포츠", null));
+		category2 = categoryRepository.save(Category.create("음악/악기", null));
+	}
+
 	@Test
 	@DisplayName("회원가입 성공")
 	void signupSuccess() {
 		// given
-		Location location = locationRepository.save(Location.create("100000", "서울특별시", "강남구", "역삼동", null));
 		SignupRequestDto request = new SignupRequestDto("홍길동", "M", LocalDate.now(), location.getId());
 
 		String signupToken = jwtProvider.createSignupToken("google", "1234567890", "test@test.com"); // signupToken 생성
@@ -88,8 +111,6 @@ public class UserServiceTest {
 	@DisplayName("관심사 저장 성공")
 	void createUserCategorySuccess() {
 		// given
-		Location location = locationRepository.save(Location.create("100000", "서울특별시", "강남구", "역삼동", null));
-
 		User user = userRepository.save(User.builder()
 			.oauthId("1234567890")
 			.provider("google")
@@ -106,11 +127,6 @@ public class UserServiceTest {
 			new UsernamePasswordAuthenticationToken(String.valueOf(user.getId()), null, List.of());
 		context.setAuthentication(auth);
 		SecurityContextHolder.setContext(context);
-
-		Category category1 = Category.create("운동/스포츠", null);
-		Category category2 = Category.create("음악/악기", null);
-		categoryRepository.save(category1);
-		categoryRepository.save(category2);
 
 		CreateUserCategoryRequestDto request = new CreateUserCategoryRequestDto(
 			user.getId(),
@@ -133,8 +149,6 @@ public class UserServiceTest {
 	@DisplayName("유저 프로필 조회 성공")
 	void getProfileSuccess() {
 		// given
-		Location location = locationRepository.save(Location.create("100000", "서울특별시", "강남구", "역삼동", null));
-
 		User user = userRepository.save(User.builder()
 			.oauthId("1234567890")
 			.provider("google")
@@ -158,6 +172,73 @@ public class UserServiceTest {
 		// then
 		assertEquals("홍길동", profile.getName());
 		assertEquals("역삼동", profile.getLocationName());
+	}
+
+	@Test
+	@DisplayName("회원 탈퇴 성공")
+	void leaveUserSuccess() {
+		// given
+		User user = userRepository.save(User.builder()
+			.oauthId("oauth123")
+			.provider("google")
+			.email("test@test.com")
+			.name("홍길동")
+			.gender("F")
+			.birth(LocalDateTime.now())
+			.location(location)
+			.build()
+		);
+
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		UsernamePasswordAuthenticationToken auth =
+			new UsernamePasswordAuthenticationToken(String.valueOf(user.getId()), null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
+
+		// when
+		userService.leaveUser(user.getId());
+
+		// then
+		User deletedUser = userRepository.findById(user.getId()).orElseThrow();
+		assertTrue(deletedUser.isDeleted());
+	}
+
+	@Test
+	@DisplayName("모임장인 유저가 탈퇴 시도 - 예외 발생")
+	void leaveUserIsGroupOwner() {
+		// given
+		User user = userRepository.save(User.builder()
+			.oauthId("oauth123")
+			.provider("google")
+			.email("test@test.com")
+			.name("홍길동")
+			.gender("F")
+			.birth(LocalDateTime.now())
+			.location(location)
+			.build()
+		);
+
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		UsernamePasswordAuthenticationToken auth =
+			new UsernamePasswordAuthenticationToken(String.valueOf(user.getId()), null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
+
+		// group, group_user 생성
+		Group group = groupQueryService.saveGroup(
+			category1,
+			location,
+			"테스트 모임",
+			"테스트 모임 설명",
+			100
+		);
+
+		groupUserRepository.save(GroupUser.create(group, user, Status.OWNER));
+
+		// when, then
+		CustomException exception = assertThrows(CustomException.class, () -> userService.leaveUser(user.getId()));
+		assertEquals("IS_GROUP_OWNER", exception.getErrorCode().name());
+
 	}
 
 }
