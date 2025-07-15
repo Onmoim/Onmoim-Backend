@@ -1,6 +1,6 @@
 package com.onmoim.server.chat.dto;
 
-import com.onmoim.server.chat.entity.ChatRoom;
+import com.onmoim.server.chat.domain.ChatRoom;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

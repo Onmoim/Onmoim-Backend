@@ -2,7 +2,7 @@ package com.onmoim.server.chat.example;
 
 import java.time.LocalDateTime;
 
-import com.onmoim.server.chat.entity.MessageType;
+import com.onmoim.server.chat.domain.enums.MessageType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

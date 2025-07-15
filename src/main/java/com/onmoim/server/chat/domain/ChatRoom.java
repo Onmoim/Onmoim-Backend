@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.entity;
+package com.onmoim.server.chat.domain;
 
 import java.util.HashSet;
 import java.util.Set;

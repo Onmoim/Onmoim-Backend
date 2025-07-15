@@ -1,6 +1,6 @@
 package com.onmoim.server.chat.example;
 
-import static com.onmoim.server.chat.entity.SubscribeRegistry.*;
+import static com.onmoim.server.chat.domain.enums.SubscribeRegistry.*;
 
 import java.security.Principal;
 

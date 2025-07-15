@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.entity;
+package com.onmoim.server.chat.domain.enums;
 
 public enum DeliveryStatus {
 	PENDING,            // 전송 대기 중

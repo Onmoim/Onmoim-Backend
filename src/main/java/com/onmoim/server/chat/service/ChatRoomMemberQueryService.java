@@ -2,7 +2,7 @@ package com.onmoim.server.chat.service;
 
 import org.springframework.stereotype.Service;
 
-import com.onmoim.server.chat.entity.ChatRoomMember;
+import com.onmoim.server.chat.domain.ChatRoomMember;
 import com.onmoim.server.chat.repository.ChatRoomMemberRepository;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
