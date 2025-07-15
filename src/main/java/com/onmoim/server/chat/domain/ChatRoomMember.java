@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.entity;
+package com.onmoim.server.chat.domain;
 
 import java.util.Objects;
 
@@ -17,7 +17,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * 채팅방 멤버 엔티티 클래스 - 데이터베이스에 저장

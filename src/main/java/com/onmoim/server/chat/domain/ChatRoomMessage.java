@@ -1,7 +1,9 @@
-package com.onmoim.server.chat.entity;
+package com.onmoim.server.chat.domain;
 
 import java.time.LocalDateTime;
 
+import com.onmoim.server.chat.domain.enums.DeliveryStatus;
+import com.onmoim.server.chat.domain.enums.MessageType;
 import com.onmoim.server.common.BaseEntity;
 
 import jakarta.persistence.Column;

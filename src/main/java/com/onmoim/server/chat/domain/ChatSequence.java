@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.entity;
+package com.onmoim.server.chat.domain;
 
 import com.onmoim.server.common.BaseEntity;
 

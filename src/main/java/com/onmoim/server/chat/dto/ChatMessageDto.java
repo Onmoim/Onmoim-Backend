@@ -2,8 +2,8 @@ package com.onmoim.server.chat.dto;
 
 import java.time.LocalDateTime;
 
-import com.onmoim.server.chat.entity.ChatRoomMessage;
-import com.onmoim.server.chat.entity.MessageType;
+import com.onmoim.server.chat.domain.ChatRoomMessage;
+import com.onmoim.server.chat.domain.enums.MessageType;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

@@ -23,7 +23,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import com.onmoim.server.chat.dto.ChatRoomResponse;
-import com.onmoim.server.chat.entity.SubscribeRegistry;
+import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.onmoim.server.TestSecurityConfig;
 import com.onmoim.server.common.exception.CustomException;

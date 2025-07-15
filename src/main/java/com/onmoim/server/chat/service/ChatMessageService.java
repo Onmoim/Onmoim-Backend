@@ -6,14 +6,16 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.onmoim.server.chat.domain.event.MessageSendEvent;
 import com.onmoim.server.chat.dto.ChatMessageDto;
 import com.onmoim.server.chat.dto.ChatUserDto;
-import com.onmoim.server.chat.entity.ChatRoomMessage;
-import com.onmoim.server.chat.entity.ChatRoomMessageId;
-import com.onmoim.server.chat.entity.DeliveryStatus;
-import com.onmoim.server.chat.entity.MessageType;
-import com.onmoim.server.chat.entity.SubscribeRegistry;
+import com.onmoim.server.chat.domain.ChatRoomMessage;
+import com.onmoim.server.chat.domain.ChatRoomMessageId;
+import com.onmoim.server.chat.domain.enums.DeliveryStatus;
+import com.onmoim.server.chat.domain.enums.MessageType;
+import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
 import com.onmoim.server.chat.repository.ChatMessageRepository;
+import com.onmoim.server.chat.repository.RoomChatMessageIdGenerator;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 

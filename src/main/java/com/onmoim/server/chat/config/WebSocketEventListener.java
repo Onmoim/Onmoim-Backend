@@ -13,8 +13,8 @@ import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
 import com.onmoim.server.chat.dto.ChatMessageDto;
 import com.onmoim.server.chat.dto.ChatUserDto;
-import com.onmoim.server.chat.entity.MessageType;
-import com.onmoim.server.chat.entity.SubscribeRegistry;
+import com.onmoim.server.chat.domain.enums.MessageType;
+import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
 import com.onmoim.server.chat.exception.StompErrorEvent;
 
 import lombok.RequiredArgsConstructor;

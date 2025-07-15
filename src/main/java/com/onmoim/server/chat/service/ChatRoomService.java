@@ -6,9 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.chat.dto.ChatRoomResponse;
-import com.onmoim.server.chat.entity.ChatRoom;
-import com.onmoim.server.chat.entity.ChatRoomMember;
-import com.onmoim.server.chat.entity.SubscribeRegistry;
+import com.onmoim.server.chat.domain.ChatRoom;
+import com.onmoim.server.chat.domain.ChatRoomMember;
+import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
 import com.onmoim.server.chat.repository.ChatRoomMemberRepository;
 import com.onmoim.server.chat.repository.ChatRoomRepository;
 

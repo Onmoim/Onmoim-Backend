@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.service;
+package com.onmoim.server.chat.repository;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.onmoim.server.chat.entity.ChatSequence;
+import com.onmoim.server.chat.domain.ChatSequence;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

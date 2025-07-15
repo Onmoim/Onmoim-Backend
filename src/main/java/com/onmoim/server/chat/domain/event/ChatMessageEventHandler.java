@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.service;
+package com.onmoim.server.chat.domain.event;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -7,8 +7,10 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.onmoim.server.chat.dto.ChatMessageDto;
-import com.onmoim.server.chat.entity.ChatRoomMessageId;
-import com.onmoim.server.chat.entity.DeliveryStatus;
+import com.onmoim.server.chat.domain.ChatRoomMessageId;
+import com.onmoim.server.chat.domain.enums.DeliveryStatus;
+import com.onmoim.server.chat.service.retry.ChatMessageRetryService;
+import com.onmoim.server.chat.service.ChatMessageService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
