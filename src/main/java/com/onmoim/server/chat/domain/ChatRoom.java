@@ -23,9 +23,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ChatRoom extends BaseEntity {
-    
+
     @Id
-    private Long id; //groupId와 동일
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private Long groupId;
 
     @Column(nullable = false)
     private String name;
