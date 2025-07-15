@@ -10,7 +10,7 @@ import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingType;
 
 
-public interface MeetingRepository extends JpaRepository<Meeting, Long>, QuerydslPredicateExecutor<Meeting> {
+public interface MeetingRepository extends JpaRepository<Meeting, Long>, QuerydslPredicateExecutor<Meeting>, MeetingRepositoryCustom {
 
 	/**
 	 * 일정 단건 조회 (삭제되지 않은 것만)
