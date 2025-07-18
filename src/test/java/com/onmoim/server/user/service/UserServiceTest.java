@@ -12,6 +12,7 @@ import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.implement.GroupQueryService;
 import com.onmoim.server.group.repository.GroupUserRepository;
+import com.onmoim.server.security.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -123,8 +124,9 @@ public class UserServiceTest {
 		);
 
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
 		UsernamePasswordAuthenticationToken auth =
-			new UsernamePasswordAuthenticationToken(String.valueOf(user.getId()), null, List.of());
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
 		context.setAuthentication(auth);
 		SecurityContextHolder.setContext(context);
 
@@ -161,8 +163,9 @@ public class UserServiceTest {
 		);
 
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
 		UsernamePasswordAuthenticationToken auth =
-			new UsernamePasswordAuthenticationToken(String.valueOf(user.getId()), null, List.of());
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
 		context.setAuthentication(auth);
 		SecurityContextHolder.setContext(context);
 
@@ -190,8 +193,9 @@ public class UserServiceTest {
 		);
 
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
 		UsernamePasswordAuthenticationToken auth =
-			new UsernamePasswordAuthenticationToken(String.valueOf(user.getId()), null, List.of());
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
 		context.setAuthentication(auth);
 		SecurityContextHolder.setContext(context);
 
@@ -219,8 +223,9 @@ public class UserServiceTest {
 		);
 
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
 		UsernamePasswordAuthenticationToken auth =
-			new UsernamePasswordAuthenticationToken(String.valueOf(user.getId()), null, List.of());
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
 		context.setAuthentication(auth);
 		SecurityContextHolder.setContext(context);
 

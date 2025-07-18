@@ -12,6 +12,7 @@ import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.UserMeeting;
 import com.onmoim.server.meeting.repository.MeetingRepository;
 import com.onmoim.server.meeting.repository.UserMeetingRepository;
+import com.onmoim.server.security.CustomUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -73,13 +74,17 @@ public class UserServiceImpl implements UserService {
 	public Long getCurrentUserId() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-		if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
+		if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
 			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
 		}
 
-		log.info("userId = {}", Long.parseLong(auth.getName()));
+		Object principal = auth.getPrincipal();
 
-		return Long.parseLong(auth.getName());
+		if (principal instanceof CustomUserDetails userDetails) {
+			return userDetails.getUserId();
+		} else {
+			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+		}
 	}
 
 	public OAuthUserDto extractSignupClaims() {
