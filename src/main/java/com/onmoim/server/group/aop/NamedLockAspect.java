@@ -26,9 +26,8 @@ public class NamedLockAspect {
 	private final GroupRepository groupRepository;
 
 	@Transactional
-	@Around("@annotation(com.onmoim.server.group.aop.NamedLock)")
-	public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
-		Long groupId = (Long) joinPoint.getArgs()[0];
+	@Around("@annotation(com.onmoim.server.group.aop.NamedLock) && args(groupId, ..)")
+	public Object around(ProceedingJoinPoint joinPoint, Long groupId) throws Throwable {
 		try {
 			Long result = groupRepository.getLock("group" + groupId, LOCK_TIMEOUT_SECOND);
 			if(result == 0L){

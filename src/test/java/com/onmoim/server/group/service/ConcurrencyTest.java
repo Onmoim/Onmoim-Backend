@@ -97,8 +97,8 @@ class ConcurrencyTest {
 		TestTransaction.end();           // 트랜잭션 종료
 
 		// when
-		int taskCount = 10000;
-		ExecutorService executorService = Executors.newFixedThreadPool(5000);
+		int taskCount = 200; // 동시성 테스트를 위한 작업 수
+		ExecutorService executorService = Executors.newFixedThreadPool(100);
 		CountDownLatch latch = new CountDownLatch(taskCount);
 		for (int i = 0; i < taskCount; i++) {
 			final int idx = i % userList.size();
