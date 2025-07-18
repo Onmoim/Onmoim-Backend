@@ -7,10 +7,12 @@ import static org.mockito.Mockito.*;
 import java.io.IOException;
 import java.net.URL;
 
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,16 +42,21 @@ class S3FileStorageServiceTest {
 	private MockMultipartFile testFile;
 	private final String bucket = "test-bucket";
 	private final String testUrl = "https://test-bucket.s3.ap-northeast-2.amazonaws.com/test-file.txt";
+	private final String testDomain = "https://cdn.example.com";
+	private final String testFileName = "test-file.txt";
 
 	@BeforeEach
 	void setUp() throws Exception {
 		// S3 버킷명 설정
 		setField(s3FileStorageService, "bucket", bucket);
 
+		// CloudFront 도메인 설정
+		setField(s3FileStorageService, "domain", testDomain);
+
 		// 테스트 파일 생성
 		testFile = new MockMultipartFile(
 			"file",
-			"test-file.txt",
+			testFileName,
 			"text/plain",
 			"테스트 파일 내용".getBytes()
 		);
@@ -62,39 +69,50 @@ class S3FileStorageServiceTest {
 	}
 
 	@Test
-	@DisplayName("파일 업로드 성공 테스트")
+	@DisplayName("파일 업로드 성공 테스트 - CloudFront url 기반")
 	void uploadFileSuccess() throws Exception {
+
+		String directory = "images/test-directory";
+		String keyName = directory + "/" + testFileName;
+		String expectedUrl = testDomain + "/" + keyName.replaceFirst("^images/", "");
 
 		doNothing().when(fileValidator).validate(any(MultipartFile.class));
 		when(amazonS3.putObject(any())).thenReturn(new PutObjectResult());
-		when(amazonS3.getUrl(eq(bucket), anyString())).thenReturn(new URL(testUrl));
 
-		FileUploadResponseDto result = s3FileStorageService.uploadFile(testFile, "test-directory");
+		// generateUniqueFilename()을 고정된 값으로 설정
+		S3FileStorageService spyService = spy(s3FileStorageService);
+		doReturn(testFileName).when(spyService).generateUniqueFilename(anyString());
+
+		FileUploadResponseDto result = spyService.uploadFile(testFile, "test-directory");
 
 		assertNotNull(result);
 		assertEquals("test-file.txt", result.getFileName());
-		assertEquals(testUrl, result.getFileUrl());
+		assertEquals(expectedUrl, result.getFileUrl());
 		assertEquals("text/plain", result.getFileType());
 		assertEquals(testFile.getSize(), result.getFileSize());
 
 		verify(fileValidator).validate(testFile);
 		verify(amazonS3).putObject(any());
-		verify(amazonS3).getUrl(eq(bucket), anyString());
 	}
 
 	@Test
 	@DisplayName("디렉토리 없이 파일 업로드 성공 테스트")
 	void uploadFileWithoutDirectorySuccess() throws Exception {
 
+		String expectedUrl = testDomain + "/" + testFileName;
+
 		doNothing().when(fileValidator).validate(any(MultipartFile.class));
 		when(amazonS3.putObject(any())).thenReturn(new PutObjectResult());
-		when(amazonS3.getUrl(eq(bucket), anyString())).thenReturn(new URL(testUrl));
 
-		FileUploadResponseDto result = s3FileStorageService.uploadFile(testFile);
+		// generateUniqueFilename()을 고정된 값으로 설정
+		S3FileStorageService spyService = spy(s3FileStorageService);
+		doReturn(testFileName).when(spyService).generateUniqueFilename(anyString());
+
+		FileUploadResponseDto result = spyService.uploadFile(testFile);
 
 		assertNotNull(result);
 		assertEquals(testFile.getOriginalFilename(), result.getFileName());
-		assertEquals(testUrl, result.getFileUrl());
+		assertEquals(expectedUrl, result.getFileUrl());
 
 		verify(fileValidator).validate(testFile);
 		verify(amazonS3).putObject(any());
@@ -113,33 +131,48 @@ class S3FileStorageServiceTest {
 		when(errorFile.getInputStream()).thenThrow(new IOException("테스트 예외"));
 
 
-		assertThrows(CustomException.class, () -> {
+		CustomException exception = assertThrows(CustomException.class, () -> {
 			s3FileStorageService.uploadFile(errorFile, "test-directory");
 		});
 
+		assertEquals(ErrorCode.FILE_UPLOAD_FAILED, exception.getErrorCode());
+
 		verify(fileValidator).validate(errorFile);
-		verify(amazonS3, never()).getUrl(anyString(), anyString());
+		verify(amazonS3, never()).putObject(any(PutObjectRequest.class));
 	}
 
 	@Test
-	@DisplayName("파일 삭제 성공 테스트")
+	@DisplayName("파일 삭제 성공 테스트 - CloudFront url 기반")
 	void deleteFileSuccess() throws Exception {
+		String directory = "images/test-directory";
+		String keyName = directory + "/" + testFileName;
+		String fileUrl = testDomain + "/" + keyName.replaceFirst("^images/", "");
+
 		doNothing().when(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 
 		assertDoesNotThrow(() -> {
-			s3FileStorageService.deleteFile(testUrl);
+			s3FileStorageService.deleteFile(fileUrl);
 		});
 
-		verify(amazonS3).deleteObject(any(DeleteObjectRequest.class));
+		ArgumentCaptor<DeleteObjectRequest> captor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
+		verify(amazonS3).deleteObject(captor.capture());
+
+		DeleteObjectRequest deleteRequest = captor.getValue();
+		assertEquals(keyName, deleteRequest.getKey());
 	}
 
 	@Test
-	@DisplayName("파일 삭제 실패 테스트")
+	@DisplayName("파일 삭제 실패 테스트 - CloudFront url 기반")
 	void deleteFileFailure() throws Exception {
+
+		String directory = "images/test-directory";
+		String keyName = directory + "/" + testFileName;
+		String fileUrl = testDomain + "/" + keyName.replaceFirst("^images/", "");
+
 		doThrow(new RuntimeException("삭제 실패")).when(amazonS3).deleteObject(any(DeleteObjectRequest.class));
 
 		CustomException exception = assertThrows(CustomException.class, () -> {
-			s3FileStorageService.deleteFile(testUrl);
+			s3FileStorageService.deleteFile(fileUrl);
 		});
 
 		assertEquals(ErrorCode.FILE_DELETE_FAILED, exception.getErrorCode());

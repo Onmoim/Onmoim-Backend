@@ -18,6 +18,8 @@ public enum ErrorCode {
 	INVALID_LOGIN_INFO(BAD_REQUEST, "아이디 또는 비밀번호가 일치하지 않습니다."),
 	FILE_UPLOAD_FAILED(BAD_REQUEST, "파일 업로드에 실패했습니다."),
 	FILE_DELETE_FAILED(BAD_REQUEST, "파일 삭제에 실패했습니다."),
+	INVALID_CLOUDFRONT_URL(BAD_REQUEST, "CloudFront URL 형식이 아닙니다."),
+	S3_KEY_EXTRACT_FAILED(BAD_REQUEST, "S3 key 추출에 실패했습니다."),
 	EMPTY_FILE(BAD_REQUEST, "파일이 비어 있습니다."),
 	INVALID_FILE_TYPE(BAD_REQUEST, "지원하지 않는 파일 형식입니다."),
 	FILE_SIZE_EXCEEDED(BAD_REQUEST, "파일 크기가 허용된 최대 크기를 초과했습니다."),
@@ -62,6 +64,11 @@ public enum ErrorCode {
 
 	/* ------------------ 400 BAD_REQUEST : 게시글 관련 오류 ------------------ */
 	POST_NOT_FOUND(BAD_REQUEST, "게시글을 찾을 수 없습니다."),
+	POST_NOT_LIKED(BAD_REQUEST, "좋아요를 하지 않은 게시글입니다."),
+
+	/* ------------------ 400 BAD_REQUEST : 댓글 관련 오류 ------------------ */
+	COMMENT_NOT_FOUND(BAD_REQUEST, "댓글을 찾을 수 없습니다."),
+	INVALID_COMMENT_THREAD(BAD_REQUEST, "답글 조회는 부모 댓글에서만 가능합니다."),
 
 	/* ------------------ 401 BAD_REQUEST : 권한 없음 ------------------ */
 	DENIED_UNAUTHORIZED_USER(UNAUTHORIZED, "로그인되지 않은 유저의 접근입니다."),

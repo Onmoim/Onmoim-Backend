@@ -8,12 +8,14 @@ import lombok.NoArgsConstructor;
 import com.onmoim.server.common.BaseEntity;
 
 /**
- * 모임 게시글 이미지 연결 엔티티
+ * 모임 게시글 이미지 중간 엔티티
  */
 @Entity
 @Getter
 @IdClass(PostImageId.class)
-@Table(name = "post_image")
+@Table(name = "post_image", indexes = {
+    @Index(name = "idx_post_image_batch", columnList = "post_id")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PostImage extends BaseEntity {
 

@@ -35,6 +35,9 @@ public class S3FileStorageService implements FileStorageService {
 	@Value("${cloud.aws.s3.bucket}")
 	private String bucket;
 
+	@Value("${cloud.aws.cloudfront.domain}")
+	private String domain;
+
 	@Override
 	public FileUploadResponseDto uploadFile(MultipartFile file, String directory) {
 		// 파일 유효성 검증
@@ -53,6 +56,8 @@ public class S3FileStorageService implements FileStorageService {
 				? directory + "/" + storedFileName
 				: storedFileName;
 
+		log.info("keyName = {}", keyName);
+
 		try {
 			// 메타데이터 설정
 			ObjectMetadata metadata = new ObjectMetadata();
@@ -68,7 +73,8 @@ public class S3FileStorageService implements FileStorageService {
 			));
 
 			// 업로드된 파일의 URL 가져오기
-			String fileUrl = amazonS3.getUrl(bucket, keyName).toString();
+			String pathWithoutPrefix = keyName.replaceFirst("^images/", "");
+			String fileUrl = domain + "/" + pathWithoutPrefix;
 
 			log.info("파일 업로드 성공: {}", fileUrl);
 
@@ -119,43 +125,27 @@ public class S3FileStorageService implements FileStorageService {
 	}
 
 	/**
-	 * URL에서 S3 키(경로)를 추출합니다.
-	 * AWS SDK의 AmazonS3URI를 기본으로 사용하며, 실패 시 수동 파싱으로 대체합니다.
+	 * CloudFront URL에서 S3 키(경로)를 추출합니다.
 	 *
 	 * @param fileUrl S3 URL
 	 * @return S3에서의 키(경로)
 	 */
 	private String extractKeyFromUrl(String fileUrl) {
 		try {
-			// AWS SDK를 사용한 URL 파싱
-			AmazonS3URI s3Uri = new AmazonS3URI(fileUrl);
 
-			// URL에서 추출한 버킷이 현재 설정된 버킷과 일치하는지 확인
-			if (!bucket.equals(s3Uri.getBucket())) {
-				log.warn("URL의 버킷({})이 설정된 버킷({})과 일치하지 않습니다.", s3Uri.getBucket(), bucket);
+			// CloudFront 도메인 제거
+			String cloudFrontPrefix = domain + "/";
+			if (fileUrl.startsWith(cloudFrontPrefix)) {
+				String pathWithoutPrefix = fileUrl.substring(cloudFrontPrefix.length());
+				return "images/" + pathWithoutPrefix;
 			}
 
-			return s3Uri.getKey();
-		} catch (IllegalArgumentException e) {
-			log.warn("AWS SDK로 URL 파싱 실패: {}, 수동 파싱 방식을 대체로 사용합니다.", fileUrl);
+			log.warn("CloudFront URL 형식이 아님 = {}", fileUrl);
+			throw new CustomException(ErrorCode.INVALID_CLOUDFRONT_URL);
 
-			// AWS SDK 파싱 실패 시 수동 파싱 방식 사용 (대체 로직)
-
-			// 1. 가상 호스팅 스타일 URL 파싱 시도 (https://bucket-name.s3.region.amazonaws.com/key)
-			String baseUrl = "https://" + bucket + ".s3." + amazonS3.getRegionName() + ".amazonaws.com/";
-			if (fileUrl.startsWith(baseUrl)) {
-				return fileUrl.substring(baseUrl.length());
-			}
-
-			// 2. 경로 스타일 URL 파싱 시도 (https://s3.region.amazonaws.com/bucket-name/key)
-			baseUrl = "https://s3." + amazonS3.getRegionName() + ".amazonaws.com/" + bucket + "/";
-			if (fileUrl.startsWith(baseUrl)) {
-				return fileUrl.substring(baseUrl.length());
-			}
-
-			// 3. 그 외 URL 형식의 경우 마지막 경로 부분만 사용
-			log.warn("인식 가능한 S3 URL 형식이 아닙니다. 마지막 경로 부분만 사용합니다: {}", fileUrl);
-			return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+		} catch (Exception e) {
+			log.warn("S3 key 추출 실패 = {}", e.getMessage(), e);
+			throw new CustomException(ErrorCode.S3_KEY_EXTRACT_FAILED);
 		}
 	}
 }

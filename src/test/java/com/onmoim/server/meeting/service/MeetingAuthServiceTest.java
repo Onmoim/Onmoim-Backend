@@ -302,28 +302,34 @@ class MeetingAuthServiceTest {
 	}
 
 	private Meeting createRegularMeeting(Long groupId, Long creatorId) {
+		Group group = groupRepository.findById(groupId).orElseThrow();
+		User creator = userRepository.findById(creatorId).orElseThrow();
+		
 		return Meeting.meetingCreateBuilder()
-			.groupId(groupId)
+			.group(group)
 			.type(MeetingType.REGULAR)
 			.title("정기모임 테스트")
 			.startAt(LocalDateTime.now().plusDays(1))
 			.placeName("테스트 장소")
 			.capacity(10)
 			.cost(0)
-			.creatorId(creatorId)
+			.creator(creator)
 			.build();
 	}
 
 	private Meeting createFlashMeeting(Long groupId, Long creatorId) {
+		Group group = groupRepository.findById(groupId).orElseThrow();
+		User creator = userRepository.findById(creatorId).orElseThrow();
+		
 		return Meeting.meetingCreateBuilder()
-			.groupId(groupId)
+			.group(group)
 			.type(MeetingType.FLASH)
 			.title("번개모임 테스트")
 			.startAt(LocalDateTime.now().plusDays(1))
 			.placeName("테스트 장소")
 			.capacity(5)
 			.cost(0)
-			.creatorId(creatorId)
+			.creator(creator)
 			.build();
 	}
 

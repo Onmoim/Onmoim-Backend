@@ -4,17 +4,23 @@ import static com.onmoim.server.common.exception.ErrorCode.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
+import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.user.entity.User;
 
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class GroupUserQueryService {
 	private final GroupUserRepository groupUserRepository;
+	private final GroupRepository groupRepository;
 
 	public void save(GroupUser groupUser) {
 		try {
@@ -32,45 +39,77 @@ public class GroupUserQueryService {
 		}
 	}
 
-	public Optional<GroupUser> findById(Long groupId, Long userId) {
+	public GroupUser findOrCreateForUpdate(
+		Group group,
+		User user,
+		Status status
+	)
+	{
+		return findGroupUserForUpdate(group.getId(), user.getId()).
+			orElseGet(() -> GroupUser.create(group, user, status));
+	}
+
+	/**
+	 * select for update .. 비관적 락(쓰기 락)
+	 * mysql 락 타임아웃 설정은 쿼리 문장으로 제어 불가능
+	 */
+	public Optional<GroupUser> findGroupUserForUpdate(
+		Long groupId,
+		Long userId
+	)
+	{
+		try {
+			return groupUserRepository.findGroupUserForUpdate(groupId, userId);
+		}
+		catch (CannotAcquireLockException e){
+			throw new CustomException(TOO_MANY_REQUEST);
+		}
+	}
+
+	public Optional<GroupUser> findById(
+		Long groupId,
+		Long userId
+	)
+	{
 		return groupUserRepository.findGroupUser(groupId, userId);
 	}
 
-	public GroupUser findOrCreate(Group group, User user, Status status) {
-		return findById(group.getId(), user.getId())
-			.orElseGet(() -> GroupUser.create(group, user, status));
-	}
-
-	public GroupUser checkAndGetOwner(Long groupId, Long userId) {
-		return validateOwner(groupId, userId);
-	}
-
-	public void checkOwner(Long groupId, Long userId) {
-		validateOwner(groupId, userId);
-	}
-
-	private GroupUser validateOwner(Long groupId, Long userId) {
+	public GroupUser getById(
+		Long groupId,
+		Long userId
+	)
+	{
 		return findById(groupId, userId)
-			.filter(GroupUser::isOwner)
-			.orElseThrow(() -> new CustomException(GROUP_FORBIDDEN));
-	}
-
-	public GroupUser checkAndGetMember(Long groupId, Long userId) {
-		return findById(groupId, userId)
-			.filter(GroupUser::isMember)
 			.orElseThrow(() -> new CustomException(MEMBER_NOT_FOUND_IN_GROUP));
 	}
 
-	public GroupUser checkCanLeave(Long groupId, Long userId) {
-		GroupUser groupUser = findById(groupId, userId)
-			.filter(GroupUser::isJoined)
-			.orElseThrow(() -> new CustomException(NOT_GROUP_MEMBER));
+	public void checkJoined(Long groupId, Long userId){
+		 findAndValidate(
+			 groupId,
+			 userId,
+			 GroupUser::isJoined,
+			 () -> new CustomException(GROUP_FORBIDDEN)
+		 );
+	}
 
+	private GroupUser findAndValidate(
+		Long groupId,
+		Long userId,
+		Predicate<GroupUser> predicate,
+		Supplier<CustomException> exceptionSupplier
+	)
+	{
+		return findById(groupId, userId)
+			.filter(predicate)
+			.orElseThrow(exceptionSupplier);
+	}
+
+	public void checkCanLeave(GroupUser groupUser) {
+		groupUser.checkGroupMember();
 		// 현재 사용자 모임장 + 모임 회원 2명 이상
-		if (groupUser.isOwner() && countMembers(groupId) > 1) {
+		if (groupUser.isOwner() && countMembers(groupUser.getGroup().getId()) > 1) {
 			throw new CustomException(GROUP_OWNER_TRANSFER_REQUIRED);
 		}
-		return groupUser;
 	}
 
 	public void leave(GroupUser groupUser) {
@@ -82,7 +121,12 @@ public class GroupUserQueryService {
 		groupUser.updateStatus(Status.PENDING);
 	}
 
-	public void transferOwnership(GroupUser owner, GroupUser member) {
+	// 모임장 양도
+	public void transferOwnership(
+		GroupUser owner,
+		GroupUser member
+	)
+	{
 		owner.updateStatus(Status.MEMBER);
 		member.updateStatus(Status.OWNER);
 	}
@@ -107,11 +151,17 @@ public class GroupUserQueryService {
 
 	// 현재 모임 회원 수
 	public Long countMembers(Long groupId) {
-		return groupUserRepository.countGroupMembers(groupId);
+		return groupRepository.countGroupMembers(groupId);
 	}
 
 	// fetch join 사용해서 모임 멤버 조회
-	public List<GroupUser> findGroupUserAndMembers(Long groupId, Long cursorId, int size) {
-		return groupUserRepository.findGroupUsers(groupId, cursorId, size);
+	public List<GroupMember> findGroupUserAndMembers(
+		Long groupId,
+		@Nullable Long lastGroupId,
+		int size
+	)
+	{
+		List<GroupUser> groupUsers = groupRepository.findGroupUsers(groupId, lastGroupId, size);
+		return groupUsers.stream().map(GroupMember::of).toList();
 	}
 }

@@ -6,30 +6,25 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import com.onmoim.server.common.BaseEntity;
+import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.user.entity.User;
 
 /**
  * 모임 게시글 엔티티
- * TODO: 좋아요 수 필드 추가 (향후 구현)
- * TODO: 댓글 관련 연관관계 추가 (향후 구현)
- * TODO: 게시글 카테고리 관계 추가 (향후 구현)
  */
+// 현재 type 컬럼은 카더널리티가 낮지만,
+// 공지만 보기, 자유게시판만 보기 같은 기능이 많습니다.(API에서 자주 쓰이는 쿼리)
+// low-카디널리티 컬럼이라도, 중간 단계의 필터링 단계에서 전체 I/O를 크게 줄여준다고 생각했는데.
+// group_id, type, deleted_date를 복합 인덱스로 설정했는데,
+// 이렇게 type을 포함시키는 것이 실질적인 성능 향상에 도움이 될까요?
 @Entity
 @Getter
-@Table(
-        name = "post",
-        indexes = {
-                @Index(
-                        name = "idx_post_group_type_deleted",
-                        columnList = "group_id,type,deleted_date"
-                ),
-                @Index(
-                        name = "idx_post_author_deleted",
-                        columnList = "author_id,deleted_date"
-                )
-        }
-)
+@Table(name = "post", indexes = {
+	@Index(name = "idx_post_group_type", columnList = "group_id,type"),
+	@Index(name = "idx_post_author", columnList = "author_id")
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class GroupPost extends BaseEntity {
 
@@ -71,6 +66,9 @@ public class GroupPost extends BaseEntity {
         this.type = type;
     }
 
+    /**
+     * 게시글 수정
+     */
     public void update(
             String title,
             String content,
@@ -81,9 +79,21 @@ public class GroupPost extends BaseEntity {
         this.type = type;
     }
 
-    public void softDelete() {
-        super.softDelete();
+    /**
+     * 게시글 작성자 검증
+     */
+    public void validateAuthor(Long userId) {
+        if (!this.author.getId().equals(userId)) {
+            throw new CustomException(ErrorCode.DENIED_UNAUTHORIZED_USER);
+        }
     }
 
-    // TODO: 좋아요 추가/취소 메서드 추가 (향후 구현)
+    /**
+     * 게시글 그룹 소속 검증
+     */
+    public void validateBelongsToGroup(Long groupId) {
+        if (!this.group.getId().equals(groupId)) {
+            throw new CustomException(ErrorCode.POST_NOT_FOUND);
+        }
+    }
 }

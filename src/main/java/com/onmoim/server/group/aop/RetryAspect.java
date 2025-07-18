@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Order(1)
+@Deprecated
 public class RetryAspect {
 	private static final int RETRY_COUNT = 5;
 	private static final long RETRY_DELAY_MS = 100L;

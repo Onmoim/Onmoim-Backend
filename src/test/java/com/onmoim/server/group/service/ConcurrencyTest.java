@@ -12,6 +12,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,6 +28,7 @@ import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.user.entity.User;
 import com.onmoim.server.user.repository.UserRepository;
+
 
 @SpringBootTest
 class ConcurrencyTest {
@@ -83,7 +85,7 @@ class ConcurrencyTest {
 		groupUserRepository.save(GroupUser.create(group, owner, Status.OWNER));
 		userRepository.save(owner);
 
-		IntStream.range(0, 20).forEach(i -> {
+		IntStream.range(0, 100).forEach(i -> {
 			User user = User.builder()
 				.name("test" + i)
 				.build();
@@ -95,17 +97,16 @@ class ConcurrencyTest {
 		TestTransaction.end();           // 트랜잭션 종료
 
 		// when
-		int taskCount = 20;
-		ExecutorService executorService = Executors.newFixedThreadPool(10);
+		int taskCount = 200; // 동시성 테스트를 위한 작업 수
+		ExecutorService executorService = Executors.newFixedThreadPool(100);
 		CountDownLatch latch = new CountDownLatch(taskCount);
 		for (int i = 0; i < taskCount; i++) {
-			final int idx = i;
+			final int idx = i % userList.size();
 			executorService.submit(() -> {
 				try {
 					// 각 쓰레드마다 인증 정보 세팅
 					Long userId = userList.get(idx).getId();
 					setSecurityContext(userId);
-
 					// 동시성 테스트
 					groupService.joinGroup(groupId);
 				} finally {

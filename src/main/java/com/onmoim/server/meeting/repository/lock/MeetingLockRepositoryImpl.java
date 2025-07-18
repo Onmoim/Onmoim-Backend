@@ -1,4 +1,4 @@
-package com.onmoim.server.meeting.repository;
+package com.onmoim.server.meeting.repository.lock;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

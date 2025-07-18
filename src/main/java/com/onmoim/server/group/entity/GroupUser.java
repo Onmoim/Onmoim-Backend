@@ -14,7 +14,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
-import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,9 +39,6 @@ public class GroupUser extends BaseEntity {
 
 	@Enumerated(EnumType.STRING)
 	private Status status;
-
-	@Version
-	private Long version;
 
 	public static GroupUser create(Group group, User user, Status status) {
 		GroupUser groupUser = new GroupUser();
@@ -88,6 +84,18 @@ public class GroupUser extends BaseEntity {
 		}
 	}
 
+	public void checkOwner() {
+		if(!isOwner()) throw new CustomException(GROUP_FORBIDDEN);
+	}
+
+	public void checkMember() {
+		if(!isMember()) throw new CustomException(GROUP_FORBIDDEN);
+	}
+
+	public void checkGroupMember(){
+		if(!isJoined()) throw new CustomException(NOT_GROUP_MEMBER);
+	}
+
 	public boolean isOwner() {
 		return status == Status.OWNER;
 	}
@@ -98,6 +106,11 @@ public class GroupUser extends BaseEntity {
 
 	public boolean isJoined() {
 		return isOwner() || isMember();
+	}
+
+	// 강퇴
+	public void ban() {
+		this.updateStatus(Status.BAN);
 	}
 
 	public void deleteGroupUser() {
