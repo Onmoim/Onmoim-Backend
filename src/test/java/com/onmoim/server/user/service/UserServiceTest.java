@@ -84,7 +84,7 @@ public class UserServiceTest {
 	private Location location;
 	private Category category1;
 	private Category category2;
-	private User savedUser;
+	private User user;
 
 	@BeforeEach
 	void setUp() {
@@ -92,7 +92,7 @@ public class UserServiceTest {
 		category1 = categoryRepository.save(Category.create("운동/스포츠", null));
 		category2 = categoryRepository.save(Category.create("음악/악기", null));
 
-		savedUser = userRepository.save(User.builder()
+		user = userRepository.save(User.builder()
 			.oauthId("1234567890")
 			.provider("google")
 			.email("test@test.com")
@@ -106,7 +106,7 @@ public class UserServiceTest {
 
 		// 인증 정보 설정
 		SecurityContext context = SecurityContextHolder.createEmptyContext();
-		CustomUserDetails userDetails = new CustomUserDetails(savedUser.getId());
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
 		UsernamePasswordAuthenticationToken auth =
 			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
 		context.setAuthentication(auth);
@@ -124,7 +124,7 @@ public class UserServiceTest {
 		// given
 		SignupRequestDto request = new SignupRequestDto("홍길동", "M", LocalDate.now(), location.getId());
 
-		String signupToken = jwtProvider.createSignupToken("google", "1234567890", "test@test.com"); // signupToken 생성
+		String signupToken = jwtProvider.createSignupToken("kakao", "11111111111", "signup@test.com"); // signupToken 생성
 		JwtHolder.set(signupToken);
 
 		try {
@@ -140,7 +140,7 @@ public class UserServiceTest {
 			// then
 			User savedUser = userRepository.findById(response.getUserId()).orElseThrow();
 			assertEquals("홍길동", savedUser.getName());
-			assertEquals("test@test.com", savedUser.getEmail());
+			assertEquals("signup@test.com", savedUser.getEmail());
 		} finally {
 			JwtHolder.clear();
 		}
@@ -151,24 +151,6 @@ public class UserServiceTest {
 	@DisplayName("관심사 저장 성공")
 	void createUserCategorySuccess() {
 		// given
-		User user = userRepository.save(User.builder()
-			.oauthId("1234567890")
-			.provider("google")
-			.email("test@test.com")
-			.name("홍길동")
-			.gender("F")
-			.birth(LocalDateTime.now())
-			.location(location)
-			.build()
-		);
-
-		SecurityContext context = SecurityContextHolder.createEmptyContext();
-		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
-		UsernamePasswordAuthenticationToken auth =
-			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
-		context.setAuthentication(auth);
-		SecurityContextHolder.setContext(context);
-
 		CreateUserCategoryRequestDto request = new CreateUserCategoryRequestDto(
 			user.getId(),
 			List.of(category1.getId(), category2.getId())
@@ -189,25 +171,6 @@ public class UserServiceTest {
 	@Test
 	@DisplayName("유저 프로필 조회 성공")
 	void getProfileSuccess() {
-		// given
-		User user = userRepository.save(User.builder()
-			.oauthId("1234567890")
-			.provider("google")
-			.email("test@test.com")
-			.name("홍길동")
-			.gender("F")
-			.birth(LocalDateTime.now())
-			.location(location)
-			.build()
-		);
-
-		SecurityContext context = SecurityContextHolder.createEmptyContext();
-		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
-		UsernamePasswordAuthenticationToken auth =
-			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
-		context.setAuthentication(auth);
-		SecurityContextHolder.setContext(context);
-
 		// when
 		ProfileResponseDto profile = userService.getProfile();
 
@@ -251,10 +214,10 @@ public class UserServiceTest {
 		);
 
 		// when
-		userService.updateUserProfile(savedUser.getId(), request, mockImage);
+		userService.updateUserProfile(user.getId(), request, mockImage);
 
 		// then
-		User updatedUser = userRepository.findById(savedUser.getId()).orElseThrow();
+		User updatedUser = userRepository.findById(user.getId()).orElseThrow();
 		assertEquals("홍길동", updatedUser.getName());
 		assertEquals("F", updatedUser.getGender());
 		assertEquals("테스트", updatedUser.getIntroduction());
@@ -273,25 +236,6 @@ public class UserServiceTest {
 	@Test
 	@DisplayName("회원 탈퇴 성공")
 	void leaveUserSuccess() {
-		// given
-		User user = userRepository.save(User.builder()
-			.oauthId("oauth123")
-			.provider("google")
-			.email("test@test.com")
-			.name("홍길동")
-			.gender("F")
-			.birth(LocalDateTime.now())
-			.location(location)
-			.build()
-		);
-
-		SecurityContext context = SecurityContextHolder.createEmptyContext();
-		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
-		UsernamePasswordAuthenticationToken auth =
-			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
-		context.setAuthentication(auth);
-		SecurityContextHolder.setContext(context);
-
 		// when
 		userService.leaveUser(user.getId());
 
@@ -304,24 +248,6 @@ public class UserServiceTest {
 	@DisplayName("모임장인 유저가 탈퇴 시도 - 예외 발생")
 	void leaveUserIsGroupOwner() {
 		// given
-		User user = userRepository.save(User.builder()
-			.oauthId("oauth123")
-			.provider("google")
-			.email("test@test.com")
-			.name("홍길동")
-			.gender("F")
-			.birth(LocalDateTime.now())
-			.location(location)
-			.build()
-		);
-
-		SecurityContext context = SecurityContextHolder.createEmptyContext();
-		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
-		UsernamePasswordAuthenticationToken auth =
-			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
-		context.setAuthentication(auth);
-		SecurityContextHolder.setContext(context);
-
 		// group, group_user 생성
 		Group group = groupQueryService.saveGroup(
 			category1,
@@ -336,7 +262,6 @@ public class UserServiceTest {
 		// when, then
 		CustomException exception = assertThrows(CustomException.class, () -> userService.leaveUser(user.getId()));
 		assertEquals("IS_GROUP_OWNER", exception.getErrorCode().name());
-
 	}
 
 }
