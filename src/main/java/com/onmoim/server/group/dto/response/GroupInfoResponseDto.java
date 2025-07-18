@@ -28,7 +28,7 @@ public record GroupInfoResponseDto(
 	String category,
 	@Schema(description = "현재 사용자와 모임 관계", example = "OWNER, MEMBER, BOOKMARK, BAN, NONE")
 	String status,
-	@Schema(description = "다가 오는 일정 개수")
+	@Schema(description = "다가오는 일정 개수")
 	Long upcomingMeetingCount
 )
 {

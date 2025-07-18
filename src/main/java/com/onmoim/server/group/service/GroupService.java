@@ -279,11 +279,11 @@ public class GroupService {
 	@Transactional(readOnly = true)
 	public List<ActiveGroup> readMostActiveGroups(
 		@Nullable Long lastGroupId,
-		@Nullable Long memberCount,
+		@Nullable Long meetingCount,
 		int size
 	)
 	{
-		return groupQueryService.readMostActiveGroups(lastGroupId, memberCount, size);
+		return groupQueryService.readMostActiveGroups(lastGroupId, meetingCount, size);
 	}
 
 	@Transactional(readOnly = true)

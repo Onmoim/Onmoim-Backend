@@ -158,6 +158,7 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 
 	/**
 	 * 활동이 활발한 모임 조회
+	 * 시작하는 일정이 현재 시간보다 이후인 개수가 많은 모임을 조회한다.
 	 */
 	@Override
 	public List<ActiveGroup> readMostActiveGroups(
