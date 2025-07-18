@@ -90,7 +90,7 @@ public class MeetingService {
 		// 2. 이미지 업로드 후, 이미지 URL 업데이트
 		if (image != null && !image.isEmpty()) {
 			try {
-				String imageUrl = fileStorageService.uploadFile(image, "meetings").getFileUrl();
+				String imageUrl = fileStorageService.uploadFile(image, "images/meetings").getFileUrl();
 				transactionTemplate.executeWithoutResult(status -> {
 					Meeting meeting = meetingQueryService.getById(meetingId);
 					meeting.updateImage(imageUrl);
@@ -304,7 +304,7 @@ public class MeetingService {
 		}
 
 		// 새 이미지 업로드 및 URL 업데이트
-		String newImageUrl = fileStorageService.uploadFile(image, "meetings").getFileUrl();
+		String newImageUrl = fileStorageService.uploadFile(image, "images/meetings").getFileUrl();
 		meeting.updateImage(newImageUrl);
 		log.info("일정 {} 이미지 수정 완료: {}", meetingId, newImageUrl);
 	}

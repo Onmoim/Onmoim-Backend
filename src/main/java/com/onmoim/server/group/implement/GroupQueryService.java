@@ -5,6 +5,7 @@ import static com.onmoim.server.common.exception.ErrorCode.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.onmoim.server.common.s3.service.FileStorageService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -15,7 +16,6 @@ import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.s3.dto.FileUploadResponseDto;
-import com.onmoim.server.common.s3.service.S3FileStorageService;
 import com.onmoim.server.group.dto.ActiveGroup;
 import com.onmoim.server.group.dto.ActiveGroupDetail;
 import com.onmoim.server.group.dto.ActiveGroupRelation;
@@ -33,7 +33,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GroupQueryService {
 	private final GroupRepository groupRepository;
-	private final S3FileStorageService s3FileStorageService;
+	private final FileStorageService fileStorageService;
 
 	public Group saveGroup(
 		Category category,
@@ -98,7 +98,7 @@ public class GroupQueryService {
 
 		// 모임 이미지 변경
 		if(image != null && !image.isEmpty()) {
-			FileUploadResponseDto uploadResponse = s3FileStorageService.uploadFile(image, "group");
+			FileUploadResponseDto uploadResponse = fileStorageService.uploadFile(image, "images/group");
 			group.updateImage(uploadResponse.getFileUrl());
 		}
 	}
