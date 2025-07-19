@@ -1,9 +1,12 @@
 package com.onmoim.server.group.service;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -12,6 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.service.CategoryQueryService;
+import com.onmoim.server.common.exception.CustomException;
+import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.kakaomap.GeoPointUpdateEvent;
 import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.chat.service.ChatMessageService;
@@ -279,11 +284,11 @@ public class GroupService {
 	@Transactional(readOnly = true)
 	public List<ActiveGroup> readMostActiveGroups(
 		@Nullable Long lastGroupId,
-		@Nullable Long memberCount,
+		@Nullable Long meetingCount,
 		int size
 	)
 	{
-		return groupQueryService.readMostActiveGroups(lastGroupId, memberCount, size);
+		return groupQueryService.readMostActiveGroups(lastGroupId, meetingCount, size);
 	}
 
 	@Transactional(readOnly = true)
@@ -316,12 +321,19 @@ public class GroupService {
 		return groupQueryService.readMonthlyScheduleCount(groupId, now);
 	}
 
-	// 현재 사용자 getPrincipal -> NPE
 	private Long getCurrentUserId() {
-		CustomUserDetails principal = (CustomUserDetails) SecurityContextHolder.getContextHolderStrategy()
+		Authentication authentication = SecurityContextHolder.getContextHolderStrategy()
 			.getContext()
-			.getAuthentication()
-			.getPrincipal();
+			.getAuthentication();
+
+		if(authentication == null) {
+			throw new CustomException(UNAUTHORIZED_ACCESS);
+		}
+
+		if(!(authentication.getPrincipal() instanceof CustomUserDetails principal)) {
+			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+		}
+
 		return principal.getUserId();
 	}
 }

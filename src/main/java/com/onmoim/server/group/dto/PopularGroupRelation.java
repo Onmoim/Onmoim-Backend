@@ -1,5 +1,9 @@
 package com.onmoim.server.group.dto;
 
+import com.onmoim.server.group.entity.Status;
+
+import jakarta.annotation.Nullable;
+
 /**
  * @param groupId 모임 id
  * @param status 현재 사용자와 모임 관계
@@ -7,7 +11,8 @@ package com.onmoim.server.group.dto;
  */
 public record PopularGroupRelation(
 	Long groupId,
-	String status,
+	@Nullable
+	Status status,
 	Long upcomingMeetingCount
 )
 {

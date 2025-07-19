@@ -131,13 +131,13 @@ public class GroupQueryService {
 	// 활동이 활발한 모임 조회
 	public List<ActiveGroup> readMostActiveGroups(
 		@Nullable Long lastGroupId,
-		@Nullable Long memberCount,
+		@Nullable Long meetingCount,
 		int size
 	)
 	{
 		return groupRepository.readMostActiveGroups(
 			lastGroupId,
-			memberCount,
+			meetingCount,
 			size
 		);
 	}

@@ -8,11 +8,13 @@ import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.entity.Status;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 
 /**
  * - 내 주변 인기 모임 리스트
  * - 활동이 활발한 모임 리스트
  */
+@Builder
 public record GroupInfoResponseDto(
 	@Schema(description = "모임 ID")
 	Long groupId,
@@ -28,7 +30,7 @@ public record GroupInfoResponseDto(
 	String category,
 	@Schema(description = "현재 사용자와 모임 관계", example = "OWNER, MEMBER, BOOKMARK, BAN, NONE")
 	String status,
-	@Schema(description = "다가 오는 일정 개수")
+	@Schema(description = "다가오는 일정 개수")
 	Long upcomingMeetingCount
 )
 {
@@ -37,16 +39,16 @@ public record GroupInfoResponseDto(
 		PopularGroupRelation commonInfo
 	)
 	{
-		return new GroupInfoResponseDto(
-			summary.groupId(),
-			summary.imageUrl(),
-			summary.name(),
-			summary.memberCount(),
-			summary.dong(),
-			summary.category(),
-			convertStatus(commonInfo.status()),
-			commonInfo.upcomingMeetingCount()
-		);
+		return GroupInfoResponseDto.builder()
+			.groupId(summary.groupId())
+			.imageUrl(summary.imageUrl())
+			.name(summary.name())
+			.memberCount(summary.memberCount())
+			.dong(summary.dong())
+			.category(summary.category())
+			.status(convertStatus(commonInfo.status()))
+			.upcomingMeetingCount(commonInfo.upcomingMeetingCount())
+			.build();
 	}
 
 	public static GroupInfoResponseDto of(
@@ -55,22 +57,27 @@ public record GroupInfoResponseDto(
 		ActiveGroupRelation groupRelation
 	)
 	{
-		return new GroupInfoResponseDto(
-			group.groupId(),
-			groupDetail.imgUrl(),
-			groupDetail.name(),
-			groupDetail.memberCount(),
-			groupDetail.dong(),
-			groupDetail.category(),
-			convertStatus(groupRelation.status()),
-			group.upcomingMeetingCount()
-		);
+
+		return GroupInfoResponseDto.builder()
+			.groupId(group.groupId())
+			.imageUrl(groupDetail.imgUrl())
+			.name(groupDetail.name())
+			.memberCount(groupDetail.memberCount())
+			.dong(groupDetail.dong())
+			.category(groupDetail.category())
+			.status(convertStatus(groupRelation.status()))
+			.upcomingMeetingCount(group.upcomingMeetingCount())
+			.build();
 	}
 
-	private static String convertStatus(String status) {
-		if(status == null || status.equals(Status.PENDING.name())){
-			return "NONE";
-		}
-		return status;
+	private static String convertStatus(Status status) {
+		if (status == null) return "NONE";
+		return switch (status) {
+			case Status.OWNER -> Status.OWNER.name();
+			case Status.MEMBER -> Status.MEMBER.name();
+			case Status.BOOKMARK -> Status.BOOKMARK.name();
+			case Status.BAN -> Status.BAN.name();
+			default -> "NONE";
+		};
 	}
 }
