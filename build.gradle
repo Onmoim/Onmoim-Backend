@@ -80,10 +80,17 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
 }
-
-tasks.named('test') {
+tasks.register('preTestClass', Test) {
     useJUnitPlatform()
+    include 'InitTest.class'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+}
+tasks.named('test') {
+    dependsOn tasks.named('preTestClass')
+    exclude 'InitTest.class'
 
+    useJUnitPlatform()
     def profile = project.hasProperty('profile') ? project.getProperty('profile') : 'test'
     systemProperty 'spring.profiles.active', profile
 }
