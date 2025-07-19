@@ -11,7 +11,9 @@ import static com.querydsl.core.types.ExpressionUtils.*;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 import com.onmoim.server.group.dto.ActiveGroup;
 import com.onmoim.server.group.dto.ActiveGroupDetail;
@@ -61,19 +63,19 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 			.where(
 				groupUser.group.id.eq(groupId),
 				groupUser.status.in(GROUP_MEMBER),
-				userIdGt(lastMemberId))
+				memberIdGt(lastMemberId))
 			.orderBy(groupUser.user.id.asc())
 			.limit(size + 1)
 			.fetch();
 	}
 
-	private BooleanExpression userIdGt(Long lastMemberId) {
-		if(lastMemberId == null) return null;
-		return groupUser.user.id.gt(lastMemberId);
+	private BooleanBuilder memberIdGt(Long lastMemberId) {
+		return nullSafeBuilder(() -> groupUser.user.id.gt(lastMemberId));
 	}
 
 	/**
 	 * 내 주변 인기 모임 조회
+	 * 모임 위치가 locationId 일치 & 회원 수가 많은 순으로 조회한다.
 	 */
 	@Override
 	public List<PopularGroupSummary> readPopularGroupsNearMe(
@@ -105,28 +107,25 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 			.fetch();
 	}
 
-	private BooleanExpression popularReadCondition(
+	private BooleanBuilder popularReadCondition(
 		@Nullable Long lastGroupId,
 		@Nullable Long memberCount
 	)
 	{
 		return memberCountLt(memberCount)
-			.or(memberCountEq(memberCount).and(groupIdGt(lastGroupId)));
+			.or(memberCountEq(memberCount).and(lastGroupIdGt(lastGroupId)));
 	}
 
-	private BooleanExpression groupIdGt(@Nullable Long lastGroupId) {
-		if(lastGroupId == null) return null;
-		return groupUser.group.id.gt(lastGroupId);
+	private BooleanBuilder lastGroupIdGt(@Nullable Long lastGroupId) {
+		return nullSafeBuilder(() -> group.id.gt(lastGroupId));
 	}
 
-	private BooleanExpression memberCountLt(@Nullable Long memberCount) {
-		if(memberCount == null) return null;
-		return groupUser.count().lt(memberCount);
+	private BooleanBuilder memberCountLt(@Nullable Long memberCount) {
+		return nullSafeBuilder(() -> groupUser.count().lt(memberCount));
 	}
 
-	private BooleanExpression memberCountEq(@Nullable Long memberCount) {
-		if(memberCount == null) return null;
-		return groupUser.count().eq(memberCount);
+	private BooleanBuilder memberCountEq(@Nullable Long memberCount) {
+		return nullSafeBuilder(() -> groupUser.count().eq(memberCount));
 	}
 
 	@Override
@@ -135,6 +134,8 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 		Long userId
 	)
 	{
+		if(groupIds.isEmpty()) return Collections.emptyList();
+
 		return queryFactory.select(Projections.constructor(
 				PopularGroupRelation.class,
 				group.id,
@@ -167,10 +168,6 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 		int size
 	)
 	{
-		BooleanBuilder having = new BooleanBuilder();
-		having.and(meeting.count().lt(meetingCount));
-		having.or(meeting.count().eq(meetingCount).and(group.id.gt(lastGroupId)));
-
 		return queryFactory.select(Projections.constructor(
 				ActiveGroup.class,
 				group.id,
@@ -188,28 +185,30 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 			.fetch();
 	}
 
-	private BooleanExpression activeReadCondition(
+	private BooleanBuilder activeReadCondition(
 		@Nullable Long lastGroupId,
 		@Nullable Long meetingCount
 	)
 	{
 		return meetingCountLt(meetingCount)
-			.or(meetingCountEq(meetingCount).and(groupIdGt(lastGroupId)));
+			.or(meetingCountEq(meetingCount).and(lastGroupIdGt(lastGroupId)));
 	}
 
-	private BooleanExpression meetingCountLt(@Nullable Long meetingCount) {
-		if(meetingCount == null) return null;
-		return groupUser.count().lt(meetingCount);
+	private BooleanBuilder meetingCountLt(@Nullable Long meetingCount)
+	{
+		return nullSafeBuilder(() -> meeting.count().lt(meetingCount));
 	}
 
-	private BooleanExpression meetingCountEq(@Nullable Long meetingCount) {
-		if(meetingCount == null) return null;
-		return groupUser.count().eq(meetingCount);
+	private BooleanBuilder meetingCountEq(@Nullable Long meetingCount)
+	{
+		return nullSafeBuilder(() -> meeting.count().eq(meetingCount));
 	}
-
 
 	@Override
-	public List<ActiveGroupDetail> readGroupDetails(List<Long> groupIds) {
+	public List<ActiveGroupDetail> readGroupDetails(List<Long> groupIds)
+	{
+		if(groupIds.isEmpty()) return Collections.emptyList();
+
 		return queryFactory.select(Projections.constructor(
 			ActiveGroupDetail.class,
 			group.id,
@@ -222,7 +221,7 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 		.from(group)
 		.leftJoin(category).on(group.category.id.eq(category.id))
 		.leftJoin(location).on(group.location.id.eq(location.id))
-		.leftJoin(groupUser).on(group.id.eq(groupUser.group.id), groupUser.status.in(GROUP_MEMBER))
+		.join(groupUser).on(group.id.eq(groupUser.group.id), groupUser.status.in(GROUP_MEMBER))
 		.where(group.id.in(groupIds))
 		.groupBy(group.id)
 		.fetch();
@@ -234,6 +233,8 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 		Long userId
 	)
 	{
+		if(groupIds.isEmpty()) return Collections.emptyList();
+
 		return queryFactory.select(Projections.constructor(
 			ActiveGroupRelation.class,
 			groupUser.group.id,
@@ -247,7 +248,8 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 
 	// 모임 년간 일정 개수
 	@Override
-	public Long readAnnualScheduleCount(Long groupId, LocalDateTime now) {
+	public Long readAnnualScheduleCount(Long groupId, LocalDateTime now)
+	{
 		int year = now.getYear();
 		LocalDateTime startOfYear = LocalDateTime.of(year, 1, 1, 0, 0, 0);
 
@@ -263,7 +265,8 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 
 	// 모임 월간 일정 개수
 	@Override
-	public Long readMonthlyScheduleCount(Long groupId, LocalDateTime now) {
+	public Long readMonthlyScheduleCount(Long groupId, LocalDateTime now)
+	{
 		int year = now.getYear();
 		int month = now.getMonthValue();
 		LocalDateTime startOfMonth = LocalDateTime.of(year, month, 1, 0, 0, 0);
@@ -275,5 +278,22 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 				meeting.startAt.lt(startOfMonth.plusMonths(1))
 			)
 			.fetchOne();
+	}
+
+	/**
+	 * null-safe BooleanBuilder
+	 * meeting.id.lt(param) 같은 NumberPath 또는 StringPath 경우
+	 * param null -> IllegalArgumentException 발생
+	 * meeting.count().lt(param) 같은 NumberExpression 경우
+	 * param null -> NullPointerException 발생
+	 */
+	private BooleanBuilder nullSafeBuilder(Supplier<BooleanExpression> sp)
+	{
+		try {
+			return new BooleanBuilder(sp.get());
+		}
+		catch (IllegalArgumentException | NullPointerException e) {
+			return new BooleanBuilder();
+		}
 	}
 }
