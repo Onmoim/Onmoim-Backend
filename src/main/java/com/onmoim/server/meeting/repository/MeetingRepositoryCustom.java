@@ -32,4 +32,10 @@ public interface MeetingRepositoryCustom {
      * 그룹의 D-day가 가까운 일정 조회
      */
     List<Meeting> findUpcomingMeetingsByDday(Long groupId, int limit);
+
+	/**
+	 * 참석자가 일정 생성자 본인 1명인 일정 조회
+	 */
+	List<Meeting> findEmptyMeetingsByCreator(Long userId);
+
 }

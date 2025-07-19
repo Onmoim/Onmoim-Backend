@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 import com.onmoim.server.meeting.entity.UserMeeting;
 import com.onmoim.server.meeting.entity.UserMeetingId;
 
-public interface UserMeetingRepository extends JpaRepository<UserMeeting, UserMeetingId> {
+public interface UserMeetingRepository extends JpaRepository<UserMeeting, UserMeetingId>, UserMeetingRepositoryCustom {
 
 	/**
 	 * 특정 사용자가 특정 일정에 참석했는지 확인
@@ -60,4 +60,12 @@ public interface UserMeetingRepository extends JpaRepository<UserMeeting, UserMe
 	List<UserMeeting> findByUserAndMeetings(
 		@Param("userId") Long userId,
 		@Param("meetingIds") List<Long> meetingIds);
+
+	/**
+	 * 탈퇴 시 남아있는 모든 일정 삭제
+	 */
+	@Modifying
+	@Query("DELETE FROM UserMeeting um WHERE um.user.id = :userId AND um.meeting.id IN :meetingIds")
+	void deleteAllByUserIdAndMeetingIdIn(@Param("userId") Long userId, @Param("meetingIds") List<Long> meetingIds);
+
 }

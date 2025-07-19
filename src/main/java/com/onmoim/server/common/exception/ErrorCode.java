@@ -95,6 +95,7 @@ public enum ErrorCode {
 	REFRESH_TOKEN_MISMATCH(UNAUTHORIZED, "저장된 refresh token과 일치하지 않습니다."),
 	USER_NOT_FOUND(UNAUTHORIZED, "존재하지 않는 사용자입니다."),
 	UNAUTHORIZED_ACCESS(UNAUTHORIZED, "인증되지 않은 사용자입니다."),
+	INVALID_OAUTH_ID_TOKEN(UNAUTHORIZED, "유효하지 않은 Google ID Token입니다."),
 
 	/* ------------------ 500 INTERNAL_SERVER_ERROR: 서버 관련 오류 ------------------ */
 	OAUTH_PROVIDER_ERROR(INTERNAL_SERVER_ERROR, "외부 인증 서버와의 통신 중 오류가 발생하였습니다.");

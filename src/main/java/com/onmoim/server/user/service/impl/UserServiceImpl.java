@@ -4,13 +4,20 @@ import static com.onmoim.server.common.exception.ErrorCode.*;
 import static com.onmoim.server.oauth.enumeration.SignupStatus.*;
 import static org.springframework.data.jpa.domain.AbstractPersistable_.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.onmoim.server.meeting.entity.Meeting;
+import com.onmoim.server.meeting.entity.UserMeeting;
+import com.onmoim.server.meeting.repository.MeetingRepository;
+import com.onmoim.server.meeting.repository.UserMeetingRepository;
+import com.onmoim.server.security.CustomUserDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.category.entity.Category;
@@ -57,21 +64,27 @@ public class UserServiceImpl implements UserService {
 	private final UserCategoryRepository userCategoryRepository;
 	private final UserMapperCustom userMapperCustom;
 	private final GroupUserRepository groupUserRepository;
+	private final UserMeetingRepository userMeetingRepository;
 	private final RefreshTokenService refreshTokenService;
 	private final FileStorageService fileStorageService;
 	private final JwtProvider jwtProvider;
+	private final MeetingRepository meetingRepository;
 
 	@Override
 	public Long getCurrentUserId() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-		if (auth == null || !auth.isAuthenticated() || auth.getName().equals("anonymousUser")) {
+		if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
 			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
 		}
 
-		log.info("userId = {}", Long.parseLong(auth.getName()));
+		Object principal = auth.getPrincipal();
 
-		return Long.parseLong(auth.getName());
+		if (principal instanceof CustomUserDetails userDetails) {
+			return userDetails.getUserId();
+		} else {
+			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+		}
 	}
 
 	public OAuthUserDto extractSignupClaims() {
@@ -192,14 +205,19 @@ public class UserServiceImpl implements UserService {
 			fileUploadResponse = fileStorageService.uploadFile(profileImgFile, directory);
 			log.info("fileUrl = {}", fileUploadResponse.getFileUrl());
 
+			// 기존 이미지가 있을 경우 삭제
+			if (StringUtils.hasText(user.getProfileImgUrl())) {
+				fileStorageService.deleteFile(user.getProfileImgUrl());
+			}
+
 			// 1. user 테이블 update(사진 등록/교체하는 경우)
 			user.updateProfile(
 				request.getName(),
 				request.getGender(),
 				request.getBirth().atStartOfDay(),
 				location,
-				request.getIntroduction(),
-				fileUploadResponse.getFileUrl()
+				fileUploadResponse.getFileUrl(),
+				request.getIntroduction()
 			);
 		} else {
 			// 1. user 테이블 update(기존 사진 교체 없는 경우)
@@ -208,8 +226,8 @@ public class UserServiceImpl implements UserService {
 				request.getGender(),
 				request.getBirth().atStartOfDay(),
 				location,
-				request.getIntroduction(),
-				request.getProfileImgUrl()
+				request.getProfileImgUrl(),
+				request.getIntroduction()
 			);
 		}
 
@@ -254,11 +272,29 @@ public class UserServiceImpl implements UserService {
 			throw new CustomException(ErrorCode.IS_GROUP_OWNER);
 		}
 
-		// TODO: 1. meeting_user 삭제
-		// TODO: 2. meeting 삭제(참석자가 본인 포함 1명일 경우)
+		// 1. meeting 및 user_meeting 삭제(참석자가 본인 포함 1명일 경우)
+		List<Meeting> emptyMeetings = meetingRepository.findEmptyMeetingsByCreator(userId);
+		log.info("emptyMeetings.size = {}", emptyMeetings.size());
+		if (!emptyMeetings.isEmpty()) {
+			List<Long> emptyMeetingIds = new ArrayList<>();
+
+			for (Meeting emptyMeeting : emptyMeetings) {
+				emptyMeetingIds.add(emptyMeeting.getId());
+				emptyMeeting.softDelete(); // meeting 삭제
+			}
+			userMeetingRepository.deleteAllByMeetingIdIn(emptyMeetingIds); // user_meeting 삭제
+		}
+
+		// 2. user_meeting 삭제(아직 시작하지 않은 일정의 user_meeting만 삭제)
+		List<Long> remainingUserMeetings = userMeetingRepository.findRemainingMeetingIdsByUserId(userId);
+		log.info("remainingUserMeetings.size = {}", remainingUserMeetings.size());
+		if (!remainingUserMeetings.isEmpty()) {
+			userMeetingRepository.deleteAllByUserIdAndMeetingIdIn(userId, remainingUserMeetings);
+		}
 
 		// 3. group_user 테이블 soft delete
 		List<GroupUser> groupUserList = groupUserRepository.findGroupUserByUserId(userId);
+		log.info("groupUserList.size = {}", groupUserList.size());
 		if (!groupUserList.isEmpty()) {
 			groupUserList.forEach(GroupUser::deleteGroupUser);
 		}

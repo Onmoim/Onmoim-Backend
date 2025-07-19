@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Date;
 
+import com.onmoim.server.user.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -126,8 +127,11 @@ public class JwtProvider {
 			throw new CustomException(INVALID_ACCESS_TOKEN);
 		}
 
-		String subject = getSubject(token);
-		return new UsernamePasswordAuthenticationToken(subject, null, Collections.emptyList());
+		Long userId = Long.parseLong(getSubject(token));
+
+		CustomUserDetails userDetails = new CustomUserDetails(userId);
+
+		return new UsernamePasswordAuthenticationToken(userDetails, null, Collections.emptyList());
 	}
 
 	public Claims parseSignupToken(String token) {

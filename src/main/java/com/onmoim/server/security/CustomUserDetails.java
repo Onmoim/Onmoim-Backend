@@ -18,6 +18,11 @@ public class CustomUserDetails implements UserDetails {
 		this.provider = provider;
 	}
 
+	// 토큰 파싱 시
+	public CustomUserDetails(Long userId) {
+		this(userId, null, null);
+	}
+
 	public Long getUserId() {
 		return userId;
 	}

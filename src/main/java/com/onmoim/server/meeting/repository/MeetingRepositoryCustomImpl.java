@@ -11,6 +11,10 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.List;
+
+import static com.onmoim.server.meeting.entity.QMeeting.meeting;
+import static com.onmoim.server.meeting.entity.QUserMeeting.userMeeting;
 
 @RequiredArgsConstructor
 public class MeetingRepositoryCustomImpl implements MeetingRepositoryCustom {
@@ -131,4 +135,18 @@ public class MeetingRepositoryCustomImpl implements MeetingRepositoryCustom {
                 .limit(limit)
                 .fetch();
     }
+
+	@Override
+	public List<Meeting> findEmptyMeetingsByCreator(Long userId) {
+		return queryFactory
+			.selectFrom(meeting)
+			.leftJoin(userMeeting).on(meeting.id.eq(userMeeting.meeting.id))
+			.where(
+				meeting.creator.id.eq(userId),
+				meeting.joinCount.eq(1),
+				userMeeting.user.id.eq(userId)
+			)
+			.fetch();
+	}
+
 }
