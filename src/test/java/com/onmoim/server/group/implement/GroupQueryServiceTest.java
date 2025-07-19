@@ -21,6 +21,8 @@ import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.dto.ActiveGroup;
 import com.onmoim.server.group.dto.ActiveGroupDetail;
 import com.onmoim.server.group.dto.ActiveGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupRelation;
+import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -413,5 +415,368 @@ class GroupQueryServiceTest {
 			new ActiveGroupRelation(groups.get(19).getId(), null, null));
 	}
 
+	@Test
+	@DisplayName("내 주변 인기 모임 조회: 내 주변 모임이 없는 경우")
+	void readPopularGroupsNearMe1() {
+		// given
+		Location myLocation = Location.builder().dong("my location").build();
+		locationRepository.save(myLocation);
 
+		// 로케이션 10개 저장
+		List<Location> locations = new ArrayList<>();
+		for (int i = 0; i < 10; i++) {
+			Location location = Location.builder()
+				.dong("mock dong" + i)
+				.build();
+			locations.add(locationRepository.save(location));
+		}
+
+		// 모임 10개 저장
+		for (int i = 0; i < 10; i++) {
+			Group group = Group.builder()
+				.name("mock group" + i)
+				.location(locations.get(i))
+				.category(category)
+				.capacity(100)
+				.build();
+			groupRepository.save(group);
+		}
+
+		// when
+		List<PopularGroupSummary> groupSummaries = groupQueryService.readPopularGroupsNearMe(
+			myLocation.getId(), null, null, 10);
+
+		// then
+		assertThat(groupSummaries).isEmpty();
+	}
+
+	@Test
+	@DisplayName("내 주변 인기 모임 조회: 파라미터 조건이 없는 경우")
+	void readPopularGroupsNearMe2() {
+		// given
+		Location location = Location.builder().dong("my location").build();
+		locationRepository.save(location);
+
+		Category category = Category.builder().name("mock category").build();
+		categoryRepository.save(category);
+
+		// 모임 10개 저장
+		List<Group> groups = new ArrayList<>();
+		for (int i = 0; i < 10; i++) {
+			Group group = Group.builder()
+				.name("mock group" + i)
+				.location(location)
+				.category(category)
+				.capacity(100)
+				.build();
+			groups.add(groupRepository.save(group));
+		}
+
+		// 유저 10명 저장
+		List<User> users = new ArrayList<>();
+		for (int i = 0; i < 10; i++) {
+			User user = User.builder().name("mock user" + i).build();
+			users.add(userRepository.save(user));
+		}
+
+		// 모임과 사용자 관계 생성
+		for (int i = 0; i < 10; i++) {
+			for (int j = 0; j < i; j++) {
+				GroupUser groupUser = GroupUser.create(groups.get(i), users.get(j), Status.MEMBER);
+				groupUserRepository.save(groupUser);
+			}
+		}
+
+		// when
+		List<PopularGroupSummary> groupSummaries = groupQueryService.readPopularGroupsNearMe(
+			location.getId(), null, null, 5);
+
+		// then
+		assertThat(groupSummaries.size()).isEqualTo(6);
+		assertThat(groupSummaries).containsExactly(
+			new PopularGroupSummary(
+				groups.get(9).getId(),
+				groups.get(9).getImgUrl(),
+				groups.get(9).getName(),
+				groups.get(9).getLocation().getDong(),
+				groups.get(9).getCategory().getName(),
+				9L
+			),
+			new PopularGroupSummary(
+				groups.get(8).getId(),
+				groups.get(8).getImgUrl(),
+				groups.get(8).getName(),
+				groups.get(8).getLocation().getDong(),
+				groups.get(8).getCategory().getName(),
+				8L
+			),
+			new PopularGroupSummary(
+				groups.get(7).getId(),
+				groups.get(7).getImgUrl(),
+				groups.get(7).getName(),
+				groups.get(7).getLocation().getDong(),
+				groups.get(7).getCategory().getName(),
+				7L
+			),
+			new PopularGroupSummary(
+				groups.get(6).getId(),
+				groups.get(6).getImgUrl(),
+				groups.get(6).getName(),
+				groups.get(6).getLocation().getDong(),
+				groups.get(6).getCategory().getName(),
+				6L
+			),
+			new PopularGroupSummary(
+				groups.get(5).getId(),
+				groups.get(5).getImgUrl(),
+				groups.get(5).getName(),
+				groups.get(5).getLocation().getDong(),
+				groups.get(5).getCategory().getName(),
+				5L
+			),
+			new PopularGroupSummary(
+				groups.get(4).getId(),
+				groups.get(4).getImgUrl(),
+				groups.get(4).getName(),
+				groups.get(4).getLocation().getDong(),
+				groups.get(4).getCategory().getName(),
+				4L
+			)
+		);
+	}
+
+	@Test
+	@DisplayName("내 주변 인기 모임 조회: 파라미터 조건이 있는 경우")
+	void readPopularGroupsNearMe3() {
+		// given
+		Location location = Location.builder().dong("my location").build();
+		locationRepository.save(location);
+
+		Category category = Category.builder().name("mock category").build();
+		categoryRepository.save(category);
+
+		// 모임 10개 저장
+		List<Group> groups = new ArrayList<>();
+		for (int i = 0; i < 10; i++) {
+			Group group = Group.builder()
+				.name("mock group" + i)
+				.location(location)
+				.category(category)
+				.capacity(100)
+				.build();
+			groups.add(groupRepository.save(group));
+		}
+
+		// 유저 10명 저장
+		List<User> users = new ArrayList<>();
+		for (int i = 0; i < 10; i++) {
+			User user = User.builder().name("mock user" + i).build();
+			users.add(userRepository.save(user));
+		}
+
+		// 모임과 사용자 관계 생성
+		// 0,1: 2명, 2,3: 5명, 4,5: 1명 6,7,8,9: 0명
+		for (int i = 0; i < 10; i++) {
+			if (i < 2) {
+				for (int j = 0; j < 2; j++) {
+					groupUserRepository.save(GroupUser.create(groups.get(i), users.get(j), Status.MEMBER));
+				}
+				continue;
+			}
+			if (i < 4) {
+				for (int j = 0; j < 5; j++) {
+					groupUserRepository.save(GroupUser.create(groups.get(i), users.get(j), Status.MEMBER));
+				}
+				continue;
+			}
+			if (i < 6) {
+				for (int j = 0; j < 1; j++) {
+					groupUserRepository.save(GroupUser.create(groups.get(i), users.get(j), Status.MEMBER));
+				}
+			}
+		}
+
+		// when
+		// 첫 번째 페이지 조회
+		List<PopularGroupSummary> groupSummaries1 = groupQueryService.readPopularGroupsNearMe(
+			location.getId(), null, null, 4);
+
+		PopularGroupSummary last = groupSummaries1.get(groupSummaries1.size() - 2);
+
+		// 두 번째 페이지 조회
+		List<PopularGroupSummary> groupSummaries2 = groupQueryService.readPopularGroupsNearMe(
+			location.getId(), last.groupId(), last.memberCount(), 4);
+
+		// then
+		// 2, 3, 0, 1, 4
+		assertThat(groupSummaries1.size()).isEqualTo(5);
+		// 4, 5, 6, 7, 8
+		assertThat(groupSummaries2.size()).isEqualTo(5);
+		assertThat(groupSummaries1).containsExactly(
+			new PopularGroupSummary(
+				groups.get(2).getId(),
+				groups.get(2).getImgUrl(),
+				groups.get(2).getName(),
+				groups.get(2).getLocation().getDong(),
+				groups.get(2).getCategory().getName(),
+				5L
+			),
+			new PopularGroupSummary(
+				groups.get(3).getId(),
+				groups.get(3).getImgUrl(),
+				groups.get(3).getName(),
+				groups.get(3).getLocation().getDong(),
+				groups.get(3).getCategory().getName(),
+				5L
+			),
+			new PopularGroupSummary(
+				groups.get(0).getId(),
+				groups.get(0).getImgUrl(),
+				groups.get(0).getName(),
+				groups.get(0).getLocation().getDong(),
+				groups.get(0).getCategory().getName(),
+				2L
+			),
+			new PopularGroupSummary(
+				groups.get(1).getId(),
+				groups.get(1).getImgUrl(),
+				groups.get(1).getName(),
+				groups.get(1).getLocation().getDong(),
+				groups.get(1).getCategory().getName(),
+				2L
+			),
+			new PopularGroupSummary(
+				groups.get(4).getId(),
+				groups.get(4).getImgUrl(),
+				groups.get(4).getName(),
+				groups.get(4).getLocation().getDong(),
+				groups.get(4).getCategory().getName(),
+				1L
+			)
+		);
+		assertThat(groupSummaries2).containsExactly(
+			new PopularGroupSummary(
+				groups.get(4).getId(),
+				groups.get(4).getImgUrl(),
+				groups.get(4).getName(),
+				groups.get(4).getLocation().getDong(),
+				groups.get(4).getCategory().getName(),
+				1L
+			),
+			new PopularGroupSummary(
+				groups.get(5).getId(),
+				groups.get(5).getImgUrl(),
+				groups.get(5).getName(),
+				groups.get(5).getLocation().getDong(),
+				groups.get(5).getCategory().getName(),
+				1L
+			),
+			new PopularGroupSummary(
+				groups.get(6).getId(),
+				groups.get(6).getImgUrl(),
+				groups.get(6).getName(),
+				groups.get(6).getLocation().getDong(),
+				groups.get(6).getCategory().getName(),
+				0L
+			),
+			new PopularGroupSummary(
+				groups.get(7).getId(),
+				groups.get(7).getImgUrl(),
+				groups.get(7).getName(),
+				groups.get(7).getLocation().getDong(),
+				groups.get(7).getCategory().getName(),
+				0L
+			),
+			new PopularGroupSummary(
+				groups.get(8).getId(),
+				groups.get(8).getImgUrl(),
+				groups.get(8).getName(),
+				groups.get(8).getLocation().getDong(),
+				groups.get(8).getCategory().getName(),
+				0L
+			)
+		);
+	}
+
+	@Test
+	@DisplayName("내 주변 인기 모임 조회: 모임과 사용자 관계 조회 없음")
+	void readPopularGroupRelation() {
+		// given
+		List<Long> groupIds = List.of();
+		Long userId = 1L;
+
+		// when
+		List<PopularGroupRelation> popularGroupRelations = groupQueryService.readPopularGroupRelation(groupIds, userId);
+
+		// then
+		assertThat(popularGroupRelations).isEmpty();
+	}
+
+	@Test
+	@DisplayName("내 주변 인기 모임 조회: 모임과 사용자 관계 조회")
+	void readPopularGroupRelation2() {
+		// given
+		User onlineUser = User.builder().name("current user").build();
+		userRepository.save(onlineUser);
+
+		// 모임 10개 생성
+		List<Group> groups = new ArrayList<>();
+		for (int i = 0; i < 10; i++) {
+			Group group = Group.builder().name("mock group" + i).build();
+			groups.add(groupRepository.save(group));
+		}
+
+		// 모임과 사용자 현재 사용자 관계 설정
+		for (int i = 0; i < 5; i++) {
+			if (i < 1) {
+				GroupUser groupUser = GroupUser.create(groups.get(i), onlineUser, Status.BAN);
+				groupUserRepository.save(groupUser);
+				continue;
+			}
+			if (i < 2) {
+				GroupUser groupUser = GroupUser.create(groups.get(i), onlineUser, Status.OWNER);
+				groupUserRepository.save(groupUser);
+				continue;
+			}
+			if (i < 3) {
+				GroupUser groupUser = GroupUser.create(groups.get(i), onlineUser, Status.MEMBER);
+				groupUserRepository.save(groupUser);
+				continue;
+			}
+			GroupUser groupUser = GroupUser.create(groups.get(i), onlineUser, Status.BOOKMARK);
+			groupUserRepository.save(groupUser);
+		}
+
+		// 모임 일정 생성
+		for (int i = 0; i < 5; i++) {
+			for (int j = 0; j < i + 1; j++) {
+				meetingRepository.save(Meeting.meetingCreateBuilder()
+					.group(groups.get(i))
+					.startAt(LocalDateTime.now().plusDays(1))
+					.build());
+			}
+		}
+
+		// 모임 10개 id 추출
+		List<Long> groupIds = groups.stream().map(Group::getId)
+			.collect(Collectors.toList());
+
+		// when
+		List<PopularGroupRelation> result = groupQueryService.readPopularGroupRelation(groupIds, onlineUser.getId());
+
+		// then
+		assertThat(result).hasSize(10);
+		assertThat(result).containsExactly(
+			new PopularGroupRelation(groups.get(0).getId(), Status.BAN, 1L),
+			new PopularGroupRelation(groups.get(1).getId(), Status.OWNER, 2L),
+			new PopularGroupRelation(groups.get(2).getId(), Status.MEMBER, 3L),
+			new PopularGroupRelation(groups.get(3).getId(), Status.BOOKMARK, 4L),
+			new PopularGroupRelation(groups.get(4).getId(), Status.BOOKMARK,5L ),
+			new PopularGroupRelation(groups.get(5).getId(), null, 0L),
+			new PopularGroupRelation(groups.get(6).getId(), null, 0L),
+			new PopularGroupRelation(groups.get(7).getId(), null, 0L),
+			new PopularGroupRelation(groups.get(8).getId(), null, 0L),
+			new PopularGroupRelation(groups.get(9).getId(), null, 0L)
+		);
+	}
 }

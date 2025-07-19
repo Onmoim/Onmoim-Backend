@@ -98,7 +98,7 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 			.from(group)
 			.leftJoin(category).on(group.category.id.eq(category.id))
 			.leftJoin(location).on(group.location.id.eq(location.id))
-			.leftJoin(groupUser).on(group.id.eq(groupUser.group.id), groupUser.status.in(GROUP_MEMBER))
+			.leftJoin(groupUser).on(groupUser.group.id.eq(group.id), groupUser.status.in(GROUP_MEMBER))
 			.where(group.deletedDate.isNull(), group.location.id.eq(locationId))
 			.groupBy(group.id)
 			.having(popularReadCondition(lastGroupId, memberCount))
