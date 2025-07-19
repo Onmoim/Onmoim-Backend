@@ -1,8 +1,5 @@
 package com.onmoim.server.group.dto;
 
-import java.util.Comparator;
-import java.util.List;
-
 /**
  * @param groupId - 모임 id
  * @param imageUrl - 모임 이미지
@@ -20,22 +17,5 @@ public record PopularGroupSummary (
 	String category
 )
 {
-	private static PopularGroupSummary EMPTY_CURSOR = new PopularGroupSummary(
-		0L, null, null, 0L, null, null);
 
-	/**
-	 * 회원 수 DESC, 모임 ID ASC (커서 추출)
-	 */
-	public static PopularGroupSummary extractCursor(List<PopularGroupSummary> list) {
-		if (list.isEmpty()) return EMPTY_CURSOR;
-
-		long memberCountMin = list.stream()
-			.mapToLong(PopularGroupSummary::memberCount)
-			.min().orElseThrow();
-
-		return list.stream()
-			.filter(gm -> gm.memberCount == memberCountMin)
-			.max(Comparator.comparing(PopularGroupSummary::groupId))
-			.orElse(EMPTY_CURSOR);
-	}
 }

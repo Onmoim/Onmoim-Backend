@@ -1,9 +1,15 @@
 package com.onmoim.server.group.dto;
 
+import com.onmoim.server.group.entity.Status;
+
+import jakarta.annotation.Nullable;
+
 public record ActiveGroupRelation (
 	Long groupId,
+	@Nullable
 	Long userId,
-	String status
+	@Nullable
+	Status status
 )
 {
 

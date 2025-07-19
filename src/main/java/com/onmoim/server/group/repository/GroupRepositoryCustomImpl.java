@@ -237,12 +237,13 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 
 		return queryFactory.select(Projections.constructor(
 			ActiveGroupRelation.class,
-			groupUser.group.id,
+			group.id,
 			groupUser.user.id,
 			groupUser.status
 		))
-		.from(groupUser)
-		.where(groupUser.group.id.in(groupIds), groupUser.user.id.eq(userId))
+		.from(group)
+		.leftJoin(groupUser).on(groupUser.user.id.eq(userId), groupUser.group.id.eq(group.id))
+		.where(group.id.in(groupIds))
 		.fetch();
 	}
 

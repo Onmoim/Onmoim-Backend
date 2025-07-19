@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +20,7 @@ import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.dto.ActiveGroup;
 import com.onmoim.server.group.dto.ActiveGroupDetail;
+import com.onmoim.server.group.dto.ActiveGroupRelation;
 import com.onmoim.server.group.entity.Group;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
@@ -293,11 +295,6 @@ class GroupQueryServiceTest {
 		assertThat(last.memberCount()).isEqualTo(7);
 	}
 
-	// todo: read group relation 테스트 추가
-
-
-
-
 	private void saveGroupUser(Group group, User user, Status status) {
 		GroupUser groupUser = GroupUser.create(group, user, status);
 		groupUserRepository.save(groupUser);
@@ -311,4 +308,110 @@ class GroupQueryServiceTest {
 				.build());
 		}
 	}
+
+	@Test
+	@DisplayName("활동이 활발한 모임 조회: 모임과 사용자 관계 조회1")
+	void readGroupsRelation1() {
+		// given
+		Long mockUserId = 1L;
+		List<Long> groupIds = List.of();
+
+		// when
+		List<ActiveGroupRelation> relations = groupQueryService.readGroupsRelation(groupIds, mockUserId);
+
+		// then
+		assertThat(relations).isEmpty();
+	}
+
+	@Test
+	@DisplayName("활동이 활발한 모임 조회: 모임과 사용자 관계 조회2")
+	void readGroupsRelation2() {
+		// given
+		User currentUser = User.builder().name("online user").build();
+		userRepository.save(currentUser);
+
+		// 유저 20명 저장
+		List<User> users = new ArrayList<>();
+		for (int i = 0; i < 20; i++) {
+			User user = User.builder().name("mock user" + i).build();
+			users.add(userRepository.save(user));
+		}
+
+		// 모임 20개 생성
+		List<Group> groups = new ArrayList<>();
+		for (int i = 0; i < 20; i++) {
+			Group group = Group.builder().name("mock group " + i)
+				.category(category)
+				.location(location)
+				.capacity(100)
+				.build();
+			groups.add(groupRepository.save(group));
+		}
+
+		// 모임과 사용자 관계 생성
+		for (int i = 0; i < 20; i++) {
+			for (int j = 0; j < 20; j++) {
+				GroupUser groupUser = GroupUser.create(groups.get(j), users.get(j), Status.MEMBER);
+				groupUserRepository.save(groupUser);
+			}
+		}
+
+		// 현재 유저와 10개의 모임 관계 생성
+		for (int i = 0; i < 10; i++) {
+			if(i < 2) {
+				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.BAN);
+				groupUserRepository.save(groupUser);
+				continue;
+			}
+			if(i < 4) {
+				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.OWNER);
+				groupUserRepository.save(groupUser);
+				continue;
+			}
+			if(i < 6) {
+				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.MEMBER);
+				groupUserRepository.save(groupUser);
+				continue;
+			}
+			if(i < 8) {
+				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.BOOKMARK);
+				groupUserRepository.save(groupUser);
+				continue;
+			}
+			GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.PENDING);
+			groupUserRepository.save(groupUser);
+		}
+		// 모임 20개 id 추출
+		List<Long> groupIds = groups.stream().map(Group::getId).collect(Collectors.toList());
+
+		// when
+		List<ActiveGroupRelation> relations = groupQueryService.readGroupsRelation(groupIds, currentUser.getId());
+
+		// then
+		System.out.println(relations);
+		assertThat(relations).hasSize(20);
+		assertThat(relations).containsExactly(
+			new ActiveGroupRelation(groups.get(0).getId(), currentUser.getId(), Status.BAN),
+			new ActiveGroupRelation(groups.get(1).getId(), currentUser.getId(), Status.BAN),
+			new ActiveGroupRelation(groups.get(2).getId(), currentUser.getId(), Status.OWNER),
+			new ActiveGroupRelation(groups.get(3).getId(), currentUser.getId(), Status.OWNER),
+			new ActiveGroupRelation(groups.get(4).getId(), currentUser.getId(), Status.MEMBER),
+			new ActiveGroupRelation(groups.get(5).getId(), currentUser.getId(), Status.MEMBER),
+			new ActiveGroupRelation(groups.get(6).getId(), currentUser.getId(), Status.BOOKMARK),
+			new ActiveGroupRelation(groups.get(7).getId(), currentUser.getId(), Status.BOOKMARK),
+			new ActiveGroupRelation(groups.get(8).getId(), currentUser.getId(), Status.PENDING),
+			new ActiveGroupRelation(groups.get(9).getId(), currentUser.getId(), Status.PENDING),
+			new ActiveGroupRelation(groups.get(10).getId(), null, null),
+			new ActiveGroupRelation(groups.get(11).getId(), null, null),
+			new ActiveGroupRelation(groups.get(12).getId(), null, null),
+			new ActiveGroupRelation(groups.get(13).getId(), null, null),
+			new ActiveGroupRelation(groups.get(14).getId(), null, null),
+			new ActiveGroupRelation(groups.get(15).getId(), null, null),
+			new ActiveGroupRelation(groups.get(16).getId(), null, null),
+			new ActiveGroupRelation(groups.get(17).getId(), null, null),
+			new ActiveGroupRelation(groups.get(18).getId(), null, null),
+			new ActiveGroupRelation(groups.get(19).getId(), null, null));
+	}
+
+
 }
