@@ -1,7 +1,6 @@
 package com.onmoim.server.chat.domain.dto;
 
 import com.onmoim.server.user.entity.User;
-
 import lombok.Data;
 
 @Data

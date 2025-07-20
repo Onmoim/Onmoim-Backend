@@ -1,7 +1,6 @@
 package com.onmoim.server.chat.domain;
 
 import com.onmoim.server.common.BaseEntity;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

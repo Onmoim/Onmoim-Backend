@@ -1,7 +1,7 @@
 package com.onmoim.server.chat.common.exception;
 
-import java.security.Principal;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -9,8 +9,7 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.security.Principal;
 
 /**
  * Controller 이하 계층에서 발생 된 에러를 처리합니다.

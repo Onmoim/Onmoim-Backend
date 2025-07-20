@@ -1,10 +1,10 @@
 package com.onmoim.server.chat.common.config;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link RejectedExecutionHandler} 인터페이스의 커스텀 구현체로,

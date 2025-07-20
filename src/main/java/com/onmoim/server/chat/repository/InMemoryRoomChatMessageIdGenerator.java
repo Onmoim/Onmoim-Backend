@@ -1,15 +1,13 @@
 package com.onmoim.server.chat.repository;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-
+import com.onmoim.server.chat.domain.ChatSequence;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.onmoim.server.chat.domain.ChatSequence;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * RoomChatMessageId는 '{RoomId}+{SequenceValue}'로 구성됩니다. 방마다 고유한 순차적 ID를 통해 클라이언트가 메시지 순서 및 유실을 판단합니다.

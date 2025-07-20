@@ -1,10 +1,9 @@
 package com.onmoim.server.chat.common.config;
 
-import java.security.Principal;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.onmoim.server.chat.common.exception.StompErrorEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -27,11 +26,10 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.onmoim.server.chat.common.exception.StompErrorEvent;
-
-import lombok.extern.slf4j.Slf4j;
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Spring 애플리케이션에서 WebSocket 메시징과 STOMP 메시지 브로커를 활성화하고

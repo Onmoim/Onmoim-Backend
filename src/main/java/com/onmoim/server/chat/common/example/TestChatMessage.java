@@ -1,13 +1,12 @@
 package com.onmoim.server.chat.common.example;
 
-import java.time.LocalDateTime;
-
 import com.onmoim.server.chat.domain.enums.MessageType;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
