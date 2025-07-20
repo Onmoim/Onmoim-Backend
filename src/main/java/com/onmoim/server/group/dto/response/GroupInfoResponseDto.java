@@ -73,10 +73,7 @@ public record GroupInfoResponseDto(
 	private static String convertStatus(Status status) {
 		if (status == null) return "NONE";
 		return switch (status) {
-			case Status.OWNER -> Status.OWNER.name();
-			case Status.MEMBER -> Status.MEMBER.name();
-			case Status.BOOKMARK -> Status.BOOKMARK.name();
-			case Status.BAN -> Status.BAN.name();
+			case OWNER, MEMBER, BOOKMARK, BAN -> status.name();
 			default -> "NONE";
 		};
 	}

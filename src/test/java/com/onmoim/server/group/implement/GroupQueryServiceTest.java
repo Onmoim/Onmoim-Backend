@@ -1,5 +1,6 @@
 package com.onmoim.server.group.implement;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.dto.ActiveGroup;
 import com.onmoim.server.group.dto.ActiveGroupDetail;
 import com.onmoim.server.group.dto.ActiveGroupRelation;
+import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.PopularGroupRelation;
 import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.entity.Group;
@@ -58,7 +60,7 @@ class GroupQueryServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		location = locationRepository.save(Location.create(null, null, null, null, null));
+		location = locationRepository.save(Location.create(null, null, null, "동동동", null));
 		category = categoryRepository.save(Category.builder().name("카테고리").build());
 	}
 
@@ -114,7 +116,7 @@ class GroupQueryServiceTest {
 			capacity
 		))
 		.isInstanceOf(CustomException.class)
-		.hasMessage(ErrorCode.ALREADY_EXISTS_GROUP.getDetail());
+		.hasMessage(ALREADY_EXISTS_GROUP.getDetail());
 	}
 
 	@Test
@@ -771,5 +773,72 @@ class GroupQueryServiceTest {
 			new PopularGroupRelation(groups.get(8).getId(), null, 0L),
 			new PopularGroupRelation(groups.get(9).getId(), null, 0L)
 		);
+	}
+
+	@Test
+	@DisplayName("모임 조회: 모임이 존재하지 않는 경우")
+	void readGroup1() {
+		// given
+		Group group = Group.builder()
+			.name("mock group")
+			.description("mock description")
+			.capacity(100)
+			.category(category)
+			.location(location)
+			.build();
+		groupRepository.save(group);
+		groupQueryService.deleteGroup(group);
+		// expected
+		assertThatThrownBy(() -> groupQueryService.readGroupDetail(group.getId(), 1L))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(NOT_EXISTS_GROUP.getDetail());
+	}
+
+	@Test
+	@DisplayName("모임 조회: 모임이 존재하는 경우, 현재 사용자와 관계가 없는 경우")
+	void readGroup2() {
+		// given
+		Group group = Group.builder()
+			.name("mock group")
+			.description("mock description")
+			.capacity(100)
+			.category(category)
+			.location(location)
+			.build();
+		groupRepository.save(group);
+
+		// when
+		GroupDetail groupDetail = groupQueryService.readGroupDetail(group.getId(), 1L);
+
+		// then
+		assertThat(groupDetail.groupId()).isEqualTo(group.getId());
+		assertThat(groupDetail.status()).isNull();
+	}
+
+	@Test
+	@DisplayName("모임 조회: 모임이 존재하는 경우, 현재 사용자와 관계가 있는 경우")
+	void readGroup3() {
+		// given
+		User user = User.builder().name("mock user").build();
+		userRepository.save(user);
+
+		Group group = Group.builder()
+			.name("mock group")
+			.description("mock description")
+			.capacity(100)
+			.category(category)
+			.location(location)
+			.build();
+		groupRepository.save(group);
+
+		GroupUser groupUser = GroupUser.create(group, user, Status.MEMBER);
+		groupUserRepository.save(groupUser);
+
+		// when
+		GroupDetail groupDetail = groupQueryService.readGroupDetail(group.getId(), user.getId());
+
+		// then
+		assertThat(groupDetail.groupId()).isEqualTo(group.getId());
+		assertThat(groupDetail.status()).isEqualTo(Status.MEMBER);
 	}
 }

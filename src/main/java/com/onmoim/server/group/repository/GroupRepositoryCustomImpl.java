@@ -13,11 +13,13 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.onmoim.server.group.dto.ActiveGroup;
 import com.onmoim.server.group.dto.ActiveGroupDetail;
 import com.onmoim.server.group.dto.ActiveGroupRelation;
+import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.PopularGroupRelation;
 import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.entity.GroupUser;
@@ -36,6 +38,32 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 	private final JPAQueryFactory queryFactory;
 
 	private final static List<Status> GROUP_MEMBER  = Arrays.asList(MEMBER, OWNER);
+
+	/**
+	 * 모임 상세 조회
+	 * 모임, 카테고리, 위치, 현재 사용자와의 관계를 조회한다.
+	 * 모임 삭제 여부 확인 포함
+	 */
+	@Override
+	public Optional<GroupDetail> readGroupDetail(Long groupId, Long userId) {
+		return Optional.ofNullable(queryFactory
+			.select(Projections.constructor(
+				GroupDetail.class,
+				group.id,
+				group.name,
+				group.description,
+				location.dong,
+				category.name,
+				group.imgUrl,
+				groupUser.status
+			))
+			.from(group)
+			.leftJoin(category).on(group.category.id.eq(category.id))
+			.leftJoin(location).on(group.location.id.eq(location.id))
+			.leftJoin(groupUser).on(groupUser.group.id.eq(group.id), groupUser.user.id.eq(userId))
+			.where(group.id.eq(groupId), group.deletedDate.isNull())
+			.fetchOne());
+	}
 
 	@Override
 	public Long countGroupMembers(Long groupId){
