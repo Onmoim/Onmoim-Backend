@@ -84,7 +84,8 @@ public class GroupService {
 
 		Group group = groupQueryService.saveGroup(category, location, name, description, capacity);
 
-		eventPublisher.publishEvent(new ChatSystemMessageEvent(group.getId(), ChatSystemMessageTemplate.CREATE_CHAT_ROOM));
+		ChatRoomResponse room = chatRoomService.createRoom(group.getId(), name, description, user.getId());
+		eventPublisher.publishEvent(new ChatSystemMessageEvent(group.getId(), ChatSystemMessageTemplate.CREATE_CHAT_ROOM.getContent()));
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
 		groupUserQueryService.groupUserSave(groupUser);
@@ -113,6 +114,15 @@ public class GroupService {
 		group.join(current);
 		// 모임 검사
 		groupUserQueryService.joinGroup(groupUser);
+
+		eventPublisher.publishEvent(
+			new ChatSystemMessageEvent(
+				group.getId(),
+				ChatSystemMessageTemplate
+					.JOIN_CHAT_ROOM
+					.getContentWithBind(user.getName())
+			)
+		);
 	}
 
 	// 모임 좋아요 또는 좋아요 취소
@@ -183,6 +193,15 @@ public class GroupService {
 		groupUserQueryService.checkCanLeave(groupUser);
 		// 모임 탈퇴
 		groupUserQueryService.leave(groupUser);
+
+		eventPublisher.publishEvent(
+			new ChatSystemMessageEvent(
+				group.getId(),
+				ChatSystemMessageTemplate
+					.LEAVE_CHAT_ROOM
+					.getContentWithBind(user.getName())
+			)
+		);
 	}
 
 	// 모임장 위임
