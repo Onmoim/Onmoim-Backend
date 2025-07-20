@@ -73,10 +73,15 @@ public class GroupQueryService {
 	}
 
 	// 모임 상세 조회
-	public GroupDetail getGroupWithDetails(Long groupId) {
-		return GroupDetail.of(groupRepository.findGroupWithDetails(groupId)
+	public GroupDetail readGroupDetail(Long groupId, Long userId) {
+		return groupRepository.readGroupDetail(groupId, userId)
+			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
+	}
+
+	public Group getGroupWithDetails(Long groupId) {
+		return groupRepository.findGroupWithDetails(groupId)
 			.filter(group -> !group.isDeleted())
-			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP)));
+			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
 	}
 
 	// 모임을 삭제합니다.

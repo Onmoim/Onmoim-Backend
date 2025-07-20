@@ -4,6 +4,7 @@ import static com.onmoim.server.common.exception.ErrorCode.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -240,13 +241,9 @@ public class GroupService {
 	public GroupDetail readGroup(Long groupId) {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
-		// 모임 조회
-		groupQueryService.existsById(groupId);
-		// 모인원 확인
-		GroupUser member = groupUserQueryService.getById(groupId, user.getId());
-		member.checkGroupMember();
-		// (모임 + 카테고리 + 로케이션) 조회
-		return groupQueryService.getGroupWithDetails(groupId);
+
+		// 모임 상세 조회
+		return groupQueryService.readGroupDetail(groupId, user.getId());
 	}
 
 	// 내 주변 인기 모임 조회
