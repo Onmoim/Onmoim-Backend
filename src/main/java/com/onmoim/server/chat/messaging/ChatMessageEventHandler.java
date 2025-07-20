@@ -17,6 +17,6 @@ public class ChatMessageEventHandler {
 	@Async
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
 	public void systemChatListener(ChatSystemMessageEvent event) {
-		chatMessageService.sendSystemMessage(event.groupId(), event.template().getContent());
+		chatMessageService.sendSystemMessage(event.groupId(), event.content());
 	}
 }
