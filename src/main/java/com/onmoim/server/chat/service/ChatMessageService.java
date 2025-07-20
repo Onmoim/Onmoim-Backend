@@ -15,10 +15,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ChatMessageService {
 	private final ChatMessageRepository chatMessageRepository;
 	private final RoomChatMessageIdGenerator roomChatMessageIdGenerator;
@@ -72,5 +74,15 @@ public class ChatMessageService {
 		chatMessageSendService.send(
 			destination, ChatMessageDto.of(chatRoomMessage, message.getChatUserDto())
 		);
+	}
+
+	public List<ChatRoomMessage> getMessages(Long roomId, Long cursor) {
+		if (cursor == null) {
+			// 첫 조회: 최신 100개
+			return chatMessageRepository.findTop100ByIdRoomIdOrderByIdMessageSequenceDesc(roomId);
+		} else {
+			// 커서가 있으면 이전 메시지 100개 조회
+			return chatMessageRepository.findTop100ByIdRoomIdAndIdMessageSequenceLessThanOrderByIdMessageSequenceDesc(roomId, cursor);
+		}
 	}
 }
