@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.example;
+package com.onmoim.server.chat.common.example;
 
 import static com.onmoim.server.chat.domain.enums.SubscribeRegistry.*;
 

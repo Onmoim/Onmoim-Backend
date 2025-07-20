@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.config;
+package com.onmoim.server.chat.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

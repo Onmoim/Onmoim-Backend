@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.config;
+package com.onmoim.server.chat.common.config;
 
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;

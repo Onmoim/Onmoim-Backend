@@ -1,17 +1,12 @@
 package com.onmoim.server.chat.service;
 
-import java.util.HashSet;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.onmoim.server.chat.dto.ChatRoomResponse;
+import com.onmoim.server.chat.domain.dto.ChatRoomResponse;
 import com.onmoim.server.chat.domain.ChatRoom;
 import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
 import com.onmoim.server.chat.repository.ChatRoomRepository;
-import com.onmoim.server.group.dto.GroupMember;
-import com.onmoim.server.group.entity.Group;
-import com.onmoim.server.group.implement.GroupQueryService;
 import com.onmoim.server.group.implement.GroupUserQueryService;
 
 import lombok.RequiredArgsConstructor;

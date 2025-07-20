@@ -6,7 +6,7 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
-import com.onmoim.server.chat.dto.ChatMessageDto;
+import com.onmoim.server.chat.domain.dto.ChatMessageDto;
 import com.onmoim.server.chat.domain.ChatRoomMessageId;
 import com.onmoim.server.chat.domain.enums.DeliveryStatus;
 import com.onmoim.server.chat.service.ChatMessageService;

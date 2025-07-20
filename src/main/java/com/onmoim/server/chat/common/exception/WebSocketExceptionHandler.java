@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.exception;
+package com.onmoim.server.chat.common.exception;
 
 import java.security.Principal;
 
