@@ -2,8 +2,6 @@ package com.onmoim.server.chat.service;
 
 import java.time.LocalDateTime;
 
-import com.onmoim.server.chat.service.retry.ChatMessageRetryService;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,8 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ChatMessageService {
 	private final ChatMessageRepository chatMessageRepository;
 	private final RoomChatMessageIdGenerator roomChatMessageIdGenerator;
-	private final SimpMessagingTemplate messagingTemplate;
-	private final ChatMessageRetryService chatMessageRetryService;
+	private final ChatMessageSendService chatMessageSendService;
 
 	/**
 	 * 시스템 메시지 전송
@@ -51,7 +48,7 @@ public class ChatMessageService {
 		// 시스템 메시지 브로드캐스트
 		// com.onmoim.server.chat.service.ChatMessageEventHandler 처리
 		String destination = SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
-		handleMessageSend(
+		chatMessageSendService.send(
 				destination,
 				ChatMessageDto.of(systemMessage, ChatUserDto.createSystem())
 		);
@@ -76,43 +73,8 @@ public class ChatMessageService {
 		chatMessageRepository.save(chatRoomMessage);
 
 		String destination = SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
-		handleMessageSend(
+		chatMessageSendService.send(
 			destination, ChatMessageDto.of(chatRoomMessage, message.getChatUserDto())
 		);
-
-	}
-
-	/**
-	 * 메시지 전송 상태 업데이트
-	 */
-	@Transactional
-	public void updateMessageDeliveryStatus(ChatRoomMessageId messageId, DeliveryStatus status) {
-		ChatRoomMessage message = chatMessageRepository.findById(messageId)
-			.orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_MESSAGE));
-
-		message.setDeliveryStatus(status);
-		chatMessageRepository.save(message);
-		log.debug("메시지 상태 업데이트: ID: {}, 상태: {}", messageId, status);
-	}
-
-	public void handleMessageSend(String destination, ChatMessageDto message) {
-		ChatRoomMessageId messageId = ChatRoomMessageId.create(message.getRoomId(),message.getMessageSequence());
-
-		try {
-			// WebSocket을 통해 메시지 전송
-			messagingTemplate.convertAndSend(destination, message);
-
-			// 전송 성공 시 SENT 상태 업데이트
-			updateMessageDeliveryStatus(messageId, DeliveryStatus.SENT);
-			log.debug("메시지 전송 완료: ID: {}, 방ID: {}", messageId, message.getRoomId());
-
-		} catch (Exception e) {
-			// 전송 실패 시 FAILED 상태 업데이트
-			updateMessageDeliveryStatus(messageId, DeliveryStatus.FAILED);
-			log.warn("메시지 전송 실패: ID: {}, 방ID: {}, 오류: {}", messageId, message.getRoomId(), e.getMessage());
-
-			// 실패 재시도 처리
-			chatMessageRetryService.failedProcess(message, destination);
-		}
 	}
 }
