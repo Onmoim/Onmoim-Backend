@@ -140,7 +140,6 @@ class GroupQueryServiceTest {
 		// 미팅 생성
 		for (int i = 0; i < 20; i++) {
 			saveMeeting(groups.get(i), i + 1);
-			if(true) continue;
 			for (int j = 0; j < i + 1; j++) {
 				meetingRepository.save(Meeting.meetingCreateBuilder()
 					.group(groups.get(i))
@@ -198,25 +197,21 @@ class GroupQueryServiceTest {
 
 		// 첫 번째 활동이 활발한 모임 조회
 		List<ActiveGroup> groups1 = groupQueryService.readMostActiveGroups(null, null, size);
-		System.out.println("groups1 = " + groups1);
 		ActiveGroup last1 = groups1.get(size - 1);
 		assertThat(groups1.size()).isEqualTo(4);
 
 		// 두 번째 활동이 활발한 모임 조회
 		List<ActiveGroup> groups2 = groupQueryService.readMostActiveGroups(last1.groupId(), last1.upcomingMeetingCount(), size);
-		System.out.println("groups2 = " + groups2);
 		ActiveGroup last2 = groups2.get(size - 1);
 		assertThat(groups2.size()).isEqualTo(4);
 
 		// 세 번째 활동이 활발한 모임 조회
 		List<ActiveGroup> groups3 = groupQueryService.readMostActiveGroups(last2.groupId(), last2.upcomingMeetingCount(), size);
-		System.out.println("groups3 = " + groups3);
 		assertThat(groups3.size()).isEqualTo(4);
 		ActiveGroup last3 = groups3.get(size - 1);
 
 		// 네 번째 활동이 활발한 모임 조회
 		List<ActiveGroup> groups4 = groupQueryService.readMostActiveGroups(last3.groupId(), last3.upcomingMeetingCount(), size);
-		System.out.println("groups4 = " + groups4);
 		assertThat(groups4.size()).isEqualTo(1);
 	}
 
@@ -285,7 +280,6 @@ class GroupQueryServiceTest {
 
 		// when
 		List<ActiveGroupDetail> activeGroupDetails = groupQueryService.readGroupsDetail(List.of(group1.getId(), group2.getId()));
-		System.out.println(activeGroupDetails);
 
 		// then
 		assertThat(activeGroupDetails).hasSize(2);
@@ -390,7 +384,6 @@ class GroupQueryServiceTest {
 		List<ActiveGroupRelation> relations = groupQueryService.readGroupsRelation(groupIds, currentUser.getId());
 
 		// then
-		System.out.println(relations);
 		assertThat(relations).hasSize(20);
 		assertThat(relations).containsExactly(
 			new ActiveGroupRelation(groups.get(0).getId(), currentUser.getId(), Status.BAN),
@@ -771,7 +764,7 @@ class GroupQueryServiceTest {
 			new PopularGroupRelation(groups.get(1).getId(), Status.OWNER, 2L),
 			new PopularGroupRelation(groups.get(2).getId(), Status.MEMBER, 3L),
 			new PopularGroupRelation(groups.get(3).getId(), Status.BOOKMARK, 4L),
-			new PopularGroupRelation(groups.get(4).getId(), Status.BOOKMARK,5L ),
+			new PopularGroupRelation(groups.get(4).getId(), Status.BOOKMARK,5L),
 			new PopularGroupRelation(groups.get(5).getId(), null, 0L),
 			new PopularGroupRelation(groups.get(6).getId(), null, 0L),
 			new PopularGroupRelation(groups.get(7).getId(), null, 0L),
