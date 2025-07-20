@@ -32,7 +32,7 @@ public class ChatRoomResponse {
 
 	public static ChatRoomResponse fromChatRoom(ChatRoom chatRoom, Long memberCount, String subscribeDestination) {
 		return ChatRoomResponse.builder()
-			.groupId(chatRoom.getId())
+			.groupId(chatRoom.getGroupId())
 			.name(chatRoom.getName())
 			.description(chatRoom.getDescription())
 			.creatorId(chatRoom.getCreatorId())
