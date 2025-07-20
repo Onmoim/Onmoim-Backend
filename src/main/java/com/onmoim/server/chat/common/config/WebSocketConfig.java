@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.config;
+package com.onmoim.server.chat.common.config;
 
 import java.security.Principal;
 import java.util.List;
@@ -29,7 +29,7 @@ import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.onmoim.server.chat.exception.StompErrorEvent;
+import com.onmoim.server.chat.common.exception.StompErrorEvent;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -133,7 +133,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
 		registry.setMessageSizeLimit(256 * 1024); // 메시지 크기제한 : 256KB까지 허용
 	}
-	
+
 	/**
 	 * STOMP 메시지 변환을 위한 메시지 컨버터 설정
 	 * LocalDateTime과 같은 Java 8 날짜/시간 타입을 처리하기 위한 JavaTimeModule을 등록합니다.

@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.dto;
+package com.onmoim.server.chat.domain.dto;
 
 import java.time.LocalDateTime;
 
@@ -19,27 +19,27 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor
 public class ChatMessageDto {
-    
+
     /** 메시지 고유 ID */
     private Long messageSequence;
-    
+
     /** 채팅방 ID */
     private Long roomId;
 
     private Long groupId;
-    
+
     /** 메시지 타입 */
     private MessageType type;
-    
+
     /** 메시지 내용 */
     private String content;
-    
+
     /** 발신자 ID (서버에서 Principal 기반으로 설정) */
     private Long senderId;
-    
+
     /** 발신자 이름 (UI 표시용) */
     private ChatUserDto chatUserDto;
-    
+
     /** 발송 시간 */
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();

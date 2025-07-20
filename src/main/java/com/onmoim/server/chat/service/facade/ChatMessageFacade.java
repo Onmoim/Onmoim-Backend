@@ -1,10 +1,10 @@
-package com.onmoim.server.chat.facade;
+package com.onmoim.server.chat.service.facade;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.onmoim.server.chat.dto.ChatMessageDto;
-import com.onmoim.server.chat.dto.ChatUserDto;
+import com.onmoim.server.chat.domain.dto.ChatMessageDto;
+import com.onmoim.server.chat.domain.dto.ChatUserDto;
 import com.onmoim.server.chat.service.ChatMessageService;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.exception.ErrorCode;
@@ -51,7 +51,7 @@ public class ChatMessageFacade {
 		message.setChatUserDto(ChatUserDto.create(user, groupUser.isOwner()));
 
 		// 메시지 전송 서비스 호출
-		chatMessageService.sendMessage(message);
+		chatMessageService.sendUserMessage(message);
 	}
 
 	private void isExistsOrThrow(Long groupId) {

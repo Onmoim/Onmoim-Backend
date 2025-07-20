@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.onmoim.server.chat.dto.ChatRoomResponse;
+import com.onmoim.server.chat.domain.dto.ChatRoomResponse;
 import com.onmoim.server.common.response.ResponseHandler;
 import com.onmoim.server.group.dto.ActiveGroup;
 import com.onmoim.server.group.dto.ActiveGroupDetail;

@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.dto;
+package com.onmoim.server.chat.domain.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -14,9 +14,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateRoomRequest {
-    
+
     @NotBlank(message = "채팅방 이름은 필수입니다.")
     private String name;
-    
+
     private String description;
 }

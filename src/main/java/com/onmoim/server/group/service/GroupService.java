@@ -3,6 +3,8 @@ package com.onmoim.server.group.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.onmoim.server.chat.domain.enums.ChatSystemMessageTemplate;
+import com.onmoim.server.chat.messaging.ChatSystemMessageEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -12,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.service.CategoryQueryService;
 import com.onmoim.server.common.kakaomap.GeoPointUpdateEvent;
-import com.onmoim.server.chat.dto.ChatRoomResponse;
+import com.onmoim.server.chat.domain.dto.ChatRoomResponse;
 import com.onmoim.server.chat.service.ChatMessageService;
 import com.onmoim.server.chat.service.ChatRoomService;
 import com.onmoim.server.group.aop.NamedLock;
@@ -28,7 +30,6 @@ import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.implement.GroupQueryService;
 import com.onmoim.server.group.implement.GroupUserQueryService;
-import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.location.entity.Location;
 import com.onmoim.server.location.service.LocationQueryService;
 import com.onmoim.server.security.CustomUserDetails;
@@ -70,7 +71,7 @@ public class GroupService {
 		Group group = groupQueryService.saveGroup(category, location, name, description, capacity);
 
 		ChatRoomResponse room = chatRoomService.createRoom(group.getId(), name, description, user.getId());
-		chatMessageService.sendSystemMessage(room.getGroupId(), "채팅방이 생성되었습니다.");
+		eventPublisher.publishEvent(new ChatSystemMessageEvent(group.getId(), ChatSystemMessageTemplate.CREATE_CHAT_ROOM));
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
 		groupUserQueryService.save(groupUser);

@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.config;
+package com.onmoim.server.chat.common.config;
 
 import java.util.Set;
 
@@ -11,7 +11,7 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.web.socket.messaging.WebSocketAnnotationMethodMessageHandler;
 
-import com.onmoim.server.chat.exception.StompErrorEvent;
+import com.onmoim.server.chat.common.exception.StompErrorEvent;
 
 import lombok.extern.slf4j.Slf4j;
 

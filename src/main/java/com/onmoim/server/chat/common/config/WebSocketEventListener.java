@@ -1,4 +1,4 @@
-package com.onmoim.server.chat.config;
+package com.onmoim.server.chat.common.config;
 
 import java.time.LocalDateTime;
 
@@ -11,11 +11,11 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
-import com.onmoim.server.chat.dto.ChatMessageDto;
-import com.onmoim.server.chat.dto.ChatUserDto;
+import com.onmoim.server.chat.domain.dto.ChatMessageDto;
+import com.onmoim.server.chat.domain.dto.ChatUserDto;
 import com.onmoim.server.chat.domain.enums.MessageType;
 import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
-import com.onmoim.server.chat.exception.StompErrorEvent;
+import com.onmoim.server.chat.common.exception.StompErrorEvent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
