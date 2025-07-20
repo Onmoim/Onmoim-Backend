@@ -464,6 +464,7 @@ public class GroupController {
 			ActiveGroupDetail::groupId,
 			Function.identity()
 		));
+
 		Map<Long, ActiveGroupRelation> relationMap = activeGroupRelations.stream().collect(Collectors.toMap(
 			ActiveGroupRelation::groupId,
 			Function.identity()

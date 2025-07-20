@@ -15,7 +15,7 @@ public interface GroupRepositoryCustom {
 	List<GroupUser> findGroupUsers(Long groupId, Long lastMemberId, int size);
 	List<PopularGroupSummary> readPopularGroupsNearMe(Long locationId, Long lastGroupId, Long memberCount, int size);
 	List<PopularGroupRelation> readPopularGroupRelation(List<Long> groupIds, Long userId);
-	List<ActiveGroup> readMostActiveGroups(Long lastGroupId, Long memberCount, int size);
+	List<ActiveGroup> readMostActiveGroups(Long lastGroupId, Long meetingCount, int size);
 	List<ActiveGroupDetail> readGroupDetails(List<Long> groupIds);
 	List<ActiveGroupRelation> readGroupsRelation(List<Long> groupIds, Long userId);
 	Long readAnnualScheduleCount (Long groupId, LocalDateTime now);
