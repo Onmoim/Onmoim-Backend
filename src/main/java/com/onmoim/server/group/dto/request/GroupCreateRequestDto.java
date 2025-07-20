@@ -28,8 +28,8 @@ public record GroupCreateRequestDto (
 	@NotBlank(message = "모임 설명은 필수입니다.")
 	String description,
 
-	@Schema(description = "모임 최대 정원", example = "10")
-	@Min(value = CREATE_MIN_CAPACITY, message = "모임 최소 정원은 5명입니다.")
-	@Max(value = CREATE_MAX_CAPACITY, message = "모임 최대 정원은 300명입니다.")
+	@Schema(description = "모임 정원 제약", example = "10")
+	@Min(value = CREATE_MIN_CAPACITY, message = "모임 최대 정원은 5명 이상이어야 합니다.")
+	@Max(value = CREATE_MAX_CAPACITY, message = "모임 최대 정원은 300명 이하이어야 합니다.")
 	int capacity
 ) {}

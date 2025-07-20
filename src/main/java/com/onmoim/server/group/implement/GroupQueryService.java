@@ -49,6 +49,7 @@ public class GroupQueryService {
 			.description(description)
 			.capacity(capacity)
 			.build();
+
 		try {
 			return groupRepository.save(group);
 		}
