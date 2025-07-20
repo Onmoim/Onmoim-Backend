@@ -1,24 +1,20 @@
 package com.onmoim.server.chat.service;
 
-import java.time.LocalDateTime;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.onmoim.server.chat.domain.dto.ChatMessageDto;
-import com.onmoim.server.chat.domain.dto.ChatUserDto;
 import com.onmoim.server.chat.domain.ChatRoomMessage;
 import com.onmoim.server.chat.domain.ChatRoomMessageId;
+import com.onmoim.server.chat.domain.dto.ChatMessageDto;
+import com.onmoim.server.chat.domain.dto.ChatUserDto;
 import com.onmoim.server.chat.domain.enums.DeliveryStatus;
 import com.onmoim.server.chat.domain.enums.MessageType;
 import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
 import com.onmoim.server.chat.repository.ChatMessageRepository;
 import com.onmoim.server.chat.repository.RoomChatMessageIdGenerator;
-import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.common.exception.ErrorCode;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service

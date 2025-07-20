@@ -1,16 +1,14 @@
 package com.onmoim.server.chat.controller;
 
-import java.security.Principal;
-
+import com.onmoim.server.chat.domain.dto.ChatMessageDto;
+import com.onmoim.server.chat.service.facade.ChatMessageFacade;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Controller;
 
-import com.onmoim.server.chat.domain.dto.ChatMessageDto;
-import com.onmoim.server.chat.service.facade.ChatMessageFacade;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.security.Principal;
 
 @Controller
 @Slf4j

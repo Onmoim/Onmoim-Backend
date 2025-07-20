@@ -1,7 +1,7 @@
 package com.onmoim.server.chat.common.config;
 
-import java.util.Set;
-
+import com.onmoim.server.chat.common.exception.StompErrorEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -11,9 +11,7 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.web.socket.messaging.WebSocketAnnotationMethodMessageHandler;
 
-import com.onmoim.server.chat.common.exception.StompErrorEvent;
-
-import lombok.extern.slf4j.Slf4j;
+import java.util.Set;
 
 /**
  * 존재하지 않은 MessageMapping 경로가  들어왔을 때 예외 처리를 위한 CustomHandler

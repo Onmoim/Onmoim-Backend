@@ -1,10 +1,9 @@
 package com.onmoim.server.chat.common.exception;
 
 
+import lombok.Getter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.springframework.context.ApplicationEvent;
-
-import lombok.Getter;
 
 /**
  * STOMP-웹소켓 에외 처리를 위한 이벤트

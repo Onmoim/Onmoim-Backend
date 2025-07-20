@@ -1,15 +1,14 @@
 package com.onmoim.server.chat.common.example;
 
-import static com.onmoim.server.chat.domain.enums.SubscribeRegistry.*;
-
-import java.security.Principal;
-
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.security.Principal;
+
+import static com.onmoim.server.chat.domain.enums.SubscribeRegistry.ERROR_SUBSCRIBE_DESTINATION;
 
 @Controller
 @RequiredArgsConstructor

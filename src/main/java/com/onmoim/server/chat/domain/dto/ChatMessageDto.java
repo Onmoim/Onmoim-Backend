@@ -1,15 +1,10 @@
 package com.onmoim.server.chat.domain.dto;
 
-import java.time.LocalDateTime;
-
 import com.onmoim.server.chat.domain.ChatRoomMessage;
 import com.onmoim.server.chat.domain.enums.MessageType;
+import lombok.*;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 /**
  * 채팅 메시지 응답 객체

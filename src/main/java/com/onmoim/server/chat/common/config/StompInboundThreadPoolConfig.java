@@ -1,10 +1,9 @@
 package com.onmoim.server.chat.common.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-
-import lombok.RequiredArgsConstructor;
 
 /**
  * Inbound의 경우 특정 트래픽 이상은 메시지를 거절합니다. 스레드풀 조절과, 한계치를 초과했을 때 대응 방법은 고도화 대상으로 분류했습니다.

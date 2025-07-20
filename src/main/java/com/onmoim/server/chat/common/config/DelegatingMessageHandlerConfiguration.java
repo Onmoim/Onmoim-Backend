@@ -1,13 +1,12 @@
 package com.onmoim.server.chat.common.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.support.SimpAnnotationMethodMessageHandler;
 import org.springframework.messaging.support.AbstractSubscribableChannel;
 import org.springframework.web.socket.config.annotation.DelegatingWebSocketMessageBrokerConfiguration;
-
-import lombok.RequiredArgsConstructor;
 
 /**
  * CustomHandler를 이용하기 위핸 Configuration 입니다.
