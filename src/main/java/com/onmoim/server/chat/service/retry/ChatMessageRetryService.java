@@ -1,5 +1,6 @@
 package com.onmoim.server.chat.service.retry;
 
+import com.onmoim.server.chat.service.ChatStatusService;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -19,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ChatMessageRetryService {
 	private final SimpMessagingTemplate messagingTemplate;
-	private final ChatMessageService chatMessageService;
+	private final ChatStatusService chatStatusService;
 
 	@Retryable(
 		retryFor = Exception.class,
@@ -34,7 +35,7 @@ public class ChatMessageRetryService {
 		messagingTemplate.convertAndSend(destination, message);
 
 		// 전송 성공 시 상태 업데이트
-		chatMessageService.updateMessageDeliveryStatus(messageId, DeliveryStatus.SENT);
+		chatStatusService.updateMessageDeliveryStatus(messageId, DeliveryStatus.SENT);
 
 		log.debug("메시지 재전송 성공: ID: {}, 방ID: {}", messageId, message.getRoomId());
 	}
@@ -46,6 +47,6 @@ public class ChatMessageRetryService {
 		log.warn("메시지 재전송 최종 실패: ID: {}, 방ID: {}, 최대 시도 횟수 초과(3회), 오류: {}",
 			messageId, message.getRoomId(), e.getMessage());
 
-		chatMessageService.updateMessageDeliveryStatus(messageId, DeliveryStatus.FAILED_PERMANENTLY);
+		chatStatusService.updateMessageDeliveryStatus(messageId, DeliveryStatus.FAILED_PERMANENTLY);
 	}
 }
