@@ -70,7 +70,7 @@ class GroupControllerTest {
 				"name",
 				"description",
 				1L,
-				1,
+				1L,
 				SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination())
 		);
 
@@ -141,7 +141,7 @@ class GroupControllerTest {
 				"name",
 				"description",
 				1L,
-				1,
+				1L,
 				SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination())
 		);
 
@@ -183,7 +183,7 @@ class GroupControllerTest {
 				"name",
 				"description",
 				1L,
-				1,
+				1L,
 				SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination())
 		);
 

@@ -29,7 +29,6 @@ public class ChatMessageService {
 	private final ChatMessageRepository chatMessageRepository;
 	private final RoomChatMessageIdGenerator roomChatMessageIdGenerator;
 	private final SimpMessagingTemplate messagingTemplate;
-	private final ChatMessageService chatMessageService;
 	private final ChatMessageRetryService chatMessageRetryService;
 
 	/**
@@ -104,12 +103,12 @@ public class ChatMessageService {
 			messagingTemplate.convertAndSend(destination, message);
 
 			// 전송 성공 시 SENT 상태 업데이트
-			chatMessageService.updateMessageDeliveryStatus(messageId, DeliveryStatus.SENT);
+			updateMessageDeliveryStatus(messageId, DeliveryStatus.SENT);
 			log.debug("메시지 전송 완료: ID: {}, 방ID: {}", messageId, message.getRoomId());
 
 		} catch (Exception e) {
 			// 전송 실패 시 FAILED 상태 업데이트
-			chatMessageService.updateMessageDeliveryStatus(messageId, DeliveryStatus.FAILED);
+			updateMessageDeliveryStatus(messageId, DeliveryStatus.FAILED);
 			log.warn("메시지 전송 실패: ID: {}, 방ID: {}, 오류: {}", messageId, message.getRoomId(), e.getMessage());
 
 			// 실패 재시도 처리
