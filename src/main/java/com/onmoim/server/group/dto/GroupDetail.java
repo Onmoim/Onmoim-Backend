@@ -1,6 +1,6 @@
 package com.onmoim.server.group.dto;
 
-
+import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.Status;
 
 import jakarta.annotation.Nullable;
@@ -14,7 +14,9 @@ public record GroupDetail(
 	String category,
 	String imgUrl,
 	@Nullable
-	Status status
+	Status status,
+	@Nullable
+	GroupLikeStatus likeStatus
 )
 {
 

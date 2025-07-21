@@ -396,9 +396,6 @@ public class GroupController {
 			responseCode = "401",
 			description = "인증되지 않은 사용자 접근"),
 		@ApiResponse(
-			responseCode = "403",
-			description = "현재 사용자가 해당 모임원이 아닌 경우"),
-		@ApiResponse(
 			responseCode = "404",
 			description = "존재하지 않는 모임")
 	})
@@ -408,8 +405,11 @@ public class GroupController {
 		@PathVariable Long groupId
 	)
 	{
+		// 모임 상세 조회
 		GroupDetail detail = groupService.readGroup(groupId);
+		// 모임원 수 조회
 		Long count = groupService.groupMemberCount(groupId);
+		// 다가오는 일정 조회 (상위 2개)
 		List<MeetingDetail> meetingDetails = meetingService.getUpcomingMeetings(2, groupId);
 
 		return ResponseEntity.ok(ResponseHandler.response(

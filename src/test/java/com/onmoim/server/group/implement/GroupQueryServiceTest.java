@@ -1,6 +1,7 @@
 package com.onmoim.server.group.implement;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
+import static com.onmoim.server.group.entity.GroupLikeStatus.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.time.LocalDateTime;
@@ -26,8 +27,11 @@ import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.PopularGroupRelation;
 import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.group.entity.GroupLike;
+import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
+import com.onmoim.server.group.repository.GroupLikeRepository;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.location.entity.Location;
@@ -46,17 +50,18 @@ class GroupQueryServiceTest {
 	private LocationRepository locationRepository;
 	@Autowired
 	private CategoryRepository categoryRepository;
-	private Location location;
-	private Category category;
 	@Autowired
 	private GroupRepository groupRepository;
-
 	@Autowired
 	private MeetingRepository meetingRepository;
 	@Autowired
 	private UserRepository userRepository;
 	@Autowired
 	private GroupUserRepository groupUserRepository;
+	@Autowired
+	private GroupLikeRepository groupLikeRepository;
+	private Location location;
+	private Category category;
 
 	@BeforeEach
 	void setUp() {
@@ -795,7 +800,7 @@ class GroupQueryServiceTest {
 	}
 
 	@Test
-	@DisplayName("모임 조회: 모임이 존재하는 경우, 현재 사용자와 관계가 없는 경우")
+	@DisplayName("모임 조회: 모임이 존재하는 경우, 현재 사용자와 관계가 없는 경우, 좋아요 관계 없는 경우")
 	void readGroup2() {
 		// given
 		Group group = Group.builder()
@@ -813,10 +818,11 @@ class GroupQueryServiceTest {
 		// then
 		assertThat(groupDetail.groupId()).isEqualTo(group.getId());
 		assertThat(groupDetail.status()).isNull();
+		assertThat(groupDetail.likeStatus()).isNull();
 	}
 
 	@Test
-	@DisplayName("모임 조회: 모임이 존재하는 경우, 현재 사용자와 관계가 있는 경우")
+	@DisplayName("모임 조회: 모임이 존재하는 경우, 현재 사용자와 관계가 있는 경우, 좋아요 상태")
 	void readGroup3() {
 		// given
 		User user = User.builder().name("mock user").build();
@@ -833,6 +839,7 @@ class GroupQueryServiceTest {
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.MEMBER);
 		groupUserRepository.save(groupUser);
+		groupLikeRepository.save(GroupLike.create(group, user, LIKE));
 
 		// when
 		GroupDetail groupDetail = groupQueryService.readGroupDetail(group.getId(), user.getId());
@@ -840,5 +847,6 @@ class GroupQueryServiceTest {
 		// then
 		assertThat(groupDetail.groupId()).isEqualTo(group.getId());
 		assertThat(groupDetail.status()).isEqualTo(Status.MEMBER);
+		assertThat(groupDetail.likeStatus()).isEqualTo(GroupLikeStatus.LIKE);
 	}
 }
