@@ -14,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.parameters.P;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.category.entity.Category;
@@ -363,17 +364,23 @@ class GroupQueryServiceTest {
 		for (int i = 0; i < 10; i++) {
 			if(i < 2) {
 				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.BAN);
+				GroupLike groupLike = GroupLike.create(groups.get(i), currentUser, LIKE);
 				groupUserRepository.save(groupUser);
+				groupLikeRepository.save(groupLike);
 				continue;
 			}
 			if(i < 4) {
 				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.OWNER);
+				GroupLike groupLike = GroupLike.create(groups.get(i), currentUser, LIKE);
 				groupUserRepository.save(groupUser);
+				groupLikeRepository.save(groupLike);
 				continue;
 			}
 			if(i < 8) {
 				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.MEMBER);
+				GroupLike groupLike = GroupLike.create(groups.get(i), currentUser, PENDING);
 				groupUserRepository.save(groupUser);
+				groupLikeRepository.save(groupLike);
 				continue;
 			}
 			GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.PENDING);
@@ -388,26 +395,26 @@ class GroupQueryServiceTest {
 		// then
 		assertThat(relations).hasSize(20);
 		assertThat(relations).containsExactly(
-			new ActiveGroupRelation(groups.get(0).getId(), currentUser.getId(), Status.BAN),
-			new ActiveGroupRelation(groups.get(1).getId(), currentUser.getId(), Status.BAN),
-			new ActiveGroupRelation(groups.get(2).getId(), currentUser.getId(), Status.OWNER),
-			new ActiveGroupRelation(groups.get(3).getId(), currentUser.getId(), Status.OWNER),
-			new ActiveGroupRelation(groups.get(4).getId(), currentUser.getId(), Status.MEMBER),
-			new ActiveGroupRelation(groups.get(5).getId(), currentUser.getId(), Status.MEMBER),
-			new ActiveGroupRelation(groups.get(6).getId(), currentUser.getId(), Status.MEMBER),
-			new ActiveGroupRelation(groups.get(7).getId(), currentUser.getId(), Status.MEMBER),
-			new ActiveGroupRelation(groups.get(8).getId(), currentUser.getId(), Status.PENDING),
-			new ActiveGroupRelation(groups.get(9).getId(), currentUser.getId(), Status.PENDING),
-			new ActiveGroupRelation(groups.get(10).getId(), null, null),
-			new ActiveGroupRelation(groups.get(11).getId(), null, null),
-			new ActiveGroupRelation(groups.get(12).getId(), null, null),
-			new ActiveGroupRelation(groups.get(13).getId(), null, null),
-			new ActiveGroupRelation(groups.get(14).getId(), null, null),
-			new ActiveGroupRelation(groups.get(15).getId(), null, null),
-			new ActiveGroupRelation(groups.get(16).getId(), null, null),
-			new ActiveGroupRelation(groups.get(17).getId(), null, null),
-			new ActiveGroupRelation(groups.get(18).getId(), null, null),
-			new ActiveGroupRelation(groups.get(19).getId(), null, null));
+			new ActiveGroupRelation(groups.get(0).getId(), currentUser.getId(), Status.BAN, LIKE),
+			new ActiveGroupRelation(groups.get(1).getId(), currentUser.getId(), Status.BAN, LIKE),
+			new ActiveGroupRelation(groups.get(2).getId(), currentUser.getId(), Status.OWNER, LIKE),
+			new ActiveGroupRelation(groups.get(3).getId(), currentUser.getId(), Status.OWNER, LIKE),
+			new ActiveGroupRelation(groups.get(4).getId(), currentUser.getId(), Status.MEMBER, PENDING),
+			new ActiveGroupRelation(groups.get(5).getId(), currentUser.getId(), Status.MEMBER, PENDING),
+			new ActiveGroupRelation(groups.get(6).getId(), currentUser.getId(), Status.MEMBER, PENDING),
+			new ActiveGroupRelation(groups.get(7).getId(), currentUser.getId(), Status.MEMBER, PENDING),
+			new ActiveGroupRelation(groups.get(8).getId(), currentUser.getId(), Status.PENDING, null),
+			new ActiveGroupRelation(groups.get(9).getId(), currentUser.getId(), Status.PENDING, null),
+			new ActiveGroupRelation(groups.get(10).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(11).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(12).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(13).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(14).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(15).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(16).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(17).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(18).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(19).getId(), null, null, null));
 	}
 
 	@Test
@@ -757,16 +764,16 @@ class GroupQueryServiceTest {
 		// then
 		assertThat(result).hasSize(10);
 		assertThat(result).containsExactly(
-			new PopularGroupRelation(groups.get(0).getId(), Status.BAN, 1L),
-			new PopularGroupRelation(groups.get(1).getId(), Status.OWNER, 2L),
-			new PopularGroupRelation(groups.get(2).getId(), Status.MEMBER, 3L),
-			new PopularGroupRelation(groups.get(3).getId(), Status.MEMBER, 4L),
-			new PopularGroupRelation(groups.get(4).getId(), Status.MEMBER,5L),
-			new PopularGroupRelation(groups.get(5).getId(), null, 0L),
-			new PopularGroupRelation(groups.get(6).getId(), null, 0L),
-			new PopularGroupRelation(groups.get(7).getId(), null, 0L),
-			new PopularGroupRelation(groups.get(8).getId(), null, 0L),
-			new PopularGroupRelation(groups.get(9).getId(), null, 0L)
+			new PopularGroupRelation(groups.get(0).getId(), Status.BAN, 1L, null),
+			new PopularGroupRelation(groups.get(1).getId(), Status.OWNER, 2L, null),
+			new PopularGroupRelation(groups.get(2).getId(), Status.MEMBER, 3L, null),
+			new PopularGroupRelation(groups.get(3).getId(), Status.MEMBER, 4L, null),
+			new PopularGroupRelation(groups.get(4).getId(), Status.MEMBER,5L, null),
+			new PopularGroupRelation(groups.get(5).getId(), null, 0L, null),
+			new PopularGroupRelation(groups.get(6).getId(), null, 0L, null),
+			new PopularGroupRelation(groups.get(7).getId(), null, 0L, null),
+			new PopularGroupRelation(groups.get(8).getId(), null, 0L, null),
+			new PopularGroupRelation(groups.get(9).getId(), null, 0L, null)
 		);
 	}
 

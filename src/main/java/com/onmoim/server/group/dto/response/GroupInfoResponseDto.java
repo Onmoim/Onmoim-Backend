@@ -5,6 +5,7 @@ import com.onmoim.server.group.dto.ActiveGroupDetail;
 import com.onmoim.server.group.dto.ActiveGroupRelation;
 import com.onmoim.server.group.dto.PopularGroupRelation;
 import com.onmoim.server.group.dto.PopularGroupSummary;
+import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.Status;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -30,6 +31,8 @@ public record GroupInfoResponseDto(
 	String category,
 	@Schema(description = "현재 사용자와 모임 관계", example = "OWNER, MEMBER, BAN, NONE")
 	String status,
+	@Schema(description = "현재 사용자와 모임 좋아요 상태", example = "LIKE, NONE")
+	String likeStatus,
 	@Schema(description = "다가오는 일정 개수")
 	Long upcomingMeetingCount
 )
@@ -47,6 +50,7 @@ public record GroupInfoResponseDto(
 			.dong(summary.dong())
 			.category(summary.category())
 			.status(convertStatus(commonInfo.status()))
+			.likeStatus(convertStatus(commonInfo.likeStatus()))
 			.upcomingMeetingCount(commonInfo.upcomingMeetingCount())
 			.build();
 	}
@@ -66,6 +70,7 @@ public record GroupInfoResponseDto(
 			.dong(groupDetail.dong())
 			.category(groupDetail.category())
 			.status(convertStatus(groupRelation.status()))
+			.likeStatus(convertStatus(groupRelation.likeStatus()))
 			.upcomingMeetingCount(group.upcomingMeetingCount())
 			.build();
 	}
@@ -76,5 +81,10 @@ public record GroupInfoResponseDto(
 			case OWNER, MEMBER, BAN -> status.name();
 			default -> "NONE";
 		};
+	}
+	private static String convertStatus(GroupLikeStatus status) {
+		if(status == null) return "NONE";
+		if(status == GroupLikeStatus.LIKE) return "LIKE";
+		return "NONE";
 	}
 }

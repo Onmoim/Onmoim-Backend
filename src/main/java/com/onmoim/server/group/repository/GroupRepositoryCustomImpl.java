@@ -171,16 +171,13 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 				PopularGroupRelation.class,
 				group.id,
 				groupUser.status,
-				meeting.count()
+				meeting.count(),
+				groupLike.status
 			))
 			.from(group)
-			.leftJoin(groupUser).on(
-				group.id.eq(groupUser.group.id),
-				groupUser.user.id.eq(userId)
-			)
-			.leftJoin(meeting).on(
-				group.id.eq(meeting.group.id),
-				meeting.startAt.gt(LocalDateTime.now()))
+			.leftJoin(groupUser).on(group.id.eq(groupUser.group.id), groupUser.user.id.eq(userId))
+			.leftJoin(groupLike).on(groupLike.group.id.eq(group.id), groupLike.user.id.eq(userId))
+			.leftJoin(meeting).on(group.id.eq(meeting.group.id), meeting.startAt.gt(LocalDateTime.now()))
 			.where(
 				group.id.in(groupIds)
 			)
@@ -270,10 +267,12 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 			ActiveGroupRelation.class,
 			group.id,
 			groupUser.user.id,
-			groupUser.status
+			groupUser.status,
+			groupLike.status
 		))
 		.from(group)
 		.leftJoin(groupUser).on(groupUser.user.id.eq(userId), groupUser.group.id.eq(group.id))
+		.leftJoin(groupLike).on(groupLike.user.id.eq(userId), groupLike.group.id.eq(group.id))
 		.where(group.id.in(groupIds))
 		.fetch();
 	}
