@@ -25,7 +25,7 @@ public record GroupDetailResponseDto(
 	String category,
 	@Schema(description = "모임 회원 수")
 	Long memberCount,
-	@Schema(description = "현재 사용자와 모임 관계", example = "OWNER, MEMBER, BOOKMARK, BAN, NONE")
+	@Schema(description = "현재 사용자와 모임 관계", example = "OWNER, MEMBER, BAN, NONE")
 	String status,
 	@Schema(description = "현재 사용자와 모임 좋아요 상태", example = "LIKE, NONE")
 	String likeStatus,
@@ -57,7 +57,7 @@ public record GroupDetailResponseDto(
 	private static String convertStatus(Status status) {
 		if (status == null) return "NONE";
 		return switch (status) {
-			case OWNER, MEMBER, BOOKMARK, BAN -> status.name();
+			case OWNER, MEMBER, BAN -> status.name();
 			default -> "NONE";
 		};
 	}

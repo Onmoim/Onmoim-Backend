@@ -371,13 +371,8 @@ class GroupQueryServiceTest {
 				groupUserRepository.save(groupUser);
 				continue;
 			}
-			if(i < 6) {
-				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.MEMBER);
-				groupUserRepository.save(groupUser);
-				continue;
-			}
 			if(i < 8) {
-				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.BOOKMARK);
+				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.MEMBER);
 				groupUserRepository.save(groupUser);
 				continue;
 			}
@@ -399,8 +394,8 @@ class GroupQueryServiceTest {
 			new ActiveGroupRelation(groups.get(3).getId(), currentUser.getId(), Status.OWNER),
 			new ActiveGroupRelation(groups.get(4).getId(), currentUser.getId(), Status.MEMBER),
 			new ActiveGroupRelation(groups.get(5).getId(), currentUser.getId(), Status.MEMBER),
-			new ActiveGroupRelation(groups.get(6).getId(), currentUser.getId(), Status.BOOKMARK),
-			new ActiveGroupRelation(groups.get(7).getId(), currentUser.getId(), Status.BOOKMARK),
+			new ActiveGroupRelation(groups.get(6).getId(), currentUser.getId(), Status.MEMBER),
+			new ActiveGroupRelation(groups.get(7).getId(), currentUser.getId(), Status.MEMBER),
 			new ActiveGroupRelation(groups.get(8).getId(), currentUser.getId(), Status.PENDING),
 			new ActiveGroupRelation(groups.get(9).getId(), currentUser.getId(), Status.PENDING),
 			new ActiveGroupRelation(groups.get(10).getId(), null, null),
@@ -738,12 +733,7 @@ class GroupQueryServiceTest {
 				groupUserRepository.save(groupUser);
 				continue;
 			}
-			if (i < 3) {
-				GroupUser groupUser = GroupUser.create(groups.get(i), onlineUser, Status.MEMBER);
-				groupUserRepository.save(groupUser);
-				continue;
-			}
-			GroupUser groupUser = GroupUser.create(groups.get(i), onlineUser, Status.BOOKMARK);
+			GroupUser groupUser = GroupUser.create(groups.get(i), onlineUser, Status.MEMBER);
 			groupUserRepository.save(groupUser);
 		}
 
@@ -770,8 +760,8 @@ class GroupQueryServiceTest {
 			new PopularGroupRelation(groups.get(0).getId(), Status.BAN, 1L),
 			new PopularGroupRelation(groups.get(1).getId(), Status.OWNER, 2L),
 			new PopularGroupRelation(groups.get(2).getId(), Status.MEMBER, 3L),
-			new PopularGroupRelation(groups.get(3).getId(), Status.BOOKMARK, 4L),
-			new PopularGroupRelation(groups.get(4).getId(), Status.BOOKMARK,5L),
+			new PopularGroupRelation(groups.get(3).getId(), Status.MEMBER, 4L),
+			new PopularGroupRelation(groups.get(4).getId(), Status.MEMBER,5L),
 			new PopularGroupRelation(groups.get(5).getId(), null, 0L),
 			new PopularGroupRelation(groups.get(6).getId(), null, 0L),
 			new PopularGroupRelation(groups.get(7).getId(), null, 0L),
