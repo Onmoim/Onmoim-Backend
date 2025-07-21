@@ -3,6 +3,7 @@ package com.onmoim.server.group.repository;
 import static com.onmoim.server.category.entity.QCategory.*;
 import static com.onmoim.server.group.entity.QGroup.*;
 import static com.onmoim.server.group.entity.QGroupUser.*;
+import static com.onmoim.server.group.entity.QGroupLike.*;
 import static com.onmoim.server.group.entity.Status.*;
 import static com.onmoim.server.location.entity.QLocation.*;
 import static com.onmoim.server.meeting.entity.QMeeting.*;
@@ -55,12 +56,14 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 				location.dong,
 				category.name,
 				group.imgUrl,
-				groupUser.status
+				groupUser.status,
+				groupLike.status
 			))
 			.from(group)
 			.leftJoin(category).on(group.category.id.eq(category.id))
 			.leftJoin(location).on(group.location.id.eq(location.id))
 			.leftJoin(groupUser).on(groupUser.group.id.eq(group.id), groupUser.user.id.eq(userId))
+			.leftJoin(groupLike).on(groupLike.group.id.eq(group.id), groupLike.user.id.eq(userId))
 			.where(group.id.eq(groupId), group.deletedDate.isNull())
 			.fetchOne());
 	}
@@ -168,16 +171,13 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 				PopularGroupRelation.class,
 				group.id,
 				groupUser.status,
-				meeting.count()
+				meeting.count(),
+				groupLike.status
 			))
 			.from(group)
-			.leftJoin(groupUser).on(
-				group.id.eq(groupUser.group.id),
-				groupUser.user.id.eq(userId)
-			)
-			.leftJoin(meeting).on(
-				group.id.eq(meeting.group.id),
-				meeting.startAt.gt(LocalDateTime.now()))
+			.leftJoin(groupUser).on(group.id.eq(groupUser.group.id), groupUser.user.id.eq(userId))
+			.leftJoin(groupLike).on(groupLike.group.id.eq(group.id), groupLike.user.id.eq(userId))
+			.leftJoin(meeting).on(group.id.eq(meeting.group.id), meeting.startAt.gt(LocalDateTime.now()))
 			.where(
 				group.id.in(groupIds)
 			)
@@ -267,10 +267,12 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 			ActiveGroupRelation.class,
 			group.id,
 			groupUser.user.id,
-			groupUser.status
+			groupUser.status,
+			groupLike.status
 		))
 		.from(group)
 		.leftJoin(groupUser).on(groupUser.user.id.eq(userId), groupUser.group.id.eq(group.id))
+		.leftJoin(groupLike).on(groupLike.user.id.eq(userId), groupLike.group.id.eq(group.id))
 		.where(group.id.in(groupIds))
 		.fetch();
 	}

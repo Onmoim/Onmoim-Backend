@@ -1,6 +1,7 @@
 package com.onmoim.server.group.service;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
+import static com.onmoim.server.group.entity.GroupLikeStatus.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.util.List;
@@ -22,11 +23,14 @@ import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.group.entity.GroupLike;
+import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.GroupUserId;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.implement.GroupQueryService;
 import com.onmoim.server.group.implement.GroupUserQueryService;
+import com.onmoim.server.group.repository.GroupLikeRepository;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.location.entity.Location;
@@ -54,6 +58,8 @@ class GroupServiceTest {
 	private GroupUserQueryService groupUserQueryService;
 	@Autowired
 	private GroupQueryService groupQueryService;
+	@Autowired
+	private GroupLikeRepository groupLikeRepository;
 
 	@AfterEach
 	void tearDown() {
@@ -80,115 +86,87 @@ class GroupServiceTest {
 	}
 
 	@Test
-	@DisplayName("모임 좋아요: 성공")
-	void likeGroupSuccessTest() {
+	@DisplayName("모임 좋아요: 신규 상태 -> 좋아요")
+	void likeGroupTest1() {
 		// given
-		User user = User.builder()
-			.name("test")
-			.build();
+		User user = User.builder().name("mock user").build();
 		userRepository.save(user);
 
 		Group group = Group.builder()
-			.name("group")
-			.description("description")
-			.capacity(100)
+			.name("mock group")
+			.description("mock description")
+			.capacity(10)
 			.build();
 		groupRepository.save(group);
 
 		setSecurityContext(user.getId());
 
 		// when
-		groupService.likeGroup(group.getId());
+		GroupLikeStatus status = groupService.likeGroup(group.getId());
 
 		// then
-		Long likeCount = groupUserRepository.countByGroupAndStatuses(group.getId(), List.of(Status.BOOKMARK));
-		assertThat(likeCount).isEqualTo(1);
-
-		SecurityContextHolder.clearContext();
+		assertThat(status).isEqualTo(LIKE);
+		Optional<GroupLike> result = groupLikeRepository.findById(new GroupUserId(group.getId(), user.getId()));
+		assertThat(result.isPresent()).isTrue();
+		assertThat(result.get().getStatus()).isEqualTo(LIKE);
 	}
 
 	@Test
-	@DisplayName("모임 좋아요 성공: PENDING -> BOOKMARK ")
-	void likeGroupSuccessTest2() {
+	@DisplayName("모임 좋아요: 좋아요 상태 -> 취소(PENDING) 상태")
+	void likeGroupTest2() {
 		// given
-		User user = User.builder()
-			.name("test")
-			.build();
+		User user = User.builder().name("mock user").build();
 		userRepository.save(user);
 
 		Group group = Group.builder()
-			.name("group")
-			.description("description")
-			.capacity(100)
+			.name("mock group")
+			.description("mock description")
+			.capacity(10)
 			.build();
 		groupRepository.save(group);
-		groupUserRepository.save(GroupUser.create(group, user, Status.PENDING));
+
+		GroupLike groupLike = GroupLike.create(group, user, LIKE);
+		groupLikeRepository.save(groupLike);
 
 		setSecurityContext(user.getId());
 
 		// when
-		groupService.likeGroup(group.getId());
+		GroupLikeStatus status = groupService.likeGroup(group.getId());
 
 		// then
-		Long likeCount = groupUserRepository.countByGroupAndStatuses(group.getId(), List.of(Status.BOOKMARK));
-		assertThat(likeCount).isEqualTo(1);
-
-		SecurityContextHolder.clearContext();
+		assertThat(status).isEqualTo(PENDING);
+		Optional<GroupLike> result = groupLikeRepository.findById(new GroupUserId(group.getId(), user.getId()));
+		assertThat(result.isPresent()).isTrue();
+		assertThat(result.get().getStatus()).isEqualTo(PENDING);
 	}
 
 	@Test
-	@DisplayName("모임 좋아요 실패: 이미 가입")
-	void likeGroupFailureTest() {
+	@DisplayName("모임 좋아요: 취소(PENDING) 상태 -> 좋아요(LIKE) 상태")
+	void likeGroupTest3() {
 		// given
-		User user = User.builder()
-			.name("test")
-			.build();
+		User user = User.builder().name("mock user").build();
 		userRepository.save(user);
 
 		Group group = Group.builder()
-			.name("group")
-			.description("description")
-			.capacity(100)
+			.name("mock group")
+			.description("mock description")
+			.capacity(10)
 			.build();
 		groupRepository.save(group);
-		groupUserRepository.save(GroupUser.create(group, user, Status.MEMBER));
 
-		setSecurityContext(user.getId());
-
-		assertThatThrownBy(() -> groupService.likeGroup(group.getId()))
-			.isInstanceOf(CustomException.class)
-			.hasMessage(GROUP_ALREADY_JOINED.getDetail());
-
-		SecurityContextHolder.clearContext();
-	}
-
-	@Test
-	@DisplayName("모임 좋아요 취소 성공: BOOKMARK -> PENDING")
-	void likeCancelGroupSuccessTest() {
-		// given
-		User user = User.builder()
-			.name("test")
-			.build();
-		userRepository.save(user);
-
-		Group group = Group.builder()
-			.name("group")
-			.description("description")
-			.capacity(100)
-			.build();
-		groupRepository.save(group);
-		groupUserRepository.save(GroupUser.create(group, user, Status.BOOKMARK));
+		GroupLike groupLike = GroupLike.create(group, user, PENDING);
+		groupLikeRepository.save(groupLike);
 
 		setSecurityContext(user.getId());
 
 		// when
-		groupService.likeGroup(group.getId());
+		GroupLikeStatus status = groupService.likeGroup(group.getId());
 
 		// then
-		Long likeCount = groupUserRepository.countByGroupAndStatuses(group.getId(), List.of(Status.PENDING));
-		assertThat(likeCount).isEqualTo(1);
-
-		SecurityContextHolder.clearContext();
+		assertThat(status).isEqualTo(LIKE);
+		Optional<GroupLike> result = groupLikeRepository.findById(new GroupUserId(group.getId(), user.getId()));
+		assertThat(result.isPresent()).isTrue();
+		assertThat(result.get().getStatus()).isEqualTo(LIKE);
 	}
 
 	@Test

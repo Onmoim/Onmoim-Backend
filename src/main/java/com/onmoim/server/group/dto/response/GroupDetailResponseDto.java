@@ -3,6 +3,7 @@ package com.onmoim.server.group.dto.response;
 import java.util.List;
 
 import com.onmoim.server.group.dto.GroupDetail;
+import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.meeting.dto.MeetingDetail;
 
@@ -24,8 +25,10 @@ public record GroupDetailResponseDto(
 	String category,
 	@Schema(description = "모임 회원 수")
 	Long memberCount,
-	@Schema(description = "현재 사용자와 모임 관계", example = "OWNER, MEMBER, BOOKMARK, BAN, NONE")
+	@Schema(description = "현재 사용자와 모임 관계", example = "OWNER, MEMBER, BAN, NONE")
 	String status,
+	@Schema(description = "현재 사용자와 모임 좋아요 상태", example = "LIKE, NONE")
+	String likeStatus,
 	@Schema(description = "모임 이미지 URL")
 	String imageUrl,
 	@Schema(description = "모임 일정")
@@ -45,6 +48,7 @@ public record GroupDetailResponseDto(
 			.category(groupDetail.category())
 			.memberCount(memberCount)
 			.status(convertStatus(groupDetail.status()))
+			.likeStatus(convertStatus(groupDetail.likeStatus()))
 			.imageUrl(groupDetail.imgUrl())
 			.list(meetingDetails.stream().map(MeetingDetailResponseDto::of).toList())
 			.build();
@@ -53,8 +57,14 @@ public record GroupDetailResponseDto(
 	private static String convertStatus(Status status) {
 		if (status == null) return "NONE";
 		return switch (status) {
-			case OWNER, MEMBER, BOOKMARK, BAN -> status.name();
+			case OWNER, MEMBER, BAN -> status.name();
 			default -> "NONE";
 		};
+	}
+
+	private static String convertStatus(GroupLikeStatus status) {
+		if (status == null) return "NONE";
+		if(status == GroupLikeStatus.LIKE) return "LIKE";
+		return "NONE";
 	}
 }
