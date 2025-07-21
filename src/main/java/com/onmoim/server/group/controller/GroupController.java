@@ -42,6 +42,7 @@ import com.onmoim.server.group.dto.response.cursor.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.cursor.CursorUtilClass;
 import com.onmoim.server.group.dto.response.cursor.MemberListCursor;
 import com.onmoim.server.group.dto.response.cursor.NearbyPopularGroupCursor;
+import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.service.GroupService;
 import com.onmoim.server.meeting.dto.MeetingDetail;
 import com.onmoim.server.meeting.service.MeetingService;
@@ -175,15 +176,12 @@ public class GroupController {
 
 	@Operation(
 		summary = "모임 좋아요(찜)",
-		description = "좋아요 또는 좋아요 취소로 동작합니다."
+		description = "현재 사용자가 좋아요 또는 좋아요 취소를 합니다."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "200",
-			description = "모임 좋아요 또는 좋아요 취소 성공"),
-		@ApiResponse(
-			responseCode = "400",
-			description = "이미 가입된 회원이거나, 벤 처리된 회원"),
+			description = "업데이트 이후 상태를 반환합니다 좋아요 상태: LIKE, 좋아요 취소 상태: PENDING"),
 		@ApiResponse(
 			responseCode = "401",
 			description = "인증되지 않은 사용자 접근"),
@@ -195,13 +193,13 @@ public class GroupController {
 			description = "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
 	})
 	@PostMapping("/v1/groups/{groupId}/like")
-	public ResponseEntity<ResponseHandler<Void>> likeGroup(
+	public ResponseEntity<ResponseHandler<String>> likeGroup(
 		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId
 	)
 	{
-		groupService.likeGroup(groupId);
-		return ResponseEntity.ok(ResponseHandler.response(null));
+		GroupLikeStatus status = groupService.likeGroup(groupId);
+		return ResponseEntity.ok(ResponseHandler.response(status.name()));
 	}
 
 	@Operation(

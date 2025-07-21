@@ -4,7 +4,6 @@ import static com.onmoim.server.common.exception.ErrorCode.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,6 +28,8 @@ import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.group.entity.GroupLike;
+import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.implement.GroupQueryService;
@@ -77,7 +78,7 @@ public class GroupService {
 		chatMessageService.sendSystemMessage(room.getGroupId(), "채팅방이 생성되었습니다.");
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
-		groupUserQueryService.save(groupUser);
+		groupUserQueryService.groupUserSave(groupUser);
 
 		String address = location.getFullAddress();
 
@@ -105,17 +106,20 @@ public class GroupService {
 		groupUserQueryService.joinGroup(groupUser);
 	}
 
-	// 모임 찜 또는 찜 취소
+	// 모임 좋아요 또는 좋아요 취소
 	@Transactional
-	public void likeGroup(Long groupId) {
+	public GroupLikeStatus likeGroup(Long groupId) {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
+
 		// 모임 조회
 		Group group = groupQueryService.getById(groupId);
-		// 관계가 없었던 경우 PENDING 상태 + 비관적 락
-		GroupUser groupUser = groupUserQueryService.findOrCreateForUpdate(group, user, Status.PENDING);
+
+		// 관계가 없었던 경우 NEW 상태
+		GroupLike groupLike = groupUserQueryService.findOrCreateLike(group, user);
+
 		// 찜하기 또는 취소
-		groupUserQueryService.likeGroup(groupUser);
+		return groupUserQueryService.likeGroup(groupLike);
 	}
 
 	// 모임원 조회

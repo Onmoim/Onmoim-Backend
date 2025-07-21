@@ -1,6 +1,7 @@
 package com.onmoim.server.group.implement;
 
 import static com.onmoim.server.common.exception.ErrorCode.*;
+import static com.onmoim.server.group.entity.GroupLikeStatus.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,8 +15,12 @@ import org.springframework.stereotype.Service;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.group.entity.GroupLike;
+import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.GroupUser;
+import com.onmoim.server.group.entity.GroupUserId;
 import com.onmoim.server.group.entity.Status;
+import com.onmoim.server.group.repository.GroupLikeRepository;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.user.entity.User;
@@ -30,8 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 public class GroupUserQueryService {
 	private final GroupUserRepository groupUserRepository;
 	private final GroupRepository groupRepository;
+	private final GroupLikeRepository groupLikeRepository;
 
-	public void save(GroupUser groupUser) {
+	public void groupUserSave(GroupUser groupUser) {
 		try {
 			groupUserRepository.save(groupUser);
 		} catch (DataIntegrityViolationException e) {
@@ -136,17 +142,37 @@ public class GroupUserQueryService {
 		Status prevStatus = groupUser.getStatus();
 		groupUser.updateStatus(Status.MEMBER);
 		if (prevStatus == Status.PENDING) {
-			save(groupUser);
+			groupUserSave(groupUser);
 		}
 	}
 
-	// 북마크 취소(BOOKMARK -> PENDING) 신규 저장(PENDING -> BOOKMARK)
-	public void likeGroup(GroupUser groupUser) {
-		Status prevStatus = groupUser.getStatus();
-		groupUser.like();
-		if (prevStatus == Status.PENDING) {
-			save(groupUser);
+	private void groupLikeSave(GroupLike groupLike) {
+		try {
+			groupLikeRepository.save(groupLike);
 		}
+		catch (DataIntegrityViolationException e) {
+			throw new CustomException(TOO_MANY_REQUEST);
+		}
+	}
+
+	// 모임-좋아요 조회
+	public GroupLike findOrCreateLike(
+		Group group,
+		User user
+	)
+	{
+		return groupLikeRepository.findById(new GroupUserId(group.getId(), user.getId()))
+			.orElseGet(() -> GroupLike.create(group, user, NEW));
+	}
+
+	// 좋아요 취소(LIKE-> PENDING) / 신규 저장(NEW -> LIKE) / 좋아요 등록(PENDING -> LIKE)
+	public GroupLikeStatus likeGroup(GroupLike groupLike) {
+		GroupLikeStatus prevStatus = groupLike.getStatus();
+		GroupLikeStatus status = groupLike.updateStatus();
+		if(prevStatus == NEW) {
+			groupLikeSave(groupLike);
+		}
+		return status;
 	}
 
 	// 현재 모임 회원 수
