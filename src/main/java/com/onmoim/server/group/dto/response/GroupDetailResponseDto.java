@@ -19,10 +19,14 @@ public record GroupDetailResponseDto(
 	String title,
 	@Schema(description = "모임 설명")
 	String description,
+	@Schema(description = "모임 최대 인원")
+	int capacity,
 	@Schema(description = "모임 주소", example = "연남동")
 	String address,
 	@Schema(description = "모임 카테고리", example = "인문학/책/글")
 	String category,
+	@Schema(description = "모임 카테고리 아이콘 URL")
+	String categoryIconUrl,
 	@Schema(description = "모임 회원 수")
 	Long memberCount,
 	@Schema(description = "현재 사용자와 모임 관계", example = "OWNER, MEMBER, BAN, NONE")
@@ -44,8 +48,10 @@ public record GroupDetailResponseDto(
 			.groupId(groupDetail.groupId())
 			.title(groupDetail.title())
 			.description(groupDetail.description())
+			.category(groupDetail.category())
 			.address(groupDetail.address())
 			.category(groupDetail.category())
+			.categoryIconUrl(groupDetail.iconUrl())
 			.memberCount(memberCount)
 			.status(convertStatus(groupDetail.status()))
 			.likeStatus(convertStatus(groupDetail.likeStatus()))

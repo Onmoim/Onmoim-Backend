@@ -56,6 +56,8 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 				location.dong,
 				category.name,
 				group.imgUrl,
+				category.iconUrl,
+				group.capacity,
 				groupUser.status,
 				groupLike.status
 			))
