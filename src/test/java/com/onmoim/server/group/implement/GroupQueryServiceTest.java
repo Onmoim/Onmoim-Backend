@@ -1,5 +1,7 @@
 package com.onmoim.server.group.implement;
 
+import static com.onmoim.server.common.exception.ErrorCode.*;
+import static com.onmoim.server.group.entity.GroupLikeStatus.*;
 import static org.assertj.core.api.Assertions.*;
 
 import java.time.LocalDateTime;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.parameters.P;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.category.entity.Category;
@@ -21,11 +24,15 @@ import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.group.dto.ActiveGroup;
 import com.onmoim.server.group.dto.ActiveGroupDetail;
 import com.onmoim.server.group.dto.ActiveGroupRelation;
+import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.PopularGroupRelation;
 import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.entity.Group;
+import com.onmoim.server.group.entity.GroupLike;
+import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.GroupUser;
 import com.onmoim.server.group.entity.Status;
+import com.onmoim.server.group.repository.GroupLikeRepository;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupUserRepository;
 import com.onmoim.server.location.entity.Location;
@@ -44,22 +51,23 @@ class GroupQueryServiceTest {
 	private LocationRepository locationRepository;
 	@Autowired
 	private CategoryRepository categoryRepository;
-	private Location location;
-	private Category category;
 	@Autowired
 	private GroupRepository groupRepository;
-
 	@Autowired
 	private MeetingRepository meetingRepository;
 	@Autowired
 	private UserRepository userRepository;
 	@Autowired
 	private GroupUserRepository groupUserRepository;
+	@Autowired
+	private GroupLikeRepository groupLikeRepository;
+	private Location location;
+	private Category category;
 
 	@BeforeEach
 	void setUp() {
-		location = locationRepository.save(Location.create(null, null, null, null, null));
-		category = categoryRepository.save(Category.builder().name("카테고리").build());
+		location = locationRepository.save(Location.create(null, null, null, "동동동", null));
+		category = categoryRepository.save(Category.builder().name("카테고리").iconUrl("http://s3/mock/image/1").build());
 	}
 
 	@Test
@@ -114,7 +122,7 @@ class GroupQueryServiceTest {
 			capacity
 		))
 		.isInstanceOf(CustomException.class)
-		.hasMessage(ErrorCode.ALREADY_EXISTS_GROUP.getDetail());
+		.hasMessage(ALREADY_EXISTS_GROUP.getDetail());
 	}
 
 	@Test
@@ -356,22 +364,23 @@ class GroupQueryServiceTest {
 		for (int i = 0; i < 10; i++) {
 			if(i < 2) {
 				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.BAN);
+				GroupLike groupLike = GroupLike.create(groups.get(i), currentUser, LIKE);
 				groupUserRepository.save(groupUser);
+				groupLikeRepository.save(groupLike);
 				continue;
 			}
 			if(i < 4) {
 				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.OWNER);
+				GroupLike groupLike = GroupLike.create(groups.get(i), currentUser, LIKE);
 				groupUserRepository.save(groupUser);
-				continue;
-			}
-			if(i < 6) {
-				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.MEMBER);
-				groupUserRepository.save(groupUser);
+				groupLikeRepository.save(groupLike);
 				continue;
 			}
 			if(i < 8) {
-				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.BOOKMARK);
+				GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.MEMBER);
+				GroupLike groupLike = GroupLike.create(groups.get(i), currentUser, PENDING);
 				groupUserRepository.save(groupUser);
+				groupLikeRepository.save(groupLike);
 				continue;
 			}
 			GroupUser groupUser = GroupUser.create(groups.get(i), currentUser, Status.PENDING);
@@ -386,26 +395,26 @@ class GroupQueryServiceTest {
 		// then
 		assertThat(relations).hasSize(20);
 		assertThat(relations).containsExactly(
-			new ActiveGroupRelation(groups.get(0).getId(), currentUser.getId(), Status.BAN),
-			new ActiveGroupRelation(groups.get(1).getId(), currentUser.getId(), Status.BAN),
-			new ActiveGroupRelation(groups.get(2).getId(), currentUser.getId(), Status.OWNER),
-			new ActiveGroupRelation(groups.get(3).getId(), currentUser.getId(), Status.OWNER),
-			new ActiveGroupRelation(groups.get(4).getId(), currentUser.getId(), Status.MEMBER),
-			new ActiveGroupRelation(groups.get(5).getId(), currentUser.getId(), Status.MEMBER),
-			new ActiveGroupRelation(groups.get(6).getId(), currentUser.getId(), Status.BOOKMARK),
-			new ActiveGroupRelation(groups.get(7).getId(), currentUser.getId(), Status.BOOKMARK),
-			new ActiveGroupRelation(groups.get(8).getId(), currentUser.getId(), Status.PENDING),
-			new ActiveGroupRelation(groups.get(9).getId(), currentUser.getId(), Status.PENDING),
-			new ActiveGroupRelation(groups.get(10).getId(), null, null),
-			new ActiveGroupRelation(groups.get(11).getId(), null, null),
-			new ActiveGroupRelation(groups.get(12).getId(), null, null),
-			new ActiveGroupRelation(groups.get(13).getId(), null, null),
-			new ActiveGroupRelation(groups.get(14).getId(), null, null),
-			new ActiveGroupRelation(groups.get(15).getId(), null, null),
-			new ActiveGroupRelation(groups.get(16).getId(), null, null),
-			new ActiveGroupRelation(groups.get(17).getId(), null, null),
-			new ActiveGroupRelation(groups.get(18).getId(), null, null),
-			new ActiveGroupRelation(groups.get(19).getId(), null, null));
+			new ActiveGroupRelation(groups.get(0).getId(), currentUser.getId(), Status.BAN, LIKE),
+			new ActiveGroupRelation(groups.get(1).getId(), currentUser.getId(), Status.BAN, LIKE),
+			new ActiveGroupRelation(groups.get(2).getId(), currentUser.getId(), Status.OWNER, LIKE),
+			new ActiveGroupRelation(groups.get(3).getId(), currentUser.getId(), Status.OWNER, LIKE),
+			new ActiveGroupRelation(groups.get(4).getId(), currentUser.getId(), Status.MEMBER, PENDING),
+			new ActiveGroupRelation(groups.get(5).getId(), currentUser.getId(), Status.MEMBER, PENDING),
+			new ActiveGroupRelation(groups.get(6).getId(), currentUser.getId(), Status.MEMBER, PENDING),
+			new ActiveGroupRelation(groups.get(7).getId(), currentUser.getId(), Status.MEMBER, PENDING),
+			new ActiveGroupRelation(groups.get(8).getId(), currentUser.getId(), Status.PENDING, null),
+			new ActiveGroupRelation(groups.get(9).getId(), currentUser.getId(), Status.PENDING, null),
+			new ActiveGroupRelation(groups.get(10).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(11).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(12).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(13).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(14).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(15).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(16).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(17).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(18).getId(), null, null, null),
+			new ActiveGroupRelation(groups.get(19).getId(), null, null, null));
 	}
 
 	@Test
@@ -731,12 +740,7 @@ class GroupQueryServiceTest {
 				groupUserRepository.save(groupUser);
 				continue;
 			}
-			if (i < 3) {
-				GroupUser groupUser = GroupUser.create(groups.get(i), onlineUser, Status.MEMBER);
-				groupUserRepository.save(groupUser);
-				continue;
-			}
-			GroupUser groupUser = GroupUser.create(groups.get(i), onlineUser, Status.BOOKMARK);
+			GroupUser groupUser = GroupUser.create(groups.get(i), onlineUser, Status.MEMBER);
 			groupUserRepository.save(groupUser);
 		}
 
@@ -760,16 +764,91 @@ class GroupQueryServiceTest {
 		// then
 		assertThat(result).hasSize(10);
 		assertThat(result).containsExactly(
-			new PopularGroupRelation(groups.get(0).getId(), Status.BAN, 1L),
-			new PopularGroupRelation(groups.get(1).getId(), Status.OWNER, 2L),
-			new PopularGroupRelation(groups.get(2).getId(), Status.MEMBER, 3L),
-			new PopularGroupRelation(groups.get(3).getId(), Status.BOOKMARK, 4L),
-			new PopularGroupRelation(groups.get(4).getId(), Status.BOOKMARK,5L),
-			new PopularGroupRelation(groups.get(5).getId(), null, 0L),
-			new PopularGroupRelation(groups.get(6).getId(), null, 0L),
-			new PopularGroupRelation(groups.get(7).getId(), null, 0L),
-			new PopularGroupRelation(groups.get(8).getId(), null, 0L),
-			new PopularGroupRelation(groups.get(9).getId(), null, 0L)
+			new PopularGroupRelation(groups.get(0).getId(), Status.BAN, 1L, null),
+			new PopularGroupRelation(groups.get(1).getId(), Status.OWNER, 2L, null),
+			new PopularGroupRelation(groups.get(2).getId(), Status.MEMBER, 3L, null),
+			new PopularGroupRelation(groups.get(3).getId(), Status.MEMBER, 4L, null),
+			new PopularGroupRelation(groups.get(4).getId(), Status.MEMBER,5L, null),
+			new PopularGroupRelation(groups.get(5).getId(), null, 0L, null),
+			new PopularGroupRelation(groups.get(6).getId(), null, 0L, null),
+			new PopularGroupRelation(groups.get(7).getId(), null, 0L, null),
+			new PopularGroupRelation(groups.get(8).getId(), null, 0L, null),
+			new PopularGroupRelation(groups.get(9).getId(), null, 0L, null)
 		);
+	}
+
+	@Test
+	@DisplayName("모임 조회: 모임이 존재하지 않는 경우")
+	void readGroup1() {
+		// given
+		Group group = Group.builder()
+			.name("mock group")
+			.description("mock description")
+			.capacity(100)
+			.category(category)
+			.location(location)
+			.build();
+		groupRepository.save(group);
+		groupQueryService.deleteGroup(group);
+		// expected
+		assertThatThrownBy(() -> groupQueryService.readGroupDetail(group.getId(), 1L))
+			.isInstanceOf(CustomException.class)
+			.hasMessage(NOT_EXISTS_GROUP.getDetail());
+	}
+
+	@Test
+	@DisplayName("모임 조회: 모임이 존재하는 경우, 현재 사용자와 관계가 없는 경우, 좋아요 관계 없는 경우")
+	void readGroup2() {
+		// given
+		Group group = Group.builder()
+			.name("mock group")
+			.description("mock description")
+			.capacity(100)
+			.category(category)
+			.location(location)
+			.build();
+		groupRepository.save(group);
+
+		// when
+		GroupDetail groupDetail = groupQueryService.readGroupDetail(group.getId(), 1L);
+
+		// then
+		assertThat(groupDetail.groupId()).isEqualTo(group.getId());
+		assertThat(groupDetail.status()).isNull();
+		assertThat(groupDetail.likeStatus()).isNull();
+	}
+
+	@Test
+	@DisplayName("모임 조회: 모임이 존재하는 경우, 현재 사용자와 관계가 있는 경우, 좋아요 상태")
+	void readGroup3() {
+		// given
+		User user = User.builder().name("mock user").build();
+		userRepository.save(user);
+
+		Group group = Group.builder()
+			.name("mock group")
+			.description("mock description")
+			.capacity(100)
+			.category(category)
+			.location(location)
+			.build();
+
+		groupRepository.save(group);
+
+		GroupUser groupUser = GroupUser.create(group, user, Status.MEMBER);
+		groupUserRepository.save(groupUser);
+		groupLikeRepository.save(GroupLike.create(group, user, LIKE));
+
+		// when
+		GroupDetail groupDetail = groupQueryService.readGroupDetail(group.getId(), user.getId());
+
+		// then
+		assertThat(groupDetail.groupId()).isEqualTo(group.getId());
+		assertThat(groupDetail.status()).isEqualTo(Status.MEMBER);
+		assertThat(groupDetail.likeStatus()).isEqualTo(GroupLikeStatus.LIKE);
+		assertThat(groupDetail.capacity()).isEqualTo(100);
+		assertThat(groupDetail.category()).isEqualTo(category.getName());
+		assertThat(groupDetail.iconUrl()).isEqualTo(category.getIconUrl());
+		assertThat(groupDetail.address()).isEqualTo(location.getDong());
 	}
 }

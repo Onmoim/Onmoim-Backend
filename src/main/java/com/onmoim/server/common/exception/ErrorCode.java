@@ -49,7 +49,7 @@ public enum ErrorCode {
 	GROUP_FORBIDDEN(FORBIDDEN, "권한이 부족합니다."),
 	GROUP_OWNER_TRANSFER_REQUIRED(CONFLICT, "모임장은 모임장을 넘기고 탈퇴할 수 있습니다."),
 	MEMBER_NOT_FOUND_IN_GROUP(NOT_FOUND, "모임 멤버를 찾을 수 없습니다."),
-	CAPACITY_MUST_BE_GREATER_THAN_CURRENT(CONFLICT,"정원은 현재 모임 수 이상이어야 합니다."),
+	CAPACITY_MUST_BE_GREATER_THAN_CURRENT(CONFLICT,"정원은 현재 모임원 수 이상이어야 합니다."),
 	MAP_API_ERROR(INTERNAL_SERVER_ERROR, "카카오 맵 API 문제"),
 
 	/* ------------------ 400 BAD_REQUEST : 일정 관련 오류 ------------------ */
