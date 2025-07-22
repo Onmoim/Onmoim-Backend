@@ -4,8 +4,10 @@ import com.onmoim.server.group.entity.Status;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 @Builder
 @Schema(description = "가입한 모임 조회 응답")
 public class GroupSummaryResponseDto {
@@ -26,7 +28,10 @@ public class GroupSummaryResponseDto {
 	private Status status;
 
 	@Schema(description = "좋아요 상태", example = "LIKE, NONE")
-	private String groupLikeStatus;
+	private String likeStatus;
+
+	@Schema(description = "추천 상태", example = "RECOMMEND, NONE")
+	private String recommendStatus;
 
 	@Schema(description = "지역")
 	private String location;
@@ -38,13 +43,15 @@ public class GroupSummaryResponseDto {
 	private Long upcomingMeetingCount;
 
 	public GroupSummaryResponseDto(Long groupId, String name, String imgUrl, String category,
-								   Status status, String groupLikeStatus, String location, Long memberCount, Long upcomingMeetingCount) {
+								   Status status, String likeStatus, String recommendStatus,
+								   String location, Long memberCount, Long upcomingMeetingCount) {
 		this.groupId = groupId;
 		this.name = name;
 		this.imgUrl = imgUrl;
 		this.category = category;
 		this.status = status;
-		this.groupLikeStatus = groupLikeStatus;
+		this.likeStatus = likeStatus;
+		this.recommendStatus = recommendStatus;
 		this.location = location;
 		this.memberCount = memberCount;
 		this.upcomingMeetingCount = upcomingMeetingCount;

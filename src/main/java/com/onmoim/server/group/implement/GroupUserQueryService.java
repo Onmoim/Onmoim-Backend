@@ -5,6 +5,7 @@ import static com.onmoim.server.group.entity.GroupLikeStatus.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -213,7 +214,17 @@ public class GroupUserQueryService {
 		boolean hasNext = result.size() > size;
 		List<GroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
 
-		// TODO: 추천 여부 삽입
+		// 추천 여부 삽입
+		Set<Long> recommendedGroupIds = groupRepository.findRecommendedGroupIds(userId);
+
+		for (GroupSummaryResponseDto dto : content) {
+			if (recommendedGroupIds.contains(dto.getGroupId())) {
+				dto.setRecommendStatus("RECOMMEND");
+			} else {
+				dto.setRecommendStatus("NONE");
+			}
+		}
+
 		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
 
 		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);

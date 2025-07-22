@@ -12,13 +12,9 @@ import static com.onmoim.server.user.entity.QUserCategory.userCategory;
 import static com.querydsl.core.types.ExpressionUtils.*;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 
-import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.group.dto.ActiveGroup;
 import com.onmoim.server.group.dto.ActiveGroupDetail;
 import com.onmoim.server.group.dto.ActiveGroupRelation;
@@ -36,6 +32,7 @@ import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
@@ -377,6 +374,7 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 				new CaseBuilder()
 					.when(groupLike.status.eq(GroupLikeStatus.LIKE)).then("LIKE")
 					.otherwise("NONE"),
+				Expressions.constant("RECOMMEND"),
 				location.dong,
 				memberCountExpression,
 				upcomingMeetingCountExpression
@@ -439,6 +437,7 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 				new CaseBuilder()
 					.when(groupLike.status.eq(GroupLikeStatus.LIKE)).then("LIKE")
 					.otherwise("NONE"),
+				Expressions.constant("RECOMMEND"),
 				location.dong,
 				memberCountExpression,
 				upcomingMeetingCountExpression
@@ -461,5 +460,33 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 			.fetch();
 
 		return result;
+	}
+
+	public Set<Long> findRecommendedGroupIds(Long userId) {
+
+		BooleanBuilder where = new BooleanBuilder();
+		where.and(userCategory.user.id.eq(userId)
+			.or(location.id.eq(user.location.id)));
+
+		List<Long> result = queryFactory
+			.select(group.id)
+			.from(group)
+			.leftJoin(groupUser).on(
+				groupUser.group.eq(group),
+				groupUser.user.id.eq(userId)
+			)
+			.leftJoin(groupUser.user, user)
+			.leftJoin(group.category, category)
+			.leftJoin(group.location, location)
+			.leftJoin(groupLike).on(
+				groupLike.user.eq(groupUser.user),
+				groupLike.group.eq(groupUser.group)
+			)
+			.leftJoin(userCategory).on(userCategory.category.eq(group.category))
+			.where(where)
+			.orderBy(group.id.desc())
+			.fetch();
+
+		return new HashSet<>(result);
 	}
 }

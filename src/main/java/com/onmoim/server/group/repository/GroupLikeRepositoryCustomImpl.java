@@ -1,6 +1,5 @@
 package com.onmoim.server.group.repository;
 
-import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
 import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.QGroupUser;
@@ -10,6 +9,7 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +66,7 @@ public class GroupLikeRepositoryCustomImpl implements GroupLikeRepositoryCustom 
 				new CaseBuilder()
 					.when(groupLike.status.eq(GroupLikeStatus.LIKE)).then("LIKE")
 					.otherwise("NONE"),
+				Expressions.constant(""), // 서비스에서 따로 주입
 				location.dong,
 				memberCountExpression,
 				upcomingMeetingCountExpression

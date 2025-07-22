@@ -3,6 +3,7 @@ package com.onmoim.server.group.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.group.dto.ActiveGroup;
@@ -27,4 +28,5 @@ public interface GroupRepositoryCustom {
 	Long readMonthlyScheduleCount (Long groupId, LocalDateTime now);
 	List<GroupSummaryResponseDto> findRecommendedGroupListByCategory(Long userId, Long cursorId, int size);
 	List<GroupSummaryResponseDto> findRecommendedGroupListByLocation(Long userId, Long cursorId, int size);
+	Set<Long> findRecommendedGroupIds(Long userId);
 }
