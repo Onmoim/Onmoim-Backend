@@ -11,6 +11,10 @@ import java.util.stream.Collectors;
 
 import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
+import com.onmoim.server.group.dto.response.RecentViewedGroupSummaryResponseDto;
+import com.onmoim.server.group.dto.response.cursor.RecentViewCursorPageResponseDto;
+import com.onmoim.server.group.entity.*;
+import com.onmoim.server.group.repository.GroupViewLogRepository;
 import com.onmoim.server.security.CustomUserDetails;
 import com.onmoim.server.user.entity.UserCategory;
 import com.onmoim.server.user.repository.UserCategoryRepository;
@@ -35,11 +39,6 @@ import com.onmoim.server.group.dto.ActiveGroupRelation;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.PopularGroupRelation;
 import com.onmoim.server.group.dto.PopularGroupSummary;
-import com.onmoim.server.group.entity.Group;
-import com.onmoim.server.group.entity.GroupLike;
-import com.onmoim.server.group.entity.GroupLikeStatus;
-import com.onmoim.server.group.entity.GroupUser;
-import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.repository.GroupLikeRepository;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupUserRepository;
@@ -71,6 +70,8 @@ class GroupQueryServiceTest {
 	private GroupLikeRepository groupLikeRepository;
 	@Autowired
 	private UserCategoryRepository userCategoryRepository;
+	@Autowired
+	private GroupViewLogRepository groupViewLogRepository;
 	private Location location;
 	private Category category;
 
@@ -991,6 +992,71 @@ class GroupQueryServiceTest {
 		assertThat(content).hasSize(1);
 		assertThat(content.get(0).getGroupId()).isEqualTo(matchedGroup.getId());
 		assertThat(content.get(0).getRecommendStatus()).isEqualTo("RECOMMEND");
+		assertThat(returnedGroupIds).doesNotContain(unmatchedGroup.getId());
+	}
+
+	@Test
+	@DisplayName("최근 본 모임 조회")
+	void getRecentViewedGroups() {
+		// given
+		// 1. 유저 생성
+		User user = userRepository.save(User.builder()
+			.oauthId("1234567890")
+			.provider("google")
+			.email("test@test.com")
+			.name("홍길동")
+			.gender("F")
+			.birth(LocalDateTime.now())
+			.location(location)
+			.profileImgUrl("https://cdn.example.com/profile/test.jpg")
+			.build()
+		);
+
+		// 인증 정보 설정
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
+		UsernamePasswordAuthenticationToken auth =
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
+
+		userCategoryRepository.save(UserCategory.create(user, category));
+
+		// 2. 최근 본 모임 생성 & 모임 조회 로그 쌓기
+		Group matchedGroup = groupRepository.save(
+			Group.builder()
+				.name("최근 본 모임")
+				.category(category)
+				.location(location)
+				.imgUrl("https://cdn.example.com/group/matchedGroup.jpg")
+				.build()
+		);
+		groupViewLogRepository.save(GroupViewLog.create(user, matchedGroup));
+
+		// 3. 최근 보지 않은 모임 생성
+		Group unmatchedGroup = groupRepository.save(
+			Group.builder()
+				.name("최근 보지 않은 모임")
+				.category(category)
+				.location(location)
+				.imgUrl("https://cdn.example.com/group/unmatchedGroup.jpg")
+				.build()
+		);
+
+		// when
+		RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto> response =
+			groupQueryService.getRecentViewedGroups(null, null, 10);
+
+		// then
+		List<RecentViewedGroupSummaryResponseDto> content = response.getContent();
+
+		List<Long> returnedGroupIds = response.getContent()
+			.stream()
+			.map(RecentViewedGroupSummaryResponseDto::getGroupId)
+			.toList();
+
+		assertThat(content).hasSize(1);
+		assertThat(content.get(0).getGroupId()).isEqualTo(matchedGroup.getId());
 		assertThat(returnedGroupIds).doesNotContain(unmatchedGroup.getId());
 	}
 }

@@ -3,16 +3,22 @@ package com.onmoim.server.group.service;
 import static com.onmoim.server.common.exception.ErrorCode.*;
 import static com.onmoim.server.group.entity.GroupLikeStatus.*;
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.onmoim.server.group.entity.*;
+import com.onmoim.server.group.repository.GroupViewLogRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,12 +28,6 @@ import com.onmoim.server.category.repository.CategoryRepository;
 import com.onmoim.server.chat.dto.ChatRoomResponse;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.group.dto.GroupMember;
-import com.onmoim.server.group.entity.Group;
-import com.onmoim.server.group.entity.GroupLike;
-import com.onmoim.server.group.entity.GroupLikeStatus;
-import com.onmoim.server.group.entity.GroupUser;
-import com.onmoim.server.group.entity.GroupUserId;
-import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.implement.GroupQueryService;
 import com.onmoim.server.group.implement.GroupUserQueryService;
 import com.onmoim.server.group.repository.GroupLikeRepository;
@@ -60,6 +60,8 @@ class GroupServiceTest {
 	private GroupQueryService groupQueryService;
 	@Autowired
 	private GroupLikeRepository groupLikeRepository;
+	@Autowired
+	private GroupViewLogRepository groupViewLogRepository;
 
 	@AfterEach
 	void tearDown() {
@@ -708,4 +710,97 @@ class GroupServiceTest {
 			.isInstanceOf(CustomException.class)
 			.hasMessage(GROUP_FORBIDDEN.getDetail());
 	}
+
+	@Test
+	@DisplayName("모임 조회 로그 생성(처음)")
+	void createNewGroupViewLog() {
+		// given
+		// 1. 유저 생성
+		Location location = locationRepository.save(Location.create("100000", "서울특별시", "강남구", "역삼동", null));
+		Category category = categoryRepository.save(Category.create("운동/스포츠", null));
+
+		User user = userRepository.save(User.builder()
+			.oauthId("1234567890")
+			.provider("google")
+			.email("test@test.com")
+			.name("홍길동")
+			.gender("F")
+			.birth(LocalDateTime.now())
+			.location(location)
+			.profileImgUrl("https://cdn.example.com/profile/test.jpg")
+			.build()
+		);
+
+		// 인증 정보 설정
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
+		UsernamePasswordAuthenticationToken auth =
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트")
+			.location(location)
+			.category(category)
+			.build());
+
+		// when
+		groupService.createGroupViewLog(group.getId());
+
+		// then
+		List<GroupViewLog> groupViewLogList = groupViewLogRepository.findAll();
+		assertEquals(1, groupViewLogList.size());
+		assertEquals(user.getId(), groupViewLogList.get(0).getUser().getId());
+		assertEquals(group.getId(), groupViewLogList.get(0).getGroup().getId());
+	}
+
+	@Test
+	@DisplayName("모임 조회 로그 생성(기존 로그 있는 경우)")
+	void createExistingGroupViewLog() {
+		// given
+		// 1. 유저 생성
+		Location location = locationRepository.save(Location.create("100000", "서울특별시", "강남구", "역삼동", null));
+		Category category = categoryRepository.save(Category.create("운동/스포츠", null));
+
+		User user = userRepository.save(User.builder()
+			.oauthId("1234567890")
+			.provider("google")
+			.email("test@test.com")
+			.name("홍길동")
+			.gender("F")
+			.birth(LocalDateTime.now())
+			.location(location)
+			.profileImgUrl("https://cdn.example.com/profile/test.jpg")
+			.build()
+		);
+
+		// 인증 정보 설정
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
+		UsernamePasswordAuthenticationToken auth =
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
+
+		Group group = groupRepository.save(Group.builder()
+			.name("테스트")
+			.location(location)
+			.category(category)
+			.build());
+
+		GroupViewLog log = groupViewLogRepository.save(GroupViewLog.create(user, group));
+
+		Long originalViewCount = log.getViewCount();
+		LocalDateTime originalViewedAt = log.getModifiedDate();
+
+		// when
+		groupService.createGroupViewLog(group.getId());
+
+		// then
+		GroupViewLog updatedLog = groupViewLogRepository.findByUserAndGroup(user, group).get();
+		assertTrue(updatedLog.getModifiedDate().isAfter(originalViewedAt));
+		assertEquals(originalViewCount + 1, updatedLog.getViewCount());
+	}
+
 }
