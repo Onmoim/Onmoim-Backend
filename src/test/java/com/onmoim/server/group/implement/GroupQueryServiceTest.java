@@ -9,11 +9,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.onmoim.server.common.response.CommonCursorPageResponseDto;
+import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
+import com.onmoim.server.security.CustomUserDetails;
+import com.onmoim.server.user.entity.UserCategory;
+import com.onmoim.server.user.repository.UserCategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.parameters.P;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,6 +69,8 @@ class GroupQueryServiceTest {
 	private GroupUserRepository groupUserRepository;
 	@Autowired
 	private GroupLikeRepository groupLikeRepository;
+	@Autowired
+	private UserCategoryRepository userCategoryRepository;
 	private Location location;
 	private Category category;
 
@@ -850,5 +860,137 @@ class GroupQueryServiceTest {
 		assertThat(groupDetail.category()).isEqualTo(category.getName());
 		assertThat(groupDetail.iconUrl()).isEqualTo(category.getIconUrl());
 		assertThat(groupDetail.address()).isEqualTo(location.getDong());
+	}
+
+	@Test
+	@DisplayName("나와 비슷한 관심사 모임 조회")
+	void getRecommendedGroupsByCategory() {
+		// given
+		// 1. 유저
+		User user = userRepository.save(User.builder()
+			.oauthId("1234567890")
+			.provider("google")
+			.email("test@test.com")
+			.name("홍길동")
+			.gender("F")
+			.birth(LocalDateTime.now())
+			.location(location)
+			.profileImgUrl("https://cdn.example.com/profile/test.jpg")
+			.build()
+		);
+
+		// 인증 정보 설정
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
+		UsernamePasswordAuthenticationToken auth =
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
+
+		userCategoryRepository.save(UserCategory.create(user, category));
+
+		// 2. 카테고리 맞는 모임 생성
+		Group matchedGroup = groupRepository.save(
+			Group.builder()
+				.name("카테고리 맞는 모임")
+				.category(category)
+				.location(location)
+				.imgUrl("https://cdn.example.com/group/matchedGroup.jpg")
+				.build()
+		);
+
+		// 3. 카테고리 안 맞는 모임 생성
+		Category otherCategory = categoryRepository.save(Category.builder().name("카테고리2").iconUrl("http://s3/mock/image/2").build());
+		Group unmatchedGroup = groupRepository.save(
+			Group.builder()
+				.name("카테고리 안 맞는 모임")
+				.category(otherCategory)
+				.location(location)
+				.imgUrl("https://cdn.example.com/group/unmatchedGroup.jpg")
+				.build()
+		);
+
+		// when
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response =
+			groupQueryService.getRecommendedGroupsByCategory(null, 10);
+
+		// then
+		List<GroupSummaryResponseDto> content = response.getContent();
+
+		List<Long> returnedGroupIds = response.getContent()
+			.stream()
+			.map(GroupSummaryResponseDto::getGroupId)
+			.toList();
+
+		assertThat(content).hasSize(1);
+		assertThat(content.get(0).getGroupId()).isEqualTo(matchedGroup.getId());
+		assertThat(content.get(0).getRecommendStatus()).isEqualTo("RECOMMEND");
+		assertThat(returnedGroupIds).doesNotContain(unmatchedGroup.getId());
+	}
+
+	@Test
+	@DisplayName("나와 가까운 모임 조회")
+	void getRecommendedGroupsByLocation() {
+		// given
+		// 1. 유저 생성
+		User user = userRepository.save(User.builder()
+			.oauthId("1234567890")
+			.provider("google")
+			.email("test@test.com")
+			.name("홍길동")
+			.gender("F")
+			.birth(LocalDateTime.now())
+			.location(location)
+			.profileImgUrl("https://cdn.example.com/profile/test.jpg")
+			.build()
+		);
+
+		// 인증 정보 설정
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
+		UsernamePasswordAuthenticationToken auth =
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
+
+		userCategoryRepository.save(UserCategory.create(user, category));
+
+		// 2. 지역 맞는 모임 생성
+		Group matchedGroup = groupRepository.save(
+			Group.builder()
+				.name("지역 맞는 모임")
+				.category(category)
+				.location(location)
+				.imgUrl("https://cdn.example.com/group/matchedGroup.jpg")
+				.build()
+		);
+
+		// 3. 지역 안 맞는 모임 생성
+		Location otherLocation = locationRepository.save(Location.create(null, null, null, "테스트", null));
+		Group unmatchedGroup = groupRepository.save(
+			Group.builder()
+				.name("지역 안 맞는 모임")
+				.category(category)
+				.location(otherLocation)
+				.imgUrl("https://cdn.example.com/group/unmatchedGroup.jpg")
+				.build()
+		);
+
+		// when
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response =
+			groupQueryService.getRecommendedGroupsByLocation(null, 10);
+
+		// then
+		List<GroupSummaryResponseDto> content = response.getContent();
+
+		List<Long> returnedGroupIds = response.getContent()
+			.stream()
+			.map(GroupSummaryResponseDto::getGroupId)
+			.toList();
+
+		assertThat(content).hasSize(1);
+		assertThat(content.get(0).getGroupId()).isEqualTo(matchedGroup.getId());
+		assertThat(content.get(0).getRecommendStatus()).isEqualTo("RECOMMEND");
+		assertThat(returnedGroupIds).doesNotContain(unmatchedGroup.getId());
 	}
 }

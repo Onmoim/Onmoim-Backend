@@ -405,7 +405,7 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 		QMeeting meetingSub = new QMeeting("meetingSub");
 
 		BooleanBuilder where = new BooleanBuilder();
-		where.and(location.id.eq(user.location.id));
+		where.and(group.location.id.eq(user.location.id));
 		if (cursorId != null) {
 			where.and(group.id.lt(cursorId)); // 커서 기준
 		}
@@ -447,7 +447,7 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 				groupUser.group.eq(group),
 				groupUser.user.id.eq(userId)
 			)
-			.leftJoin(groupUser.user, user)
+			.leftJoin(user).on(user.id.eq(userId))
 			.leftJoin(group.category, category)
 			.leftJoin(group.location, location)
 			.leftJoin(groupLike).on(
