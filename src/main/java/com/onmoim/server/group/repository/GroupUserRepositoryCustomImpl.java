@@ -4,6 +4,7 @@ import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.group.dto.response.JoinedGroupResponseDto;
 import com.onmoim.server.group.entity.QGroupUser;
 import com.onmoim.server.group.entity.Status;
+import com.onmoim.server.meeting.entity.QMeeting;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
@@ -15,11 +16,11 @@ import lombok.RequiredArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.onmoim.server.group.entity.QGroupLike.groupLike;
 import static com.onmoim.server.group.entity.QGroupUser.groupUser;
 import static com.onmoim.server.group.entity.QGroup.group;
 import static com.onmoim.server.category.entity.QCategory.category;
 import static com.onmoim.server.location.entity.QLocation.location;
-import static com.onmoim.server.meeting.entity.QMeeting.meeting;
 
 @RequiredArgsConstructor
 public class GroupUserRepositoryCustomImpl implements GroupUserRepositoryCustom {
@@ -29,6 +30,7 @@ public class GroupUserRepositoryCustomImpl implements GroupUserRepositoryCustom 
 	public CommonCursorPageResponseDto<JoinedGroupResponseDto> findJoinedGroupListByUserId(Long userId, Long cursorId, int size) {
 
 		QGroupUser groupUserSub = new QGroupUser("groupUserSub");
+		QMeeting meetingSub = new QMeeting("meetingSub");
 
 		BooleanBuilder where = new BooleanBuilder();
 		where.and(groupUser.user.id.eq(userId));
@@ -45,6 +47,14 @@ public class GroupUserRepositoryCustomImpl implements GroupUserRepositoryCustom 
 				groupUserSub.status.in(Status.OWNER, Status.MEMBER)
 			);
 
+		Expression<Long> upcomingMeetingCountExpression = JPAExpressions
+			.select(meetingSub.id.countDistinct())
+			.from(meetingSub)
+			.where(
+				meetingSub.group.id.eq(group.id),
+				meetingSub.startAt.gt(LocalDateTime.now())
+			);
+
 		List<JoinedGroupResponseDto> result = queryFactory
 			.select(Projections.constructor(
 				JoinedGroupResponseDto.class,
@@ -53,20 +63,20 @@ public class GroupUserRepositoryCustomImpl implements GroupUserRepositoryCustom 
 				group.imgUrl,
 				category.name,
 				groupUser.status,
+				groupLike.status,
 				location.dong,
 				memberCountExpression,
-				Expressions.numberTemplate(Long.class,
-					"count(distinct case when {0} > {1} then {2} end)",
-					meeting.startAt, LocalDateTime.now(), meeting.id
-				).as("upcomingMeetingCount")
+				upcomingMeetingCountExpression
 			))
 			.from(groupUser)
-			.leftJoin(group).on(group.id.eq(groupUser.group.id))
+			.leftJoin(groupUser.group, group)
 			.leftJoin(group.category, category)
 			.leftJoin(group.location, location)
-			.leftJoin(meeting).on(meeting.group.eq(group))
+			.leftJoin(groupLike).on(
+				groupLike.user.eq(groupUser.user),
+				groupLike.group.eq(groupUser.group)
+			)
 			.where(where)
-			.groupBy(group.id, group.name, group.imgUrl, category.name, groupUser.status, location.dong)
 			.orderBy(group.id.desc())
 			.limit(size + 1)
 			.fetch();
