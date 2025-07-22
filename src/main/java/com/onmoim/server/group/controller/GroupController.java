@@ -8,6 +8,10 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.onmoim.server.group.dto.response.*;
+import com.onmoim.server.group.implement.GroupUserQueryService;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,10 +37,6 @@ import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.dto.request.MemberIdRequestDto;
-import com.onmoim.server.group.dto.response.GroupDetailResponseDto;
-import com.onmoim.server.group.dto.response.GroupInfoResponseDto;
-import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
-import com.onmoim.server.group.dto.response.GroupStatisticsResponseDto;
 import com.onmoim.server.group.dto.response.cursor.ActiveGroupCursor;
 import com.onmoim.server.group.dto.response.cursor.CursorPageResponseDto;
 import com.onmoim.server.group.dto.response.cursor.CursorUtilClass;
@@ -45,6 +45,7 @@ import com.onmoim.server.group.dto.response.cursor.NearbyPopularGroupCursor;
 import com.onmoim.server.group.service.GroupService;
 import com.onmoim.server.meeting.dto.MeetingDetail;
 import com.onmoim.server.meeting.service.MeetingService;
+import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -62,6 +63,7 @@ import lombok.RequiredArgsConstructor;
 public class GroupController {
 	private final GroupService groupService;
 	private final MeetingService meetingService;
+	private final GroupUserQueryService groupUserQueryService;
 
 	@Operation(
 		summary = "모임 생성",
@@ -589,5 +591,30 @@ public class GroupController {
 				monthlySchedule
 			)
 		));
+	}
+
+	/**
+	 * 내 모임 - 가입한 모임 조회
+	 */
+	@GetMapping("/v1/groups/my-groups")
+	@Operation(
+		summary = "내 모임 - 가입한 모임 조회",
+		description = "내가 가입한 모임을 조회합니다.")
+	@ApiResponses({
+		@ApiResponse(
+			responseCode = "200",
+			description = "조회 성공",
+			content = @Content(
+				schema = @Schema(implementation = CommonCursorPageResponseDto.class))),
+		@ApiResponse(responseCode = "401", description = "인증 실패")
+	})
+	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<JoinedGroupResponseDto>>> getJoinedGroups(
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략)") Long cursorId,
+		@RequestParam(defaultValue = "10")
+		@Parameter(description = "페이지 크기") int size
+	) {
+		CommonCursorPageResponseDto<JoinedGroupResponseDto> response = groupUserQueryService.getJoinedGroups(cursorId, size);
+		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 }

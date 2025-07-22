@@ -7,8 +7,14 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.common.response.CommonCursorPageResponseDto;
+import com.onmoim.server.group.dto.response.JoinedGroupResponseDto;
+import com.onmoim.server.security.CustomUserDetails;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.onmoim.server.common.exception.CustomException;
@@ -163,5 +169,30 @@ public class GroupUserQueryService {
 	{
 		List<GroupUser> groupUsers = groupRepository.findGroupUsers(groupId, lastGroupId, size);
 		return groupUsers.stream().map(GroupMember::of).toList();
+	}
+
+	/**
+	 * 가입한 모임 조회
+	 */
+	public CommonCursorPageResponseDto<JoinedGroupResponseDto> getJoinedGroups(Long cursorId, int size) {
+		Long userId = getCurrentUserId();
+
+		return groupUserRepository.findJoinedGroupListByUserId(userId, cursorId, size);
+	}
+
+	public Long getCurrentUserId() {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+		if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
+			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+		}
+
+		Object principal = auth.getPrincipal();
+
+		if (principal instanceof CustomUserDetails userDetails) {
+			return userDetails.getUserId();
+		} else {
+			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+		}
 	}
 }
