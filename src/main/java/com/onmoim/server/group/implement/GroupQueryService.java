@@ -191,7 +191,17 @@ public class GroupQueryService {
 	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getRecommendedGroupsByCategory(Long cursorId, int size) {
 		Long userId = getCurrentUserId();
 
-		return groupRepository.findRecommendedGroupListByCategory(userId, cursorId, size);
+		List<GroupSummaryResponseDto> result = groupRepository.findRecommendedGroupListByCategory(userId, cursorId, size);
+
+		if (result.isEmpty()) {
+			return CommonCursorPageResponseDto.empty();
+		}
+
+		boolean hasNext = result.size() > size;
+		List<GroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
+		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
+
+		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);
 	}
 
 	/**
@@ -200,7 +210,17 @@ public class GroupQueryService {
 	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getRecommendedGroupsByLocation(Long cursorId, int size) {
 		Long userId = getCurrentUserId();
 
-		return groupRepository.findRecommendedGroupListByLocation(userId, cursorId, size);
+		List<GroupSummaryResponseDto> result = groupRepository.findRecommendedGroupListByLocation(userId, cursorId, size);
+
+		if (result.isEmpty()) {
+			return CommonCursorPageResponseDto.empty();
+		}
+
+		boolean hasNext = result.size() > size;
+		List<GroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
+		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
+
+		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);
 	}
 
 	public Long getCurrentUserId() {

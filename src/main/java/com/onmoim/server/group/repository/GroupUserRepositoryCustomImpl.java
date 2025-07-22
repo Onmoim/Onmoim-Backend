@@ -1,6 +1,5 @@
 package com.onmoim.server.group.repository;
 
-import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
 import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.QGroupUser;
@@ -28,7 +27,7 @@ public class GroupUserRepositoryCustomImpl implements GroupUserRepositoryCustom 
 
 	private final JPAQueryFactory queryFactory;
 
-	public CommonCursorPageResponseDto<GroupSummaryResponseDto> findJoinedGroupListByUserId(Long userId, Long cursorId, int size) {
+	public List<GroupSummaryResponseDto> findJoinedGroupList(Long userId, Long cursorId, int size) {
 
 		QGroupUser groupUserSub = new QGroupUser("groupUserSub");
 		QMeeting meetingSub = new QMeeting("meetingSub");
@@ -84,15 +83,7 @@ public class GroupUserRepositoryCustomImpl implements GroupUserRepositoryCustom 
 			.limit(size + 1)
 			.fetch();
 
-		if (result.isEmpty()) {
-			return CommonCursorPageResponseDto.empty();
-		}
-
-		boolean hasNext = result.size() > size;
-		List<GroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
-		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
-
-		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);
+		return result;
 	}
 
 }

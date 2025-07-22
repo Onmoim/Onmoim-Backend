@@ -12,6 +12,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -25,7 +27,19 @@ public class GroupLikeQueryService {
 	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getLikedGroups(Long cursorId, int size) {
 		Long userId = getCurrentUserId();
 
-		return groupLikeRepository.findLikedGroupListByUserId(userId, cursorId, size);
+		List<GroupSummaryResponseDto> result = groupLikeRepository.findLikedGroupList(userId, cursorId, size);
+
+		if (result.isEmpty()) {
+			return CommonCursorPageResponseDto.empty();
+		}
+
+		boolean hasNext = result.size() > size;
+		List<GroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
+
+		// TODO: 추천 여부 삽입
+		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
+
+		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);
 	}
 
 	public Long getCurrentUserId() {

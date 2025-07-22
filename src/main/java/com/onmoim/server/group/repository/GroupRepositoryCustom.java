@@ -25,6 +25,6 @@ public interface GroupRepositoryCustom {
 	List<ActiveGroupRelation> readGroupsRelation(List<Long> groupIds, Long userId);
 	Long readAnnualScheduleCount (Long groupId, LocalDateTime now);
 	Long readMonthlyScheduleCount (Long groupId, LocalDateTime now);
-	CommonCursorPageResponseDto<GroupSummaryResponseDto> findRecommendedGroupListByCategory(Long userId, Long cursorId, int size);
-	CommonCursorPageResponseDto<GroupSummaryResponseDto> findRecommendedGroupListByLocation(Long userId, Long cursorId, int size);
+	List<GroupSummaryResponseDto> findRecommendedGroupListByCategory(Long userId, Long cursorId, int size);
+	List<GroupSummaryResponseDto> findRecommendedGroupListByLocation(Long userId, Long cursorId, int size);
 }

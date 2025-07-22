@@ -203,7 +203,20 @@ public class GroupUserQueryService {
 	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getJoinedGroups(Long cursorId, int size) {
 		Long userId = getCurrentUserId();
 
-		return groupUserRepository.findJoinedGroupListByUserId(userId, cursorId, size);
+		List<GroupSummaryResponseDto> result = groupUserRepository.findJoinedGroupList(userId, cursorId, size);
+
+
+		if (result.isEmpty()) {
+			return CommonCursorPageResponseDto.empty();
+		}
+
+		boolean hasNext = result.size() > size;
+		List<GroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
+
+		// TODO: 추천 여부 삽입
+		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
+
+		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);
 	}
 
 	public Long getCurrentUserId() {

@@ -1,10 +1,11 @@
 package com.onmoim.server.group.repository;
 
-import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
+
+import java.util.List;
 
 public interface GroupLikeRepositoryCustom {
 
-	CommonCursorPageResponseDto<GroupSummaryResponseDto> findLikedGroupListByUserId(Long userId, Long cursorId, int size);
+	List<GroupSummaryResponseDto> findLikedGroupList(Long userId, Long cursorId, int size);
 
 }

@@ -339,7 +339,7 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 		}
 	}
 
-	public CommonCursorPageResponseDto<GroupSummaryResponseDto> findRecommendedGroupListByCategory(Long userId, Long cursorId, int size) {
+	public List<GroupSummaryResponseDto> findRecommendedGroupListByCategory(Long userId, Long cursorId, int size) {
 
 		QGroupUser groupUserSub = new QGroupUser("groupUserSub");
 		QMeeting meetingSub = new QMeeting("meetingSub");
@@ -398,18 +398,10 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 			.limit(size + 1)
 			.fetch();
 
-		if (result.isEmpty()) {
-			return CommonCursorPageResponseDto.empty();
-		}
-
-		boolean hasNext = result.size() > size;
-		List<GroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
-		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
-
-		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);
+		return result;
 	}
 
-	public CommonCursorPageResponseDto<GroupSummaryResponseDto> findRecommendedGroupListByLocation(Long userId, Long cursorId, int size) {
+	public List<GroupSummaryResponseDto> findRecommendedGroupListByLocation(Long userId, Long cursorId, int size) {
 
 		QGroupUser groupUserSub = new QGroupUser("groupUserSub");
 		QMeeting meetingSub = new QMeeting("meetingSub");
@@ -468,14 +460,6 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 			.limit(size + 1)
 			.fetch();
 
-		if (result.isEmpty()) {
-			return CommonCursorPageResponseDto.empty();
-		}
-
-		boolean hasNext = result.size() > size;
-		List<GroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
-		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
-
-		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);
+		return result;
 	}
 }
