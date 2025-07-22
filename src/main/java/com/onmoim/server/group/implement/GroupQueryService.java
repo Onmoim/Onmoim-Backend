@@ -4,11 +4,15 @@ import static com.onmoim.server.common.exception.ErrorCode.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
 import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
+import com.onmoim.server.group.dto.response.RecentViewedGroupSummaryResponseDto;
+import com.onmoim.server.group.dto.response.cursor.RecentViewCursorPageResponseDto;
+import com.onmoim.server.group.repository.GroupViewLogRepository;
 import com.onmoim.server.security.CustomUserDetails;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
@@ -39,6 +43,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GroupQueryService {
 	private final GroupRepository groupRepository;
+	private final GroupViewLogRepository groupViewLogRepository;
 	private final FileStorageService fileStorageService;
 
 	public Group saveGroup(
@@ -222,6 +227,40 @@ public class GroupQueryService {
 
 		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);
 	}
+
+	/**
+	 * 최근 본 모임 조회
+	 */
+	public RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto> getRecentViewedGroups(LocalDateTime cursorViewedAt, Long cursorLogId, int size) {
+		Long userId = getCurrentUserId();
+
+		List<RecentViewedGroupSummaryResponseDto> result = groupViewLogRepository.findRecentViewedGroupList(userId, cursorViewedAt, cursorLogId, size + 1);
+
+		if (result.isEmpty()) {
+			return RecentViewCursorPageResponseDto.empty();
+		}
+
+		boolean hasNext = result.size() > size;
+		List<RecentViewedGroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
+
+		// 추천 여부 삽입
+		Set<Long> recommendedGroupIds = groupRepository.findRecommendedGroupIds(userId);
+
+		for (RecentViewedGroupSummaryResponseDto dto : content) {
+			if (recommendedGroupIds.contains(dto.getGroupId())) {
+				dto.setRecommendStatus("RECOMMEND");
+			} else {
+				dto.setRecommendStatus("NONE");
+			}
+		}
+
+		// 커서 추출
+		LocalDateTime nextCursorViewedAt = hasNext ? content.get(content.size() - 1).getViewedAt() : null;
+		Long nextCursorLogId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
+
+		return RecentViewCursorPageResponseDto.of(content, hasNext, nextCursorViewedAt, nextCursorLogId);
+	}
+
 
 	public Long getCurrentUserId() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();

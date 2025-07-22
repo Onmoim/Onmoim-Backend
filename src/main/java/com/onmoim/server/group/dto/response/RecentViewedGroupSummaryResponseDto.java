@@ -6,11 +6,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Builder
-@Schema(description = "모임 카드 조회 응답")
-public class GroupSummaryResponseDto {
+@Schema(description = "최근 본 모임 카드 조회 응답")
+public class RecentViewedGroupSummaryResponseDto {
 
 	@Schema(description = "모임 ID")
 	private Long groupId;
@@ -42,9 +44,12 @@ public class GroupSummaryResponseDto {
 	@Schema(description = "다가오는 일정 수")
 	private Long upcomingMeetingCount;
 
-	public GroupSummaryResponseDto(Long groupId, String name, String imgUrl, String category,
+	@Schema(description = "최근 조회한 시각")
+	private LocalDateTime viewedAt;
+
+	public RecentViewedGroupSummaryResponseDto(Long groupId, String name, String imgUrl, String category,
 								   Status status, String likeStatus, String recommendStatus,
-								   String location, Long memberCount, Long upcomingMeetingCount) {
+								   String location, Long memberCount, Long upcomingMeetingCount, LocalDateTime viewedAt) {
 		this.groupId = groupId;
 		this.name = name;
 		this.imgUrl = imgUrl;
@@ -55,6 +60,7 @@ public class GroupSummaryResponseDto {
 		this.location = location;
 		this.memberCount = memberCount;
 		this.upcomingMeetingCount = upcomingMeetingCount;
+		this.viewedAt = viewedAt;
 	}
 
 }

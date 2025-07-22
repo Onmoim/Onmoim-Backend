@@ -9,6 +9,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.onmoim.server.group.dto.response.*;
+import com.onmoim.server.group.dto.response.cursor.*;
 import com.onmoim.server.group.implement.GroupLikeQueryService;
 import com.onmoim.server.group.implement.GroupQueryService;
 import com.onmoim.server.group.implement.GroupUserQueryService;
@@ -40,11 +41,6 @@ import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.dto.request.MemberIdRequestDto;
-import com.onmoim.server.group.dto.response.cursor.ActiveGroupCursor;
-import com.onmoim.server.group.dto.response.cursor.CursorPageResponseDto;
-import com.onmoim.server.group.dto.response.cursor.CursorUtilClass;
-import com.onmoim.server.group.dto.response.cursor.MemberListCursor;
-import com.onmoim.server.group.dto.response.cursor.NearbyPopularGroupCursor;
 import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.service.GroupService;
 import com.onmoim.server.meeting.dto.MeetingDetail;
@@ -721,5 +717,32 @@ public class GroupController {
 	public ResponseEntity<ResponseHandler<String>> createGroupViewLog(@PathVariable Long groupId) {
 		groupService.createGroupViewLog(groupId);
 		return ResponseEntity.ok(ResponseHandler.response("모임 조회 로그 쌓기가 완료되었습니다."));
+	}
+
+	/**
+	 * 프로필 - 최근 본 모임 조회
+	 */
+	@GetMapping("/v1/groups/viewed")
+	@Operation(
+		summary = "최근 본 모임 조회",
+		description = "최근 본 모임을 조회합니다.")
+	@ApiResponses({
+		@ApiResponse(
+			responseCode = "200",
+			description = "조회 성공",
+			content = @Content(
+				schema = @Schema(implementation = RecentViewCursorPageResponseDto.class))),
+		@ApiResponse(responseCode = "401", description = "인증 실패")
+	})
+	public ResponseEntity<ResponseHandler<RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto>>> getRecentViewedGroups(
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 조회 시각 (첫 페이지는 생략)") LocalDateTime cursorViewedAt,
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략)") Long cursorId,
+		@RequestParam(defaultValue = "10")
+		@Parameter(description = "페이지 크기") int size
+	) {
+		RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto> response = groupQueryService.getRecentViewedGroups(cursorViewedAt, cursorId, size);
+		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 }

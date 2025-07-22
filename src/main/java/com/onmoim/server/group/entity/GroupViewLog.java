@@ -14,8 +14,9 @@ import lombok.NoArgsConstructor;
 public class GroupViewLog extends BaseEntity {
 
 	@Id
+	@Column(name = "group_view_log_id")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private Long groupViewLogId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	private User user;
