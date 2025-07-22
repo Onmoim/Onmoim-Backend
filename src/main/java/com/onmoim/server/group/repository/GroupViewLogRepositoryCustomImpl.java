@@ -37,6 +37,7 @@ public class GroupViewLogRepositoryCustomImpl implements GroupViewLogRepositoryC
 
 		BooleanBuilder where = new BooleanBuilder();
 		where.and(groupViewLog.user.id.eq(userId));
+		where.and(groupViewLog.modifiedDate.goe(LocalDateTime.now().minusMonths(1))); // 1개월 이내 조회한 모임만
 		// 커서 조건: modifiedDate < cursorViewedAt or (modifiedDate = cursorViewedAt and group.id < cursorLogId)
 		if (cursorViewedAt != null && cursorLogId != null) {
 			where.and(
