@@ -19,9 +19,11 @@ public class GroupViewLog extends BaseEntity {
 	private Long groupViewLogId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id")
 	private User user;
 
 	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "group_id")
 	private Group group;
 
 	@Column(nullable = false)
