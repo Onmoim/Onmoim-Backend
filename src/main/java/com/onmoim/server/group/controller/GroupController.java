@@ -12,6 +12,7 @@ import com.onmoim.server.group.dto.response.*;
 import com.onmoim.server.group.implement.GroupLikeQueryService;
 import com.onmoim.server.group.implement.GroupQueryService;
 import com.onmoim.server.group.implement.GroupUserQueryService;
+import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.ResponseEntity;
@@ -693,5 +694,32 @@ public class GroupController {
 	) {
 		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupQueryService.getRecommendedGroupsByLocation(cursorId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
+	}
+
+	/**
+	 * 최근 본 모임 로그 쌓기
+	 */
+	@PostMapping("/v1/groups/{groupId}/view")
+	@Operation(
+		summary = "최근 본 모임 로그 쌓기",
+		description = "모임 조회 로그를 쌓기 위한 api입니다. 모임을 조회할 때마다 호출해주세요."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "모임 조회 로그 쌓기 성공",
+			content = @Content(
+				mediaType = "application/json",
+				schema = @Schema(implementation = ResponseHandler.class)
+			)
+		),
+		@ApiResponse(
+			responseCode = "404",
+			description = "BAD REQUEST - 존재하지 않는 모임 요청"
+		)
+	})
+	public ResponseEntity<ResponseHandler<String>> createGroupViewLog(@PathVariable Long groupId) {
+		groupService.createGroupViewLog(groupId);
+		return ResponseEntity.ok(ResponseHandler.response("모임 조회 로그 쌓기가 완료되었습니다."));
 	}
 }

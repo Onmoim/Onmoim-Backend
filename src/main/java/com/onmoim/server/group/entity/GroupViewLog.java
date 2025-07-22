@@ -23,4 +23,19 @@ public class GroupViewLog extends BaseEntity {
 	@ManyToOne(fetch = FetchType.LAZY)
 	private Group group;
 
+	@Column(nullable = false)
+	private Long viewCount = 0L;
+
+	public static GroupViewLog create(User user, Group group) {
+		GroupViewLog groupViewLog = new GroupViewLog();
+		groupViewLog.user = user;
+		groupViewLog.group = group;
+		groupViewLog.viewCount = 1L;
+		return groupViewLog;
+	}
+
+	public void markViewed() {
+		this.viewCount += 1;
+	}
+
 }
