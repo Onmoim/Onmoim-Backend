@@ -54,7 +54,7 @@ public class Group extends BaseEntity {
 	@Column(columnDefinition = "TEXT")
 	private String description;
 
-	@Comment("모임 최대 정원")
+	@Comment("모임 정원")
 	private int capacity;
 
 	@Comment("모임 대표 사진")
