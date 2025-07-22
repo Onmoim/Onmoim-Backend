@@ -1,14 +1,15 @@
 package com.onmoim.server.group.repository;
 
 import com.onmoim.server.common.response.CommonCursorPageResponseDto;
-import com.onmoim.server.group.dto.response.JoinedGroupResponseDto;
+import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
+import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.QGroupUser;
 import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.meeting.entity.QMeeting;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
-import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class GroupUserRepositoryCustomImpl implements GroupUserRepositoryCustom 
 
 	private final JPAQueryFactory queryFactory;
 
-	public CommonCursorPageResponseDto<JoinedGroupResponseDto> findJoinedGroupListByUserId(Long userId, Long cursorId, int size) {
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> findJoinedGroupListByUserId(Long userId, Long cursorId, int size) {
 
 		QGroupUser groupUserSub = new QGroupUser("groupUserSub");
 		QMeeting meetingSub = new QMeeting("meetingSub");
@@ -55,15 +56,17 @@ public class GroupUserRepositoryCustomImpl implements GroupUserRepositoryCustom 
 				meetingSub.startAt.gt(LocalDateTime.now())
 			);
 
-		List<JoinedGroupResponseDto> result = queryFactory
+		List<GroupSummaryResponseDto> result = queryFactory
 			.select(Projections.constructor(
-				JoinedGroupResponseDto.class,
+				GroupSummaryResponseDto.class,
 				group.id,
 				group.name,
 				group.imgUrl,
 				category.name,
 				groupUser.status,
-				groupLike.status,
+				new CaseBuilder()
+					.when(groupLike.status.eq(GroupLikeStatus.LIKE)).then("LIKE")
+					.otherwise("NONE"),
 				location.dong,
 				memberCountExpression,
 				upcomingMeetingCountExpression
@@ -86,7 +89,7 @@ public class GroupUserRepositoryCustomImpl implements GroupUserRepositoryCustom 
 		}
 
 		boolean hasNext = result.size() > size;
-		List<JoinedGroupResponseDto> content = hasNext ? result.subList(0, size) : result;
+		List<GroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
 		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
 
 		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);

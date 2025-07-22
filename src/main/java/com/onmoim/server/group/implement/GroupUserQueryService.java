@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.response.CommonCursorPageResponseDto;
-import com.onmoim.server.group.dto.response.JoinedGroupResponseDto;
+import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
 import com.onmoim.server.security.CustomUserDetails;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -200,7 +200,7 @@ public class GroupUserQueryService {
 	/**
 	 * 가입한 모임 조회
 	 */
-	public CommonCursorPageResponseDto<JoinedGroupResponseDto> getJoinedGroups(Long cursorId, int size) {
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getJoinedGroups(Long cursorId, int size) {
 		Long userId = getCurrentUserId();
 
 		return groupUserRepository.findJoinedGroupListByUserId(userId, cursorId, size);

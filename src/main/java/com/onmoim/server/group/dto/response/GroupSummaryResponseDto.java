@@ -1,6 +1,5 @@
 package com.onmoim.server.group.dto.response;
 
-import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.Status;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -9,7 +8,7 @@ import lombok.Getter;
 @Getter
 @Builder
 @Schema(description = "가입한 모임 조회 응답")
-public class JoinedGroupResponseDto {
+public class GroupSummaryResponseDto {
 
 	@Schema(description = "모임 ID")
 	private Long groupId;
@@ -26,8 +25,8 @@ public class JoinedGroupResponseDto {
 	@Schema(description = "모임 상태(OWNER: 운영중, MEMBER: 가입중)")
 	private Status status;
 
-	@Schema(description = "좋아요 상태")
-	private GroupLikeStatus groupLikeStatus;
+	@Schema(description = "좋아요 상태", example = "LIKE, NONE")
+	private String groupLikeStatus;
 
 	@Schema(description = "지역")
 	private String location;
@@ -38,8 +37,8 @@ public class JoinedGroupResponseDto {
 	@Schema(description = "다가오는 일정 수")
 	private Long upcomingMeetingCount;
 
-	public JoinedGroupResponseDto(Long groupId, String name, String imgUrl, String category,
-								  Status status, GroupLikeStatus groupLikeStatus, String location, Long memberCount, Long upcomingMeetingCount) {
+	public GroupSummaryResponseDto(Long groupId, String name, String imgUrl, String category,
+								   Status status, String groupLikeStatus, String location, Long memberCount, Long upcomingMeetingCount) {
 		this.groupId = groupId;
 		this.name = name;
 		this.imgUrl = imgUrl;

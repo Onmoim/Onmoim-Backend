@@ -606,13 +606,13 @@ public class GroupController {
 				schema = @Schema(implementation = CommonCursorPageResponseDto.class))),
 		@ApiResponse(responseCode = "401", description = "인증 실패")
 	})
-	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<JoinedGroupResponseDto>>> getJoinedGroups(
+	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<GroupSummaryResponseDto>>> getJoinedGroups(
 		@RequestParam(required = false)
 		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략)") Long cursorId,
 		@RequestParam(defaultValue = "10")
 		@Parameter(description = "페이지 크기") int size
 	) {
-		CommonCursorPageResponseDto<JoinedGroupResponseDto> response = groupUserQueryService.getJoinedGroups(cursorId, size);
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupUserQueryService.getJoinedGroups(cursorId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 }
