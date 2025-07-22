@@ -711,7 +711,7 @@ public class GroupController {
 		),
 		@ApiResponse(
 			responseCode = "404",
-			description = "BAD REQUEST - 존재하지 않는 모임 요청"
+			description = "NOT FOUND - 존재하지 않는 모임"
 		)
 	})
 	public ResponseEntity<ResponseHandler<String>> createGroupViewLog(@PathVariable Long groupId) {
