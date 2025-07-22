@@ -9,6 +9,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.onmoim.server.group.dto.response.*;
+import com.onmoim.server.group.implement.GroupLikeQueryService;
 import com.onmoim.server.group.implement.GroupUserQueryService;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -65,6 +66,7 @@ public class GroupController {
 	private final GroupService groupService;
 	private final MeetingService meetingService;
 	private final GroupUserQueryService groupUserQueryService;
+	private final GroupLikeQueryService groupLikeQueryService;
 
 	@Operation(
 		summary = "모임 생성",
@@ -594,7 +596,7 @@ public class GroupController {
 	/**
 	 * 내 모임 - 가입한 모임 조회
 	 */
-	@GetMapping("/v1/groups/my-groups")
+	@GetMapping("/v1/groups/joined")
 	@Operation(
 		summary = "내 모임 - 가입한 모임 조회",
 		description = "내가 가입한 모임을 조회합니다.")
@@ -613,6 +615,31 @@ public class GroupController {
 		@Parameter(description = "페이지 크기") int size
 	) {
 		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupUserQueryService.getJoinedGroups(cursorId, size);
+		return ResponseEntity.ok(ResponseHandler.response(response));
+	}
+
+	/**
+	 * 홈/프로필 - 찜한 모임 조회
+	 */
+	@GetMapping("/v1/groups/liked")
+	@Operation(
+		summary = "홈/프로필 - 찜한 모임 조회",
+		description = "내가 찜한 모임을 조회합니다.")
+	@ApiResponses({
+		@ApiResponse(
+			responseCode = "200",
+			description = "조회 성공",
+			content = @Content(
+				schema = @Schema(implementation = CommonCursorPageResponseDto.class))),
+		@ApiResponse(responseCode = "401", description = "인증 실패")
+	})
+	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<GroupSummaryResponseDto>>> getLikedGroups(
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략)") Long cursorId,
+		@RequestParam(defaultValue = "10")
+		@Parameter(description = "페이지 크기") int size
+	) {
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupLikeQueryService.getLikedGroups(cursorId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 }
