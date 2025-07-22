@@ -67,7 +67,7 @@ class GroupQueryServiceTest {
 	@BeforeEach
 	void setUp() {
 		location = locationRepository.save(Location.create(null, null, null, "동동동", null));
-		category = categoryRepository.save(Category.builder().name("카테고리").build());
+		category = categoryRepository.save(Category.builder().name("카테고리").iconUrl("http://s3/mock/image/1").build());
 	}
 
 	@Test
@@ -832,6 +832,7 @@ class GroupQueryServiceTest {
 			.category(category)
 			.location(location)
 			.build();
+
 		groupRepository.save(group);
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.MEMBER);
@@ -845,5 +846,9 @@ class GroupQueryServiceTest {
 		assertThat(groupDetail.groupId()).isEqualTo(group.getId());
 		assertThat(groupDetail.status()).isEqualTo(Status.MEMBER);
 		assertThat(groupDetail.likeStatus()).isEqualTo(GroupLikeStatus.LIKE);
+		assertThat(groupDetail.capacity()).isEqualTo(100);
+		assertThat(groupDetail.category()).isEqualTo(category.getName());
+		assertThat(groupDetail.iconUrl()).isEqualTo(category.getIconUrl());
+		assertThat(groupDetail.address()).isEqualTo(location.getDong());
 	}
 }
