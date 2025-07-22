@@ -20,7 +20,7 @@ public class GroupLikeQueryService {
 	private final GroupLikeRepository groupLikeRepository;
 
 	/**
-	 * 가입한 모임 조회
+	 * 찜한 모임 조회
 	 */
 	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getLikedGroups(Long cursorId, int size) {
 		Long userId = getCurrentUserId();

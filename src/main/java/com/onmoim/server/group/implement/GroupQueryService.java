@@ -5,8 +5,14 @@ import static com.onmoim.server.common.exception.ErrorCode.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.onmoim.server.common.exception.ErrorCode;
+import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
+import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
+import com.onmoim.server.security.CustomUserDetails;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -177,5 +183,39 @@ public class GroupQueryService {
 	) {
 		Group group = getById(groupId);
 		group.updateLocation(geoPoint);
+	}
+
+	/**
+	 * 나와 비슷한 관심사 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getRecommendedGroupsByCategory(Long cursorId, int size) {
+		Long userId = getCurrentUserId();
+
+		return groupRepository.findRecommendedGroupListByCategory(userId, cursorId, size);
+	}
+
+	/**
+	 * 나와 가까운 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getRecommendedGroupsByLocation(Long cursorId, int size) {
+		Long userId = getCurrentUserId();
+
+		return groupRepository.findRecommendedGroupListByLocation(userId, cursorId, size);
+	}
+
+	public Long getCurrentUserId() {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+		if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
+			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+		}
+
+		Object principal = auth.getPrincipal();
+
+		if (principal instanceof CustomUserDetails userDetails) {
+			return userDetails.getUserId();
+		} else {
+			throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+		}
 	}
 }

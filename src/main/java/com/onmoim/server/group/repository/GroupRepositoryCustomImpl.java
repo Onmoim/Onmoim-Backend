@@ -8,6 +8,7 @@ import static com.onmoim.server.group.entity.Status.*;
 import static com.onmoim.server.location.entity.QLocation.*;
 import static com.onmoim.server.meeting.entity.QMeeting.*;
 import static com.onmoim.server.user.entity.QUser.*;
+import static com.onmoim.server.user.entity.QUserCategory.userCategory;
 import static com.querydsl.core.types.ExpressionUtils.*;
 
 import java.time.LocalDateTime;
@@ -17,17 +18,25 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.group.dto.ActiveGroup;
 import com.onmoim.server.group.dto.ActiveGroupDetail;
 import com.onmoim.server.group.dto.ActiveGroupRelation;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.PopularGroupRelation;
 import com.onmoim.server.group.dto.PopularGroupSummary;
+import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
+import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.GroupUser;
+import com.onmoim.server.group.entity.QGroupUser;
 import com.onmoim.server.group.entity.Status;
+import com.onmoim.server.meeting.entity.QMeeting;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import jakarta.annotation.Nullable;
@@ -328,5 +337,145 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 		catch (IllegalArgumentException | NullPointerException e) {
 			return new BooleanBuilder();
 		}
+	}
+
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> findRecommendedGroupListByCategory(Long userId, Long cursorId, int size) {
+
+		QGroupUser groupUserSub = new QGroupUser("groupUserSub");
+		QMeeting meetingSub = new QMeeting("meetingSub");
+
+		BooleanBuilder where = new BooleanBuilder();
+		where.and(userCategory.user.id.eq(userId));
+		if (cursorId != null) {
+			where.and(group.id.lt(cursorId)); // 커서 기준
+		}
+
+		Expression<Long> memberCountExpression = JPAExpressions
+			.select(groupUserSub.id.countDistinct())
+			.from(groupUserSub)
+			.where(
+				groupUserSub.group.id.eq(group.id),
+				groupUserSub.status.in(Status.OWNER, Status.MEMBER)
+			);
+
+		Expression<Long> upcomingMeetingCountExpression = JPAExpressions
+			.select(meetingSub.id.countDistinct())
+			.from(meetingSub)
+			.where(
+				meetingSub.group.id.eq(group.id),
+				meetingSub.startAt.gt(LocalDateTime.now())
+			);
+
+		List<GroupSummaryResponseDto> result = queryFactory
+			.select(Projections.constructor(
+				GroupSummaryResponseDto.class,
+				group.id,
+				group.name,
+				group.imgUrl,
+				category.name,
+				groupUser.status,
+				new CaseBuilder()
+					.when(groupLike.status.eq(GroupLikeStatus.LIKE)).then("LIKE")
+					.otherwise("NONE"),
+				location.dong,
+				memberCountExpression,
+				upcomingMeetingCountExpression
+			))
+			.from(group)
+			.leftJoin(groupUser).on(
+				groupUser.group.eq(group),
+				groupUser.user.id.eq(userId)
+			)
+			.leftJoin(group.category, category)
+			.leftJoin(group.location, location)
+			.leftJoin(groupLike).on(
+				groupLike.user.eq(groupUser.user),
+				groupLike.group.eq(groupUser.group)
+			)
+			.leftJoin(userCategory).on(userCategory.category.eq(group.category))
+			.where(where)
+			.orderBy(group.id.desc())
+			.limit(size + 1)
+			.fetch();
+
+		if (result.isEmpty()) {
+			return CommonCursorPageResponseDto.empty();
+		}
+
+		boolean hasNext = result.size() > size;
+		List<GroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
+		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
+
+		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);
+	}
+
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> findRecommendedGroupListByLocation(Long userId, Long cursorId, int size) {
+
+		QGroupUser groupUserSub = new QGroupUser("groupUserSub");
+		QMeeting meetingSub = new QMeeting("meetingSub");
+
+		BooleanBuilder where = new BooleanBuilder();
+		where.and(location.id.eq(user.location.id));
+		if (cursorId != null) {
+			where.and(group.id.lt(cursorId)); // 커서 기준
+		}
+
+		Expression<Long> memberCountExpression = JPAExpressions
+			.select(groupUserSub.id.countDistinct())
+			.from(groupUserSub)
+			.where(
+				groupUserSub.group.id.eq(group.id),
+				groupUserSub.status.in(Status.OWNER, Status.MEMBER)
+			);
+
+		Expression<Long> upcomingMeetingCountExpression = JPAExpressions
+			.select(meetingSub.id.countDistinct())
+			.from(meetingSub)
+			.where(
+				meetingSub.group.id.eq(group.id),
+				meetingSub.startAt.gt(LocalDateTime.now())
+			);
+
+		List<GroupSummaryResponseDto> result = queryFactory
+			.select(Projections.constructor(
+				GroupSummaryResponseDto.class,
+				group.id,
+				group.name,
+				group.imgUrl,
+				category.name,
+				groupUser.status,
+				new CaseBuilder()
+					.when(groupLike.status.eq(GroupLikeStatus.LIKE)).then("LIKE")
+					.otherwise("NONE"),
+				location.dong,
+				memberCountExpression,
+				upcomingMeetingCountExpression
+			))
+			.from(group)
+			.leftJoin(groupUser).on(
+				groupUser.group.eq(group),
+				groupUser.user.id.eq(userId)
+			)
+			.leftJoin(groupUser.user, user)
+			.leftJoin(group.category, category)
+			.leftJoin(group.location, location)
+			.leftJoin(groupLike).on(
+				groupLike.user.eq(groupUser.user),
+				groupLike.group.eq(groupUser.group)
+			)
+			.where(where)
+			.orderBy(group.id.desc())
+			.limit(size + 1)
+			.fetch();
+
+		if (result.isEmpty()) {
+			return CommonCursorPageResponseDto.empty();
+		}
+
+		boolean hasNext = result.size() > size;
+		List<GroupSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
+		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
+
+		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);
 	}
 }
