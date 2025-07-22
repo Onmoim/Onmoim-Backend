@@ -48,7 +48,7 @@ public record GroupDetailResponseDto(
 			.groupId(groupDetail.groupId())
 			.title(groupDetail.title())
 			.description(groupDetail.description())
-			.category(groupDetail.category())
+			.capacity(groupDetail.capacity())
 			.address(groupDetail.address())
 			.category(groupDetail.category())
 			.categoryIconUrl(groupDetail.iconUrl())
