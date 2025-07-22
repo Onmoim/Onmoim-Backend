@@ -3,7 +3,9 @@ package com.onmoim.server.group.dto.response;
 import com.onmoim.server.meeting.dto.MeetingDetail;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public record MeetingDetailResponseDto(
+public record MeetingDetailResponseDto (
+	@Schema(description = "일정 ID")
+	Long meetingId,
 	@Schema(description = "일정 대표 사진")
 	String imgUrl,
 	@Schema(description = "일정 제목")
@@ -30,6 +32,7 @@ public record MeetingDetailResponseDto(
 {
 	public static MeetingDetailResponseDto of(MeetingDetail meetingDetail) {
 		return new MeetingDetailResponseDto(
+			meetingDetail.meetingId(),
 			meetingDetail.imgUrl(),
 			meetingDetail.title(),
 			meetingDetail.type(),

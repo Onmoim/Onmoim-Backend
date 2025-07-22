@@ -6,6 +6,8 @@ import com.onmoim.server.common.GeoPoint;
 import com.onmoim.server.meeting.entity.Meeting;
 
 public record MeetingDetail(
+	// 일정 ID
+	Long meetingId,
 	// 일정 대표 사진
 	String imgUrl,
 	// 일정 제목
@@ -30,6 +32,7 @@ public record MeetingDetail(
 {
 	public static MeetingDetail of(Meeting meeting, Boolean attendance) {
 		return new MeetingDetail(
+			meeting.getId(),
 			meeting.getImgUrl(),
 			meeting.getTitle(),
 			meeting.getType().getDescription(),
