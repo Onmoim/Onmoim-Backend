@@ -9,6 +9,7 @@ import java.util.Set;
 import com.onmoim.server.common.exception.ErrorCode;
 import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.common.s3.service.FileStorageService;
+import com.onmoim.server.group.dto.response.GroupSummaryByCategoryResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
 import com.onmoim.server.group.dto.response.RecentViewedGroupSummaryResponseDto;
 import com.onmoim.server.group.dto.response.cursor.RecentViewCursorPageResponseDto;
@@ -259,6 +260,37 @@ public class GroupQueryService {
 		Long nextCursorLogId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
 
 		return RecentViewCursorPageResponseDto.of(content, hasNext, nextCursorViewedAt, nextCursorLogId);
+	}
+
+	/**
+	 * 카테고리별 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryByCategoryResponseDto> getGroupsByCategory(Long categoryId, Long cursorId, int size) {
+		Long userId = getCurrentUserId();
+
+		List<GroupSummaryByCategoryResponseDto> result = groupRepository.findGroupListByCategory(categoryId, userId, cursorId, size);
+
+		if (result.isEmpty()) {
+			return CommonCursorPageResponseDto.empty();
+		}
+
+		boolean hasNext = result.size() > size;
+		List<GroupSummaryByCategoryResponseDto> content = hasNext ? result.subList(0, size) : result;
+
+		// 추천 여부 삽입
+		Set<Long> recommendedGroupIds = groupRepository.findRecommendedGroupIds(userId);
+
+		for (GroupSummaryByCategoryResponseDto dto : content) {
+			if (recommendedGroupIds.contains(dto.getGroupId())) {
+				dto.setRecommendStatus("RECOMMEND");
+			} else {
+				dto.setRecommendStatus("NONE");
+			}
+		}
+
+		Long nextCursorId = hasNext ? content.get(content.size() - 1).getGroupId() : null;
+
+		return CommonCursorPageResponseDto.of(content, hasNext, nextCursorId);
 	}
 
 

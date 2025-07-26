@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.onmoim.server.common.response.CommonCursorPageResponseDto;
+import com.onmoim.server.group.dto.response.GroupSummaryByCategoryResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
 import com.onmoim.server.group.dto.response.RecentViewedGroupSummaryResponseDto;
 import com.onmoim.server.group.dto.response.cursor.RecentViewCursorPageResponseDto;
@@ -1058,5 +1059,53 @@ class GroupQueryServiceTest {
 		assertThat(content).hasSize(1);
 		assertThat(content.get(0).getGroupId()).isEqualTo(matchedGroup.getId());
 		assertThat(returnedGroupIds).doesNotContain(unmatchedGroup.getId());
+	}
+
+	@Test
+	@DisplayName("카테고리별 모임 조회")
+	void getGroupsByCategory() {
+		// given
+		// 1. 유저
+		User user = userRepository.save(User.builder()
+				.oauthId("1234567890")
+				.provider("google")
+				.email("test@test.com")
+				.name("홍길동")
+				.gender("F")
+				.birth(LocalDateTime.now())
+				.location(location)
+				.profileImgUrl("https://cdn.example.com/profile/test.jpg")
+				.build()
+		);
+
+		// 인증 정보 설정
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(user.getId());
+		UsernamePasswordAuthenticationToken auth =
+				new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
+
+		userCategoryRepository.save(UserCategory.create(user, category));
+
+		// 2. 모임 생성
+		Group group = groupRepository.save(
+				Group.builder()
+						.name("테스트 모임")
+						.category(category)
+						.location(location)
+						.imgUrl("https://cdn.example.com/group/matchedGroup.jpg")
+						.build()
+		);
+
+		// when
+		CommonCursorPageResponseDto<GroupSummaryByCategoryResponseDto> response =
+				groupQueryService.getGroupsByCategory(category.getId(), null, 10);
+
+		// then
+		List<GroupSummaryByCategoryResponseDto> content = response.getContent();
+
+		assertThat(content).hasSize(1);
+		assertThat(content.get(0).getCategory()).isEqualTo(category.getName());
 	}
 }

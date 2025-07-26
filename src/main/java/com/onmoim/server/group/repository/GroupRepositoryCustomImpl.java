@@ -21,6 +21,7 @@ import com.onmoim.server.group.dto.ActiveGroupRelation;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.PopularGroupRelation;
 import com.onmoim.server.group.dto.PopularGroupSummary;
+import com.onmoim.server.group.dto.response.GroupSummaryByCategoryResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
 import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.GroupUser;
@@ -488,5 +489,74 @@ public class GroupRepositoryCustomImpl implements GroupRepositoryCustom {
 			.fetch();
 
 		return new HashSet<>(result);
+	}
+
+	public List<GroupSummaryByCategoryResponseDto> findGroupListByCategory(Long categoryId, Long userId, Long cursorId, int size) {
+
+		QGroupUser groupUserSub = new QGroupUser("groupUserSub");
+		QMeeting meetingSub = new QMeeting("meetingSub");
+		QGroupUser groupUserSub2 = new QGroupUser("groupUserSub2");
+
+		BooleanBuilder where = new BooleanBuilder();
+		where.and(category.id.eq(categoryId));
+		// 본인이 가입한 그룹은 조회되지 않도록
+		where.and(group.id.notIn(
+			JPAExpressions
+				.select(groupUserSub2.group.id)
+					.from(groupUserSub2)
+					.where(
+						groupUserSub2.user.id.eq(userId),
+						groupUserSub2.status.in(Status.OWNER, Status.MEMBER)
+					))
+		);
+		if (cursorId != null) {
+			where.and(group.id.lt(cursorId)); // 커서 기준
+		}
+
+		Expression<Long> memberCountExpression = JPAExpressions
+			.select(groupUserSub.id.countDistinct())
+			.from(groupUserSub)
+			.where(
+				groupUserSub.group.id.eq(group.id),
+				groupUserSub.status.in(Status.OWNER, Status.MEMBER)
+			);
+
+		Expression<Long> upcomingMeetingCountExpression = JPAExpressions
+			.select(meetingSub.id.countDistinct())
+			.from(meetingSub)
+			.where(
+				meetingSub.group.id.eq(group.id),
+				meetingSub.startAt.gt(LocalDateTime.now())
+			);
+
+		List<GroupSummaryByCategoryResponseDto> result = queryFactory
+			.select(Projections.constructor(
+				GroupSummaryByCategoryResponseDto.class,
+				group.id,
+				group.name,
+				group.imgUrl,
+				category.name,
+				new CaseBuilder()
+					.when(groupLike.status.eq(GroupLikeStatus.LIKE)).then("LIKE")
+					.otherwise("NONE"),
+				Expressions.constant("RECOMMEND"),
+				location.dong,
+				memberCountExpression,
+				upcomingMeetingCountExpression
+			))
+			.from(group)
+			.leftJoin(user).on(user.id.eq(userId))
+			.leftJoin(group.category, category)
+			.leftJoin(group.location, location)
+			.leftJoin(groupLike).on(
+				groupLike.user.id.eq(userId),
+				groupLike.group.eq(group)
+			)
+			.where(where)
+			.orderBy(group.id.desc())
+			.limit(size + 1)
+			.fetch();
+
+		return result;
 	}
 }

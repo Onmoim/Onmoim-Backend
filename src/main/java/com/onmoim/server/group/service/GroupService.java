@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.onmoim.server.common.response.CommonCursorPageResponseDto;
+import com.onmoim.server.group.dto.response.GroupSummaryByCategoryResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
 import com.onmoim.server.group.dto.response.RecentViewedGroupSummaryResponseDto;
 import com.onmoim.server.group.dto.response.cursor.RecentViewCursorPageResponseDto;
@@ -380,6 +381,13 @@ public class GroupService {
 	 */
 	public RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto> getRecentViewedGroups(LocalDateTime cursorViewedAt, Long cursorId, int size) {
 		return groupQueryService.getRecentViewedGroups(cursorViewedAt, cursorId, size);
+	}
+
+	/**
+	 * 카테고리별 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryByCategoryResponseDto> getGroupsByCategory(Long categoryId, Long cursorId, int size) {
+		return groupQueryService.getGroupsByCategory(categoryId, cursorId, size);
 	}
 
 	private Long getCurrentUserId() {

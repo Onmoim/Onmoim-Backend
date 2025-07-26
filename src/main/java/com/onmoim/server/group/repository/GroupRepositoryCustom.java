@@ -12,6 +12,7 @@ import com.onmoim.server.group.dto.ActiveGroupRelation;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.PopularGroupRelation;
 import com.onmoim.server.group.dto.PopularGroupSummary;
+import com.onmoim.server.group.dto.response.GroupSummaryByCategoryResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
 import com.onmoim.server.group.entity.GroupUser;
 
@@ -29,4 +30,5 @@ public interface GroupRepositoryCustom {
 	List<GroupSummaryResponseDto> findRecommendedGroupListByCategory(Long userId, Long cursorId, int size);
 	List<GroupSummaryResponseDto> findRecommendedGroupListByLocation(Long userId, Long cursorId, int size);
 	Set<Long> findRecommendedGroupIds(Long userId);
+	List<GroupSummaryByCategoryResponseDto> findGroupListByCategory(Long categoryId, Long userId, Long cursorId, int size);
 }
