@@ -8,6 +8,10 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.onmoim.server.group.dto.response.*;
+import com.onmoim.server.group.dto.response.cursor.*;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,19 +37,11 @@ import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.dto.request.GroupCreateRequestDto;
 import com.onmoim.server.group.dto.request.GroupUpdateRequestDto;
 import com.onmoim.server.group.dto.request.MemberIdRequestDto;
-import com.onmoim.server.group.dto.response.GroupDetailResponseDto;
-import com.onmoim.server.group.dto.response.GroupInfoResponseDto;
-import com.onmoim.server.group.dto.response.GroupMembersResponseDto;
-import com.onmoim.server.group.dto.response.GroupStatisticsResponseDto;
-import com.onmoim.server.group.dto.response.cursor.ActiveGroupCursor;
-import com.onmoim.server.group.dto.response.cursor.CursorPageResponseDto;
-import com.onmoim.server.group.dto.response.cursor.CursorUtilClass;
-import com.onmoim.server.group.dto.response.cursor.MemberListCursor;
-import com.onmoim.server.group.dto.response.cursor.NearbyPopularGroupCursor;
 import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.service.GroupService;
 import com.onmoim.server.meeting.dto.MeetingDetail;
 import com.onmoim.server.meeting.service.MeetingService;
+import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -587,5 +583,132 @@ public class GroupController {
 				monthlySchedule
 			)
 		));
+	}
+
+	/**
+	 * 내 모임 - 가입한 모임 조회
+	 */
+	@GetMapping("/v1/groups/joined")
+	@Operation(
+		summary = "내 모임 - 가입한 모임 조회",
+		description = "내가 가입한 모임을 조회합니다.")
+	@ApiResponses({
+		@ApiResponse(
+			responseCode = "200",
+			description = "조회 성공",
+			content = @Content(
+				schema = @Schema(implementation = CommonCursorPageResponseDto.class))),
+		@ApiResponse(responseCode = "401", description = "인증 실패")
+	})
+	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<GroupSummaryResponseDto>>> getJoinedGroups(
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략, 이전 페이지의 nextCursorId)") Long cursorId,
+		@RequestParam(defaultValue = "10")
+		@Parameter(description = "페이지 크기") int size
+	) {
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupService.getJoinedGroups(cursorId, size);
+		return ResponseEntity.ok(ResponseHandler.response(response));
+	}
+
+	/**
+	 * 홈/프로필 - 찜한 모임 조회
+	 */
+	@GetMapping("/v1/groups/liked")
+	@Operation(
+		summary = "홈/프로필 - 찜한 모임 조회",
+		description = "내가 찜한 모임을 조회합니다.")
+	@ApiResponses({
+		@ApiResponse(
+			responseCode = "200",
+			description = "조회 성공",
+			content = @Content(
+				schema = @Schema(implementation = CommonCursorPageResponseDto.class))),
+		@ApiResponse(responseCode = "401", description = "인증 실패")
+	})
+	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<GroupSummaryResponseDto>>> getLikedGroups(
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략, 이전 페이지의 nextCursorId)") Long cursorId,
+		@RequestParam(defaultValue = "10")
+		@Parameter(description = "페이지 크기") int size
+	) {
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupService.getLikedGroups(cursorId, size);
+		return ResponseEntity.ok(ResponseHandler.response(response));
+	}
+
+	/**
+	 * 홈 - 나와 비슷한 관심사 모임 조회
+	 */
+	@GetMapping("/v1/groups/recommend/category")
+	@Operation(
+		summary = "홈 - 나와 비슷한 관심사 모임 조회",
+		description = "나와 비슷한 관심사의 모임을 조회합니다.")
+	@ApiResponses({
+		@ApiResponse(
+			responseCode = "200",
+			description = "조회 성공",
+			content = @Content(
+				schema = @Schema(implementation = CommonCursorPageResponseDto.class))),
+		@ApiResponse(responseCode = "401", description = "인증 실패")
+	})
+	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<GroupSummaryResponseDto>>> getRecommendedGroupsByCategory(
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략, 이전 페이지의 nextCursorId)") Long cursorId,
+		@RequestParam(defaultValue = "10")
+		@Parameter(description = "페이지 크기") int size
+	) {
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupService.getRecommendedGroupsByCategory(cursorId, size);
+		return ResponseEntity.ok(ResponseHandler.response(response));
+	}
+
+	/**
+	 * 홈 - 나와 가까운 모임 조회
+	 */
+	@GetMapping("/v1/groups/recommend/location")
+	@Operation(
+		summary = "홈 - 나와 가까운 모임 조회",
+		description = "나와 가까운 모임을 조회합니다.")
+	@ApiResponses({
+		@ApiResponse(
+			responseCode = "200",
+			description = "조회 성공",
+			content = @Content(
+				schema = @Schema(implementation = CommonCursorPageResponseDto.class))),
+		@ApiResponse(responseCode = "401", description = "인증 실패")
+	})
+	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<GroupSummaryResponseDto>>> getRecommendedGroupsByLocation(
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략, 이전 페이지의 nextCursorId)") Long cursorId,
+		@RequestParam(defaultValue = "10")
+		@Parameter(description = "페이지 크기") int size
+	) {
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupService.getRecommendedGroupsByLocation(cursorId, size);
+		return ResponseEntity.ok(ResponseHandler.response(response));
+	}
+
+	/**
+	 * 최근 본 모임 로그 쌓기
+	 */
+	@PostMapping("/v1/groups/{groupId}/view")
+	@Operation(
+		summary = "최근 본 모임 로그 쌓기",
+		description = "모임 조회 로그를 쌓기 위한 api입니다. 모임을 조회할 때마다 호출해주세요."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(
+			responseCode = "200",
+			description = "모임 조회 로그 쌓기 성공",
+			content = @Content(
+				mediaType = "application/json",
+				schema = @Schema(implementation = ResponseHandler.class)
+			)
+		),
+		@ApiResponse(
+			responseCode = "404",
+			description = "NOT FOUND - 존재하지 않는 모임"
+		)
+	})
+	public ResponseEntity<ResponseHandler<String>> createGroupViewLog(@PathVariable Long groupId) {
+		groupService.createGroupViewLog(groupId);
+		return ResponseEntity.ok(ResponseHandler.response("모임 조회 로그 쌓기가 완료되었습니다."));
 	}
 }

@@ -1,16 +1,12 @@
 package com.onmoim.server.user.controller;
 
+import com.onmoim.server.group.dto.response.RecentViewedGroupSummaryResponseDto;
+import com.onmoim.server.group.dto.response.cursor.RecentViewCursorPageResponseDto;
+import com.onmoim.server.group.service.GroupService;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.onmoim.server.common.response.ResponseHandler;
@@ -31,6 +27,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDateTime;
+
 @RestController
 @RequestMapping("/api/v1/user")
 @RequiredArgsConstructor
@@ -39,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserController {
 
 	private final UserService userService;
+	private final GroupService groupService;
 
 	@PostMapping("/signup")
 	@Operation(
@@ -162,6 +161,33 @@ public class UserController {
 	public ResponseEntity<ResponseHandler<String>> leaveUser(@PathVariable Long id) {
 		userService.leaveUser(id);
 		return ResponseEntity.ok(ResponseHandler.response("회원 탈퇴가 완료되었습니다."));
+	}
+
+	/**
+	 * 프로필 - 최근 본 모임 조회
+	 */
+	@GetMapping("/recent/groups")
+	@Operation(
+		summary = "최근 본 모임 조회",
+		description = "최근 본 모임을 조회합니다.")
+	@ApiResponses({
+		@ApiResponse(
+			responseCode = "200",
+			description = "조회 성공",
+			content = @Content(
+				schema = @Schema(implementation = RecentViewCursorPageResponseDto.class))),
+		@ApiResponse(responseCode = "401", description = "인증 실패")
+	})
+	public ResponseEntity<ResponseHandler<RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto>>> getRecentViewedGroups(
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 조회 시각 (첫 페이지는 생략, 이전 페이지의 nextCursorViewedAt)") LocalDateTime cursorViewedAt,
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략, 이전 페이지의 nextCursorId)") Long cursorId,
+		@RequestParam(defaultValue = "10")
+		@Parameter(description = "페이지 크기") int size
+	) {
+		RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto> response = groupService.getRecentViewedGroups(cursorViewedAt, cursorId, size);
+		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
 }

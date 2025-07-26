@@ -4,7 +4,16 @@ import static com.onmoim.server.common.exception.ErrorCode.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
+import com.onmoim.server.common.response.CommonCursorPageResponseDto;
+import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
+import com.onmoim.server.group.dto.response.RecentViewedGroupSummaryResponseDto;
+import com.onmoim.server.group.dto.response.cursor.RecentViewCursorPageResponseDto;
+import com.onmoim.server.group.entity.*;
+import com.onmoim.server.group.implement.GroupLikeQueryService;
+import com.onmoim.server.group.repository.GroupRepository;
+import com.onmoim.server.group.repository.GroupViewLogRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -27,11 +36,6 @@ import com.onmoim.server.group.dto.PopularGroupRelation;
 import com.onmoim.server.group.dto.PopularGroupSummary;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.dto.GroupMember;
-import com.onmoim.server.group.entity.Group;
-import com.onmoim.server.group.entity.GroupLike;
-import com.onmoim.server.group.entity.GroupLikeStatus;
-import com.onmoim.server.group.entity.GroupUser;
-import com.onmoim.server.group.entity.Status;
 import com.onmoim.server.group.implement.GroupQueryService;
 import com.onmoim.server.group.implement.GroupUserQueryService;
 import com.onmoim.server.location.entity.Location;
@@ -53,11 +57,14 @@ public class GroupService {
 	private final UserQueryService userQueryService;
 	private final LocationQueryService locationQueryService;
 	private final CategoryQueryService categoryQueryService;
+	private final GroupRepository groupRepository;
+	private final GroupViewLogRepository groupViewLogRepository;
 
 	private final ApplicationEventPublisher eventPublisher;
 
 	private final ChatRoomService chatRoomService;
 	private final ChatMessageService chatMessageService;
+	private final GroupLikeQueryService groupLikeQueryService;
 
 	// 모임 생성
 	@Transactional
@@ -318,6 +325,61 @@ public class GroupService {
 
 	public Long readMonthlyScheduleCount(Long groupId, LocalDateTime now) {
 		return groupQueryService.readMonthlyScheduleCount(groupId, now);
+	}
+
+	/**
+	 * 가입한 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getJoinedGroups(Long cursorId, int size) {
+		return groupUserQueryService.getJoinedGroups(cursorId, size);
+	}
+
+	/**
+	 * 찜한 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getLikedGroups(Long cursorId, int size) {
+		return groupLikeQueryService.getLikedGroups(cursorId, size);
+	}
+
+	/**
+	 * 나와 비슷한 관심사 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getRecommendedGroupsByCategory(Long cursorId, int size) {
+		return groupQueryService.getRecommendedGroupsByCategory(cursorId, size);
+	}
+
+	/**
+	 * 나와 가까운 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getRecommendedGroupsByLocation(Long cursorId, int size) {
+		return groupQueryService.getRecommendedGroupsByLocation(cursorId, size);
+	}
+
+	/**
+	 * 최근 본 모임 로그 쌓기
+	 */
+	@Transactional
+	public void createGroupViewLog(Long groupId) {
+		Long userId = getCurrentUserId();
+		User user = userQueryService.findById(userId);
+		Group group = groupRepository.findById(groupId)
+			.filter(g -> !g.isDeleted())
+			.orElseThrow(() -> new CustomException(NOT_EXISTS_GROUP));
+
+		Optional<GroupViewLog> existingLog = groupViewLogRepository.findByUserAndGroup(user, group);
+
+		if (existingLog.isPresent()) {
+			existingLog.get().markViewed();
+		} else {
+			groupViewLogRepository.save(GroupViewLog.create(user, group));
+		}
+	}
+
+	/**
+	 * 최근 본 모임 조회
+	 */
+	public RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto> getRecentViewedGroups(LocalDateTime cursorViewedAt, Long cursorId, int size) {
+		return groupQueryService.getRecentViewedGroups(cursorViewedAt, cursorId, size);
 	}
 
 	private Long getCurrentUserId() {

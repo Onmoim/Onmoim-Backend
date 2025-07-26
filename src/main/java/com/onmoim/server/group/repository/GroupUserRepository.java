@@ -14,7 +14,7 @@ import com.onmoim.server.group.entity.Status;
 
 import jakarta.persistence.LockModeType;
 
-public interface GroupUserRepository extends JpaRepository<GroupUser, GroupUserId> {
+public interface GroupUserRepository extends JpaRepository<GroupUser, GroupUserId>, GroupUserRepositoryCustom {
 
 	@Query("select gu from GroupUser gu where gu.id.groupId = :groupId and gu.id.userId = :userId")
 	Optional<GroupUser> findGroupUser(@Param("groupId") Long groupId, @Param("userId") Long userId);
@@ -29,4 +29,5 @@ public interface GroupUserRepository extends JpaRepository<GroupUser, GroupUserI
 	@Lock(value = LockModeType.PESSIMISTIC_WRITE)
 	@Query("select gu from GroupUser gu where gu.id.groupId = :groupId and gu.id.userId = :userId")
 	Optional<GroupUser> findGroupUserForUpdate(@Param("groupId") Long groupId, @Param("userId") Long userId);
+
 }
