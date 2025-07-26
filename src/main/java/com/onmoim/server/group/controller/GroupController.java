@@ -10,10 +10,6 @@ import java.util.stream.Collectors;
 
 import com.onmoim.server.group.dto.response.*;
 import com.onmoim.server.group.dto.response.cursor.*;
-import com.onmoim.server.group.implement.GroupLikeQueryService;
-import com.onmoim.server.group.implement.GroupQueryService;
-import com.onmoim.server.group.implement.GroupUserQueryService;
-import com.onmoim.server.user.dto.request.CreateUserCategoryRequestDto;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.ResponseEntity;
@@ -63,9 +59,6 @@ import lombok.RequiredArgsConstructor;
 public class GroupController {
 	private final GroupService groupService;
 	private final MeetingService meetingService;
-	private final GroupUserQueryService groupUserQueryService;
-	private final GroupLikeQueryService groupLikeQueryService;
-	private final GroupQueryService groupQueryService;
 
 	@Operation(
 		summary = "모임 생성",
@@ -609,11 +602,11 @@ public class GroupController {
 	})
 	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<GroupSummaryResponseDto>>> getJoinedGroups(
 		@RequestParam(required = false)
-		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략)") Long cursorId,
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략, 이전 페이지의 nextCursorId)") Long cursorId,
 		@RequestParam(defaultValue = "10")
 		@Parameter(description = "페이지 크기") int size
 	) {
-		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupUserQueryService.getJoinedGroups(cursorId, size);
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupService.getJoinedGroups(cursorId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
@@ -634,11 +627,11 @@ public class GroupController {
 	})
 	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<GroupSummaryResponseDto>>> getLikedGroups(
 		@RequestParam(required = false)
-		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략)") Long cursorId,
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략, 이전 페이지의 nextCursorId)") Long cursorId,
 		@RequestParam(defaultValue = "10")
 		@Parameter(description = "페이지 크기") int size
 	) {
-		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupLikeQueryService.getLikedGroups(cursorId, size);
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupService.getLikedGroups(cursorId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
@@ -659,11 +652,11 @@ public class GroupController {
 	})
 	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<GroupSummaryResponseDto>>> getRecommendedGroupsByCategory(
 		@RequestParam(required = false)
-		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략)") Long cursorId,
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략, 이전 페이지의 nextCursorId)") Long cursorId,
 		@RequestParam(defaultValue = "10")
 		@Parameter(description = "페이지 크기") int size
 	) {
-		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupQueryService.getRecommendedGroupsByCategory(cursorId, size);
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupService.getRecommendedGroupsByCategory(cursorId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
@@ -684,11 +677,11 @@ public class GroupController {
 	})
 	public ResponseEntity<ResponseHandler<CommonCursorPageResponseDto<GroupSummaryResponseDto>>> getRecommendedGroupsByLocation(
 		@RequestParam(required = false)
-		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략)") Long cursorId,
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략, 이전 페이지의 nextCursorId)") Long cursorId,
 		@RequestParam(defaultValue = "10")
 		@Parameter(description = "페이지 크기") int size
 	) {
-		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupQueryService.getRecommendedGroupsByLocation(cursorId, size);
+		CommonCursorPageResponseDto<GroupSummaryResponseDto> response = groupService.getRecommendedGroupsByLocation(cursorId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 

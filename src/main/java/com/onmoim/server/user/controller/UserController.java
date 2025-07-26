@@ -2,7 +2,7 @@ package com.onmoim.server.user.controller;
 
 import com.onmoim.server.group.dto.response.RecentViewedGroupSummaryResponseDto;
 import com.onmoim.server.group.dto.response.cursor.RecentViewCursorPageResponseDto;
-import com.onmoim.server.group.implement.GroupQueryService;
+import com.onmoim.server.group.service.GroupService;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +37,7 @@ import java.time.LocalDateTime;
 public class UserController {
 
 	private final UserService userService;
-	private final GroupQueryService groupQueryService;
+	private final GroupService groupService;
 
 	@PostMapping("/signup")
 	@Operation(
@@ -180,13 +180,13 @@ public class UserController {
 	})
 	public ResponseEntity<ResponseHandler<RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto>>> getRecentViewedGroups(
 		@RequestParam(required = false)
-		@Parameter(description = "다음 페이지 커서 조회 시각 (첫 페이지는 생략)") LocalDateTime cursorViewedAt,
+		@Parameter(description = "다음 페이지 커서 조회 시각 (첫 페이지는 생략, 이전 페이지의 nextCursorViewedAt)") LocalDateTime cursorViewedAt,
 		@RequestParam(required = false)
-		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략)") Long cursorId,
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략, 이전 페이지의 nextCursorId)") Long cursorId,
 		@RequestParam(defaultValue = "10")
 		@Parameter(description = "페이지 크기") int size
 	) {
-		RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto> response = groupQueryService.getRecentViewedGroups(cursorViewedAt, cursorId, size);
+		RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto> response = groupService.getRecentViewedGroups(cursorViewedAt, cursorId, size);
 		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 

@@ -6,7 +6,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.onmoim.server.common.response.CommonCursorPageResponseDto;
+import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
+import com.onmoim.server.group.dto.response.RecentViewedGroupSummaryResponseDto;
+import com.onmoim.server.group.dto.response.cursor.RecentViewCursorPageResponseDto;
 import com.onmoim.server.group.entity.*;
+import com.onmoim.server.group.implement.GroupLikeQueryService;
 import com.onmoim.server.group.repository.GroupRepository;
 import com.onmoim.server.group.repository.GroupViewLogRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -59,6 +64,7 @@ public class GroupService {
 
 	private final ChatRoomService chatRoomService;
 	private final ChatMessageService chatMessageService;
+	private final GroupLikeQueryService groupLikeQueryService;
 
 	// 모임 생성
 	@Transactional
@@ -322,6 +328,34 @@ public class GroupService {
 	}
 
 	/**
+	 * 가입한 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getJoinedGroups(Long cursorId, int size) {
+		return groupUserQueryService.getJoinedGroups(cursorId, size);
+	}
+
+	/**
+	 * 찜한 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getLikedGroups(Long cursorId, int size) {
+		return groupLikeQueryService.getLikedGroups(cursorId, size);
+	}
+
+	/**
+	 * 나와 비슷한 관심사 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getRecommendedGroupsByCategory(Long cursorId, int size) {
+		return groupQueryService.getRecommendedGroupsByCategory(cursorId, size);
+	}
+
+	/**
+	 * 나와 가까운 모임 조회
+	 */
+	public CommonCursorPageResponseDto<GroupSummaryResponseDto> getRecommendedGroupsByLocation(Long cursorId, int size) {
+		return groupQueryService.getRecommendedGroupsByLocation(cursorId, size);
+	}
+
+	/**
 	 * 최근 본 모임 로그 쌓기
 	 */
 	@Transactional
@@ -339,6 +373,13 @@ public class GroupService {
 		} else {
 			groupViewLogRepository.save(GroupViewLog.create(user, group));
 		}
+	}
+
+	/**
+	 * 최근 본 모임 조회
+	 */
+	public RecentViewCursorPageResponseDto<RecentViewedGroupSummaryResponseDto> getRecentViewedGroups(LocalDateTime cursorViewedAt, Long cursorId, int size) {
+		return groupQueryService.getRecentViewedGroups(cursorViewedAt, cursorId, size);
 	}
 
 	private Long getCurrentUserId() {
