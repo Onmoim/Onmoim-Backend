@@ -1,32 +1,30 @@
 package com.onmoim.server.chat.service;
 
-import java.time.LocalDateTime;
-
-import org.springframework.context.ApplicationEventPublisher;
+import com.onmoim.server.chat.domain.ChatRoomMessage;
+import com.onmoim.server.chat.domain.ChatRoomMessageId;
+import com.onmoim.server.chat.domain.dto.ChatMessageDto;
+import com.onmoim.server.chat.domain.dto.ChatUserDto;
+import com.onmoim.server.chat.domain.enums.DeliveryStatus;
+import com.onmoim.server.chat.domain.enums.MessageType;
+import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
+import com.onmoim.server.chat.repository.ChatMessageRepository;
+import com.onmoim.server.chat.repository.RoomChatMessageIdGenerator;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.onmoim.server.chat.dto.ChatMessageDto;
-import com.onmoim.server.chat.dto.ChatUserDto;
-import com.onmoim.server.chat.entity.ChatRoomMessage;
-import com.onmoim.server.chat.entity.ChatRoomMessageId;
-import com.onmoim.server.chat.entity.DeliveryStatus;
-import com.onmoim.server.chat.entity.MessageType;
-import com.onmoim.server.chat.entity.SubscribeRegistry;
-import com.onmoim.server.chat.repository.ChatMessageRepository;
-import com.onmoim.server.common.exception.CustomException;
-import com.onmoim.server.common.exception.ErrorCode;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ChatMessageService {
 	private final ChatMessageRepository chatMessageRepository;
-	private final ApplicationEventPublisher eventPublisher;
 	private final RoomChatMessageIdGenerator roomChatMessageIdGenerator;
+	private final ChatMessageSendService chatMessageSendService;
 
 	/**
 	 * 시스템 메시지 전송
@@ -48,11 +46,9 @@ public class ChatMessageService {
 		// 시스템 메시지 브로드캐스트
 		// com.onmoim.server.chat.service.ChatMessageEventHandler 처리
 		String destination = SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
-		eventPublisher.publishEvent(
-			new MessageSendEvent(
+		chatMessageSendService.send(
 				destination,
 				ChatMessageDto.of(systemMessage, ChatUserDto.createSystem())
-			)
 		);
 
 		log.debug("시스템 메시지 전송 완료: 방ID: {}, 내용: {}", roomId, content);
@@ -60,7 +56,7 @@ public class ChatMessageService {
 	}
 
 	@Transactional
-	public void sendMessage(ChatMessageDto message) {
+	public void sendUserMessage(ChatMessageDto message) {
 		Long roomId = message.getRoomId();
 
 		ChatRoomMessage chatRoomMessage = ChatRoomMessage.create(
@@ -75,20 +71,18 @@ public class ChatMessageService {
 		chatMessageRepository.save(chatRoomMessage);
 
 		String destination = SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + roomId;
-		eventPublisher.publishEvent(new MessageSendEvent(destination, ChatMessageDto.of(chatRoomMessage, message.getChatUserDto())));
-
+		chatMessageSendService.send(
+			destination, ChatMessageDto.of(chatRoomMessage, message.getChatUserDto())
+		);
 	}
 
-	/**
-	 * 메시지 전송 상태 업데이트
-	 */
-	@Transactional
-	public void updateMessageDeliveryStatus(ChatRoomMessageId messageId, DeliveryStatus status) {
-		ChatRoomMessage message = chatMessageRepository.findById(messageId)
-			.orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_MESSAGE));
-
-		message.setDeliveryStatus(status);
-		chatMessageRepository.save(message);
-		log.debug("메시지 상태 업데이트: ID: {}, 상태: {}", messageId, status);
+	public List<ChatRoomMessage> getMessages(Long roomId, Long cursor) {
+		if (cursor == null) {
+			// 첫 조회: 최신 100개
+			return chatMessageRepository.findTop100ByIdRoomIdOrderByIdMessageSequenceDesc(roomId);
+		} else {
+			// 커서가 있으면 이전 메시지 100개 조회
+			return chatMessageRepository.findTop100ByIdRoomIdAndIdMessageSequenceLessThanOrderByIdMessageSequenceDesc(roomId, cursor);
+		}
 	}
 }

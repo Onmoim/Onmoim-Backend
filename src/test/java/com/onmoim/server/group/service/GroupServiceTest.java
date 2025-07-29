@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.repository.CategoryRepository;
-import com.onmoim.server.chat.dto.ChatRoomResponse;
+import com.onmoim.server.chat.domain.dto.ChatRoomResponse;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.group.dto.GroupMember;
 import com.onmoim.server.group.implement.GroupQueryService;

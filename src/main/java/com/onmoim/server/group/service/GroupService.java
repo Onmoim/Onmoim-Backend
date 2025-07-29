@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.onmoim.server.chat.domain.enums.ChatSystemMessageTemplate;
+import com.onmoim.server.chat.messaging.ChatSystemMessageEvent;
 import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryByCategoryResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryResponseDto;
@@ -26,7 +28,7 @@ import com.onmoim.server.category.entity.Category;
 import com.onmoim.server.category.service.CategoryQueryService;
 import com.onmoim.server.common.exception.CustomException;
 import com.onmoim.server.common.kakaomap.GeoPointUpdateEvent;
-import com.onmoim.server.chat.dto.ChatRoomResponse;
+import com.onmoim.server.chat.domain.dto.ChatRoomResponse;
 import com.onmoim.server.chat.service.ChatMessageService;
 import com.onmoim.server.chat.service.ChatRoomService;
 import com.onmoim.server.group.aop.NamedLock;
@@ -83,7 +85,7 @@ public class GroupService {
 		Group group = groupQueryService.saveGroup(category, location, name, description, capacity);
 
 		ChatRoomResponse room = chatRoomService.createRoom(group.getId(), name, description, user.getId());
-		chatMessageService.sendSystemMessage(room.getGroupId(), "채팅방이 생성되었습니다.");
+		eventPublisher.publishEvent(new ChatSystemMessageEvent(group.getId(), ChatSystemMessageTemplate.CREATE_CHAT_ROOM.getContent()));
 
 		GroupUser groupUser = GroupUser.create(group, user, Status.OWNER);
 		groupUserQueryService.groupUserSave(groupUser);
@@ -112,6 +114,15 @@ public class GroupService {
 		group.join(current);
 		// 모임 검사
 		groupUserQueryService.joinGroup(groupUser);
+
+		eventPublisher.publishEvent(
+			new ChatSystemMessageEvent(
+				group.getId(),
+				ChatSystemMessageTemplate
+					.JOIN_CHAT_ROOM
+					.getContentWithBind(user.getName())
+			)
+		);
 	}
 
 	// 모임 좋아요 또는 좋아요 취소
@@ -182,6 +193,15 @@ public class GroupService {
 		groupUserQueryService.checkCanLeave(groupUser);
 		// 모임 탈퇴
 		groupUserQueryService.leave(groupUser);
+
+		eventPublisher.publishEvent(
+			new ChatSystemMessageEvent(
+				group.getId(),
+				ChatSystemMessageTemplate
+					.LEAVE_CHAT_ROOM
+					.getContentWithBind(user.getName())
+			)
+		);
 	}
 
 	// 모임장 위임
