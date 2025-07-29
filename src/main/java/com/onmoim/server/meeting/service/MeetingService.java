@@ -4,12 +4,17 @@ import static java.lang.Boolean.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
+
+import com.onmoim.server.meeting.dto.request.UpcomingMeetingsRequestDto;
+import com.onmoim.server.meeting.dto.response.MeetingSummaryResponseDto;
+import com.onmoim.server.meeting.dto.response.UpcomingMeetingCursorPageResponseDto;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -372,6 +377,13 @@ public class MeetingService {
 				meetingMap.get(id),
 				userMeetingMap.getOrDefault(id, FALSE))
 			).toList();
+	}
+
+	/**
+	 * 다가오는 일정 조회
+	 */
+	public UpcomingMeetingCursorPageResponseDto<MeetingSummaryResponseDto> getUpcomingMeetingList(LocalDateTime cursorStartAt, Long cursorId, int size, UpcomingMeetingsRequestDto request) {
+		return meetingQueryService.getUpcomingMeetingList(cursorStartAt, cursorId, size, request);
 	}
 
 	private void tryDeleteFileFromS3(String fileUrl) {

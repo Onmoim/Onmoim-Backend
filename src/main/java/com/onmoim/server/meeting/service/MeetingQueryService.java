@@ -1,8 +1,15 @@
 package com.onmoim.server.meeting.service;
 
+import com.onmoim.server.meeting.dto.request.UpcomingMeetingsRequestDto;
 import com.onmoim.server.meeting.dto.response.CursorPageResponseDto;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
+import com.onmoim.server.meeting.dto.response.MeetingSummaryResponseDto;
+import com.onmoim.server.meeting.dto.response.UpcomingMeetingCursorPageResponseDto;
+import com.onmoim.server.security.CustomUserDetails;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,5 +92,36 @@ public class MeetingQueryService {
 
 	public List<UserMeeting> getUserMeetings(Long userId, List<Long> meetingIds) {
 		return userMeetingRepository.findByUserAndMeetings(userId, meetingIds);
+	}
+
+	/**
+	 * 다가오는 일정 조회
+	 */
+	public UpcomingMeetingCursorPageResponseDto<MeetingSummaryResponseDto> getUpcomingMeetingList(LocalDateTime startAt, Long cursorId, int size, UpcomingMeetingsRequestDto request) {
+		Long userId = getCurrentUserId();
+
+		List<MeetingSummaryResponseDto> result = meetingRepository.findUpcomingMeetingList(userId, startAt, cursorId, size + 1, request);
+
+		if (result.isEmpty()) {
+			return UpcomingMeetingCursorPageResponseDto.empty();
+		}
+
+		boolean hasNext = result.size() > size;
+		List<MeetingSummaryResponseDto> content = hasNext ? result.subList(0, size) : result;
+
+		// 커서 추출
+		LocalDateTime nextCursorStartAt = hasNext ? content.get(content.size() - 1).getStartAt() : null;
+		Long nextCursorId = hasNext ? content.get(content.size() - 1).getId() : null;
+
+		return UpcomingMeetingCursorPageResponseDto.of(content, hasNext, nextCursorStartAt, nextCursorId);
+	}
+
+	private Long getCurrentUserId() {
+		CustomUserDetails principal =
+			(CustomUserDetails) SecurityContextHolder.getContextHolderStrategy()
+				.getContext()
+				.getAuthentication()
+				.getPrincipal();
+		return principal.getUserId();
 	}
 }

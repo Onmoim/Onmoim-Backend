@@ -1,6 +1,9 @@
 package com.onmoim.server.meeting.controller;
 
+import com.onmoim.server.meeting.dto.request.UpcomingMeetingsRequestDto;
 import com.onmoim.server.meeting.dto.response.CursorPageResponseDto;
+import com.onmoim.server.meeting.dto.response.MeetingSummaryResponseDto;
+import com.onmoim.server.meeting.dto.response.UpcomingMeetingCursorPageResponseDto;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,6 +31,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.time.LocalDateTime;
 
 @Slf4j
 @RestController
@@ -230,6 +235,34 @@ public class MeetingController {
 	) {
 		meetingService.deleteMeeting(meetingId);
 		return ResponseEntity.ok(ResponseHandler.response(null));
+	}
+
+	/**
+	 * 다가오는 일정 조회
+	 */
+	@GetMapping("/meetings/upcoming")
+	@Operation(
+		summary = "다가오는 일정 조회",
+		description = "다가오는 일정을 조회합니다.")
+	@ApiResponses({
+		@ApiResponse(
+			responseCode = "200",
+			description = "조회 성공",
+			content = @Content(
+				schema = @Schema(implementation = UpcomingMeetingCursorPageResponseDto.class))),
+		@ApiResponse(responseCode = "401", description = "인증 실패")
+	})
+	public ResponseEntity<ResponseHandler<UpcomingMeetingCursorPageResponseDto<MeetingSummaryResponseDto>>> getUpcomingMeetingList(
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 시작일시 (첫 페이지는 생략, 이전 페이지의 nextCursorStartAt)") LocalDateTime cursorStartAt,
+		@RequestParam(required = false)
+		@Parameter(description = "다음 페이지 커서 ID (첫 페이지는 생략, 이전 페이지의 nextCursorId)") Long cursorId,
+		@RequestParam(defaultValue = "10")
+		@Parameter(description = "페이지 크기") int size,
+		@ModelAttribute UpcomingMeetingsRequestDto request
+		) {
+		UpcomingMeetingCursorPageResponseDto<MeetingSummaryResponseDto> response = meetingService.getUpcomingMeetingList(cursorStartAt, cursorId, size, request);
+		return ResponseEntity.ok(ResponseHandler.response(response));
 	}
 
 	/**
