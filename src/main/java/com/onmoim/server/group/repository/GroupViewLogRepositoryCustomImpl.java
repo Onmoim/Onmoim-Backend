@@ -98,4 +98,28 @@ public class GroupViewLogRepositoryCustomImpl implements GroupViewLogRepositoryC
 
 		return result;
 	}
+
+	public Long countRecentViewedGroups(Long userId) {
+
+		return queryFactory
+			.select(groupViewLog.count())
+			.from(groupViewLog)
+			.join(groupViewLog.group, group)
+			.leftJoin(groupUser).on(
+				groupUser.group.eq(group),
+				groupUser.user.id.eq(userId)
+			)
+			.leftJoin(group.category, category)
+			.leftJoin(group.location, location)
+			.leftJoin(groupLike).on(
+				groupLike.user.eq(groupUser.user),
+				groupLike.group.eq(groupUser.group)
+			)
+			.where(
+				groupViewLog.user.id.eq(userId),
+				groupViewLog.modifiedDate.goe(LocalDateTime.now().minusMonths(1)) // 1개월 이내 조회한 모임만
+			)
+			.fetchOne();
+
+	}
 }

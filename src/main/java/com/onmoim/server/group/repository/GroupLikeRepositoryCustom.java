@@ -8,4 +8,6 @@ public interface GroupLikeRepositoryCustom {
 
 	List<GroupSummaryResponseDto> findLikedGroupList(Long userId, Long cursorId, int size);
 
+	Long countLikedGroups(Long userId);
+
 }

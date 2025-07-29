@@ -8,4 +8,6 @@ public interface GroupUserRepositoryCustom {
 
 	List<GroupSummaryResponseDto> findJoinedGroupList(Long userId, Long cursorId, int size);
 
+	Long countJoinedGroups(Long userId);
+
 }
