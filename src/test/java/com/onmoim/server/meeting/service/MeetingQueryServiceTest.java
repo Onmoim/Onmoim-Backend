@@ -55,7 +55,7 @@ class MeetingQueryServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		baseTime = LocalDateTime.now().plusDays(1); // 공통으로 설정
+		baseTime = LocalDateTime.of(2025, 7, 30, 12, 0); // 공통으로 설정
 		leader = userRepository.save(User.builder().name("모임장").build());
 		member = userRepository.save(User.builder().name("멤버").build());
 		group = groupRepository.save(Group.builder().name("테스트 그룹").capacity(100).build());
@@ -272,9 +272,11 @@ class MeetingQueryServiceTest {
 
 		UpcomingMeetingsRequestDto request = UpcomingMeetingsRequestDto
 			.builder()
-			.thisWeekYn(true)
+			.thisWeekYn(null)
+			.thisMonthYn(null)
 			.joinedYn(true)
 			.regularYn(true)
+			.flashYn(null)
 			.build();
 
 		// when
