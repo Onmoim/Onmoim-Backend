@@ -88,4 +88,24 @@ public class GroupUserRepositoryCustomImpl implements GroupUserRepositoryCustom 
 		return result;
 	}
 
+	public Long countJoinedGroups(Long userId) {
+
+		return queryFactory
+			.select(groupUser.count())
+			.from(groupUser)
+			.leftJoin(groupUser.group, group)
+			.leftJoin(group.category, category)
+			.leftJoin(group.location, location)
+			.leftJoin(groupLike).on(
+				groupLike.user.eq(groupUser.user),
+				groupLike.group.eq(groupUser.group)
+			)
+			.where(
+				groupUser.user.id.eq(userId),
+				groupUser.status.in(Status.OWNER, Status.MEMBER)
+			)
+			.fetchOne();
+
+	}
+
 }

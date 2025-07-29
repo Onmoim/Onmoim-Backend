@@ -9,4 +9,6 @@ public interface GroupViewLogRepositoryCustom {
 
 	List<RecentViewedGroupSummaryResponseDto> findRecentViewedGroupList(Long userId, LocalDateTime cursorViewedAt, Long cursorId, int size);
 
+	Long countRecentViewedGroups(Long userId);
+
 }

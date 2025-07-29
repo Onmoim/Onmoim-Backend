@@ -86,4 +86,21 @@ public class GroupLikeRepositoryCustomImpl implements GroupLikeRepositoryCustom 
 
 		return result;
 	}
+
+	public Long countLikedGroups(Long userId) {
+
+		return queryFactory
+			.select(group.count())
+			.from(groupLike)
+			.leftJoin(groupLike.group, group)
+			.leftJoin(groupUser).on(
+				groupUser.user.eq(groupLike.user),
+				groupUser.group.eq(groupLike.group)
+			)
+			.leftJoin(group.category, category)
+			.leftJoin(group.location, location)
+			.where(groupLike.user.id.eq(userId))
+			.fetchOne();
+
+	}
 }
