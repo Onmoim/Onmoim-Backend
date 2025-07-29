@@ -163,6 +163,7 @@ public class MeetingRepositoryCustomImpl implements MeetingRepositoryCustom {
 	public List<MeetingSummaryResponseDto> findUpcomingMeetingList(Long userId, LocalDateTime cursorStartAt, Long cursorId, int size, UpcomingMeetingsRequestDto request) {
 
 		BooleanBuilder where = buildUpcomingMeetingPredicate(userId, request);
+		where.and(meeting.startAt.gt(LocalDateTime.now()));
 		// 커서 조건: startAt > cursorStartAt or (startAt = cursorStartAt and meeting.id < cursorId)
 		if (cursorStartAt != null && cursorId != null) {
 			where.and(
@@ -230,14 +231,13 @@ public class MeetingRepositoryCustomImpl implements MeetingRepositoryCustom {
 		if (request.getDate() != null) {
 			LocalDateTime start = request.getDate().atStartOfDay();
 			LocalDateTime end = start.plusDays(1);
-			System.out.println("start = " + start);
-			System.out.println("end = " + start);
 			where.and(meeting.startAt.between(start, end));
 		}
 
 		// 다가오는 일정 페이지
 		// 이번주
-		if (Boolean.TRUE.equals(request.getThisWeekYn()) && Boolean.FALSE.equals(request.getThisMonthYn())) {
+		if (Boolean.TRUE.equals(request.getThisWeekYn()) &&
+			(request.getThisMonthYn() == null || Boolean.FALSE.equals(request.getThisMonthYn()))) {
 			LocalDate now = LocalDate.now();
 			LocalDate monday = now.with(DayOfWeek.MONDAY);
 			LocalDate sunday = now.with(DayOfWeek.SUNDAY);
