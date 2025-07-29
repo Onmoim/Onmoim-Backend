@@ -2,16 +2,25 @@ package com.onmoim.server.meeting.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.onmoim.server.meeting.dto.request.UpcomingMeetingsRequestDto;
 import com.onmoim.server.meeting.dto.response.CursorPageResponseDto;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
+import com.onmoim.server.meeting.dto.response.MeetingSummaryResponseDto;
+import com.onmoim.server.meeting.dto.response.UpcomingMeetingCursorPageResponseDto;
+import com.onmoim.server.security.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.onmoim.server.group.entity.Group;
@@ -42,9 +51,11 @@ class MeetingQueryServiceTest {
 	private User leader;
 	private User member;
 	private Group group;
+	private LocalDateTime baseTime;
 
 	@BeforeEach
 	void setUp() {
+		baseTime = LocalDateTime.now().plusDays(1); // 공통으로 설정
 		leader = userRepository.save(User.builder().name("모임장").build());
 		member = userRepository.save(User.builder().name("멤버").build());
 		group = groupRepository.save(Group.builder().name("테스트 그룹").capacity(100).build());
@@ -192,6 +203,96 @@ class MeetingQueryServiceTest {
 		assertThat(result.get(1).getStartAt()).isEqualTo(now.plusDays(2));
 	}
 
+	@Test
+	@DisplayName("다가오는 일정 조회 - 날짜로 조회")
+	void getUpcomingMeetingListByDate() {
+		// given
+		// 인증 정보 설정
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(member.getId());
+		UsernamePasswordAuthenticationToken auth =
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
+
+		// 일정 생성
+		List<Meeting> regularMeetings = createTestMeetingsByType(MeetingType.REGULAR, 10);
+		List<Meeting> flashMeetings = createTestMeetingsByType(MeetingType.FLASH, 10);
+
+		// 정기 모임 5개만 참여
+		for (int i = 0; i < 5; i++) {
+			userMeetingRepository.save(UserMeeting.create(regularMeetings.get(i), member));
+		}
+
+		UpcomingMeetingsRequestDto request = UpcomingMeetingsRequestDto
+			.builder()
+			.date(baseTime.toLocalDate())
+			.build();
+
+		// when
+		UpcomingMeetingCursorPageResponseDto<MeetingSummaryResponseDto> response =
+			meetingQueryService.getUpcomingMeetingList(null, null, 20, request);
+
+		// then
+		List<MeetingSummaryResponseDto> content = response.getContent();
+
+		List<Long> returnedMeetingIds = response.getContent()
+			.stream()
+			.map(MeetingSummaryResponseDto::getId)
+			.toList();
+
+		List<Long> expectedMeetingIds = Stream.concat(regularMeetings.stream(), flashMeetings.stream())
+			.map(Meeting::getId)
+			.toList();
+
+		assertThat(content).hasSize(20);
+		assertThat(returnedMeetingIds).containsExactlyInAnyOrderElementsOf(expectedMeetingIds);
+	}
+
+	@Test
+	@DisplayName("다가오는 일정 조회 - request로 조회")
+	void getUpcomingMeetingListByRequest() {
+		// given
+		// 인증 정보 설정
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(member.getId());
+		UsernamePasswordAuthenticationToken auth =
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
+
+		// 일정 생성
+		List<Meeting> regularMeetings = createTestMeetingsByType(MeetingType.REGULAR, 10);
+		List<Meeting> flashMeetings = createTestMeetingsByType(MeetingType.FLASH, 10);
+
+		// 정기 모임 5개만 참여
+		for (int i = 0; i < 5; i++) {
+			userMeetingRepository.save(UserMeeting.create(regularMeetings.get(i), member));
+		}
+
+		UpcomingMeetingsRequestDto request = UpcomingMeetingsRequestDto
+			.builder()
+			.thisWeekYn(true)
+			.joinedYn(true)
+			.regularYn(true)
+			.build();
+
+		// when
+		UpcomingMeetingCursorPageResponseDto<MeetingSummaryResponseDto> response =
+			meetingQueryService.getUpcomingMeetingList(null, null, 20, request);
+
+		// then
+		List<MeetingSummaryResponseDto> content = response.getContent();
+
+		assertThat(content).hasSize(5);
+		assertThat(content).allSatisfy(dto ->
+			assertThat(dto.getType()).isEqualTo(MeetingType.REGULAR)
+		);
+		assertThat(content).allSatisfy(dto ->
+			assertThat(dto.getAttendance()).isTrue()
+		);
+	}
+
 	//테스트 헬퍼 메서드
 
 	private List<Meeting> createTestMeetings(int count) {
@@ -200,7 +301,6 @@ class MeetingQueryServiceTest {
 
 	private List<Meeting> createTestMeetingsByType(MeetingType type, int count) {
 		List<Meeting> meetings = new ArrayList<>();
-		LocalDateTime baseTime = LocalDateTime.now().plusDays(1);
 
 		for (int i = 0; i < count; i++) {
 			MeetingType currentType = (type == null) ? (i % 2 == 0 ? MeetingType.REGULAR : MeetingType.FLASH) : type;
@@ -208,7 +308,7 @@ class MeetingQueryServiceTest {
 				.title("테스트 모임 " + (i + 1))
 				.group(group)
 				.creator(leader)
-				.startAt(baseTime.plusHours(i))
+				.startAt(baseTime.plusHours(i)) // setUp에 baseTime 공통으로 설정
 				.placeName("테스트 장소")
 				.capacity(10)
 				.type(currentType)
