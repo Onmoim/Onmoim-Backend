@@ -1,10 +1,13 @@
 package com.onmoim.server.meeting.repository;
 
+import com.onmoim.server.meeting.dto.request.UpcomingMeetingsRequestDto;
 import com.onmoim.server.meeting.dto.response.CursorPageResponseDto;
 import com.onmoim.server.meeting.dto.response.MeetingResponseDto;
+import com.onmoim.server.meeting.dto.response.MeetingSummaryResponseDto;
 import com.onmoim.server.meeting.entity.Meeting;
 import com.onmoim.server.meeting.entity.MeetingType;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface MeetingRepositoryCustom {
@@ -37,5 +40,10 @@ public interface MeetingRepositoryCustom {
 	 * 참석자가 일정 생성자 본인 1명인 일정 조회
 	 */
 	List<Meeting> findEmptyMeetingsByCreator(Long userId);
+
+	/**
+	 * 다가오는 일정 조회
+	 */
+	List<MeetingSummaryResponseDto> findUpcomingMeetingList(Long userId, LocalDateTime cursorStartAt, Long cursorId, int size, UpcomingMeetingsRequestDto request);
 
 }
