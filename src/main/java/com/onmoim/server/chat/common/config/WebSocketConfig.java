@@ -3,6 +3,8 @@ package com.onmoim.server.chat.common.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.onmoim.server.chat.common.exception.StompErrorEvent;
+import com.onmoim.server.security.CustomUserDetails;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +21,8 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -75,7 +79,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
 		// 웹소켓 연결 엔드포인트 등록
 		registry.addEndpoint("/ws-chat")
-			.setHandshakeHandler(handshakeHandler())
 			.setAllowedOriginPatterns(corsPattern); //cors,
 	}
 
@@ -147,33 +150,23 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 	}
 
 	//아하 Principal 관련 Spring Security와 통합 예정입니다.
-	@Bean
-	public DefaultHandshakeHandler handshakeHandler() {
-		return new DefaultHandshakeHandler() {
-			@Override
-			protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler,
-				Map<String, Object> attributes) {
-
-				return new StompPrincipal("1"); // 아래에서 구현
-			}
-		};
-	}
-
-	public static class StompPrincipal implements Principal {
-		private final String name;
-
-		public StompPrincipal(String name) {
-			this.name = name;
-		}
-
-		@Override
-		public String getName() {
-			return name;
-		}
-
-		@Override
-		public String toString() {
-			return "StompPrincipal[name=" + name + "]";
-		}
-	}
+	// @Bean
+	// public DefaultHandshakeHandler handshakeHandler() {
+	// 	return new DefaultHandshakeHandler() {
+	// 		@Override
+	// 		protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler,
+	// 			Map<String, Object> attributes) {
+	// 			Object principal = SecurityContextHolder.getContextHolderStrategy()
+	// 				.getContext()
+	// 				.getAuthentication()
+	// 				.getPrincipal();
+	//
+	// 			if ((principal instanceof CustomUserDetails customUserDetails)) {
+	// 				return (Principal) customUserDetails;
+	// 			}
+	//
+	//
+	// 		}
+	// 	};
+	// }
 }
