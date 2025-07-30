@@ -25,8 +25,8 @@ public class ChatMessageRetryService {
 		backoff = @Backoff(delay = 100, multiplier = 1.5, maxDelay = 1000, random = true)
 	) // 약 100ms -> 150ms -> 225ms
 	public void failedProcess(ChatMessageDto message, String destination) {
-		ChatRoomMessageId messageId = ChatRoomMessageId.create(message.getRoomId(), message.getMessageSequence());
-		log.debug("메시지 재전송 시도: ID: {}, 방ID: {}", messageId, message.getRoomId());
+		ChatRoomMessageId messageId = ChatRoomMessageId.create(message.getGroupId(), message.getMessageSequence());
+		log.debug("메시지 재전송 시도: ID: {}, 방ID: {}", messageId, message.getGroupId());
 
 		// WebSocket을 통해 메시지 재전송
 		messagingTemplate.convertAndSend(destination, message);
@@ -34,15 +34,15 @@ public class ChatMessageRetryService {
 		// 전송 성공 시 상태 업데이트
 		chatStatusService.updateMessageDeliveryStatus(messageId, DeliveryStatus.SENT);
 
-		log.debug("메시지 재전송 성공: ID: {}, 방ID: {}", messageId, message.getRoomId());
+		log.debug("메시지 재전송 성공: ID: {}, 방ID: {}", messageId, message.getGroupId());
 	}
 
 	@Recover
 	public void recoverFailedMessage(Exception e, ChatMessageDto message, String destination) {
-		ChatRoomMessageId messageId = ChatRoomMessageId.create(message.getRoomId(), message.getMessageSequence());
+		ChatRoomMessageId messageId = ChatRoomMessageId.create(message.getGroupId(), message.getMessageSequence());
 
 		log.warn("메시지 재전송 최종 실패: ID: {}, 방ID: {}, 최대 시도 횟수 초과(3회), 오류: {}",
-			messageId, message.getRoomId(), e.getMessage());
+			messageId, message.getGroupId(), e.getMessage());
 
 		chatStatusService.updateMessageDeliveryStatus(messageId, DeliveryStatus.FAILED_PERMANENTLY);
 	}

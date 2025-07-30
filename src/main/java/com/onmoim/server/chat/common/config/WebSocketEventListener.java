@@ -1,12 +1,7 @@
 package com.onmoim.server.chat.common.config;
 
-import com.onmoim.server.chat.common.exception.StompErrorEvent;
-import com.onmoim.server.chat.domain.dto.ChatMessageDto;
-import com.onmoim.server.chat.domain.dto.ChatUserDto;
-import com.onmoim.server.chat.domain.enums.MessageType;
-import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -16,7 +11,13 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
-import java.time.LocalDateTime;
+import com.onmoim.server.chat.common.exception.StompErrorEvent;
+import com.onmoim.server.chat.domain.dto.SystemMessageDto;
+import com.onmoim.server.chat.domain.enums.MessageType;
+import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -64,27 +65,23 @@ public class WebSocketEventListener {
 	@EventListener
 	public void onError(StompErrorEvent event) {
 		log.debug("Websocket StompErrorEvent 수신");
-
-		ChatMessageDto errorMessage = ChatMessageDto.builder()
-			.chatUserDto(ChatUserDto.createSystem())
+		SystemMessageDto errorMessage = SystemMessageDto.builder()
 			.type(MessageType.ERROR)
 			.content(event.getErrorMessage())
 			.timestamp(LocalDateTime.now())
 			.build();
-
-		String destination = SubscribeRegistry.ERROR_SUBSCRIBE_DESTINATION.getDestination();
+		String destination = SubscribeRegistry.SYSTEM_MESSAGE_PREFIX.getDestination();
 		messagingTemplate.convertAndSendToUser(event.getUserIdOrSessionId(), destination, errorMessage);
 	}
 
 	private void send(MessageType messageType, String content, String userId) {
-		ChatMessageDto errorMessage = ChatMessageDto.builder()
-			.chatUserDto(ChatUserDto.createSystem())
+		SystemMessageDto message = SystemMessageDto.builder()
 			.type(messageType)
 			.content(content)
 			.timestamp(LocalDateTime.now())
 			.build();
 
-		String destination = SubscribeRegistry.ERROR_SUBSCRIBE_DESTINATION.getDestination();
-		messagingTemplate.convertAndSendToUser(userId, destination, errorMessage);
+		String destination = SubscribeRegistry.SYSTEM_MESSAGE_PREFIX.getDestination();
+		messagingTemplate.convertAndSendToUser(userId, destination, message);
 	}
 }

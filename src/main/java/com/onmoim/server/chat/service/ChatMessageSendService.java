@@ -21,7 +21,7 @@ public class ChatMessageSendService {
 
 	@Transactional
 	public void send(String destination, ChatMessageDto message) {
-		ChatRoomMessageId messageId = ChatRoomMessageId.create(message.getRoomId(),message.getMessageSequence());
+		ChatRoomMessageId messageId = ChatRoomMessageId.create(message.getGroupId(),message.getMessageSequence());
 
 		try {
 			// WebSocket을 통해 메시지 전송
@@ -29,12 +29,12 @@ public class ChatMessageSendService {
 
 			// 전송 성공 시 SENT 상태 업데이트
 			chatStatusService.updateMessageDeliveryStatus(messageId, DeliveryStatus.SENT);
-			log.debug("메시지 전송 완료: ID: {}, 방ID: {}", messageId, message.getRoomId());
+			log.debug("메시지 전송 완료: ID: {}, 방ID: {}", messageId, message.getGroupId());
 
 		} catch (Exception e) {
 			// 전송 실패 시 FAILED 상태 업데이트
 			chatStatusService.updateMessageDeliveryStatus(messageId, DeliveryStatus.FAILED);
-			log.warn("메시지 전송 실패: ID: {}, 방ID: {}, 오류: {}", messageId, message.getRoomId(), e.getMessage());
+			log.warn("메시지 전송 실패: ID: {}, 방ID: {}, 오류: {}", messageId, message.getGroupId(), e.getMessage());
 
 			// 실패 재시도 처리
 			chatMessageRetryService.failedProcess(message, destination);

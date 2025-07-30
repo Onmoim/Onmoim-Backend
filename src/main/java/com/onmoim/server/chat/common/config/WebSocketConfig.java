@@ -1,9 +1,13 @@
 package com.onmoim.server.chat.common.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.onmoim.server.chat.common.exception.StompErrorEvent;
-import lombok.extern.slf4j.Slf4j;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.checkerframework.checker.units.qual.A;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -16,9 +20,15 @@ import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -26,10 +36,13 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
-import java.security.Principal;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.onmoim.server.chat.common.exception.StompErrorEvent;
+import com.onmoim.server.security.CustomUserDetails;
+import com.onmoim.server.security.JwtProvider;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Spring 애플리케이션에서 WebSocket 메시징과 STOMP 메시지 브로커를 활성화하고
@@ -50,12 +63,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	private final ApplicationEventPublisher eventPublisher;
 	private final ThreadPoolTaskExecutor stompInboundExecutor;
+	private JwtProvider jwtProvider;
 	@Value("${websocket.cors.pattern.string:}")
 	private String corsPattern; //test에서는 cors=*, 프러덕션에서는 ='';
 
-	public WebSocketConfig(ApplicationEventPublisher eventPublisher, @Qualifier("stompInboundExecutor") ThreadPoolTaskExecutor inboundExecutor) {
+	public WebSocketConfig(ApplicationEventPublisher eventPublisher,
+		@Qualifier("stompInboundExecutor") ThreadPoolTaskExecutor inboundExecutor,
+		@Autowired JwtProvider jwtProvider) {
 		this.eventPublisher = eventPublisher;
 		this.stompInboundExecutor = inboundExecutor;
+		this.jwtProvider = jwtProvider;
 	}
 
 	@Override
@@ -81,6 +98,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	@Override
 	public void configureClientInboundChannel(ChannelRegistration registration) { // request Channel
+
 		// 클라이언트로부터 들어오는 메시지 처리에 대한 설정
 		registration.interceptors(new ChannelInterceptor() {
 
@@ -90,7 +108,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 				log.debug(" clientInboundChannel - 수신된 메시지: {}", message);
 				try {
-					// 기존 로직
 					return message;
 				} catch (Exception ex) {
 					// 예외 발생 시 이벤트 발행
@@ -111,7 +128,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 					return message; // 또는 에러 메시지 반환
 				}
 			}
-		}).taskExecutor(stompInboundExecutor);
+		});
 
 	}
 
@@ -146,7 +163,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 		return false; // false는 기본 컨버터도 추가하도록 함
 	}
 
-	//아하 Principal 관련 Spring Security와 통합 예정입니다.
+	// //아하 Principal 관련 Spring Security와 통합 예정입니다.
 	@Bean
 	public DefaultHandshakeHandler handshakeHandler() {
 		return new DefaultHandshakeHandler() {
@@ -154,26 +171,61 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 			protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler,
 				Map<String, Object> attributes) {
 
-				return new StompPrincipal("1"); // 아래에서 구현
+				// return new Authentication() {
+				// 	@Override
+				// 	public Collection<? extends GrantedAuthority> getAuthorities() {
+				// 		return List.of();
+				// 	}
+				//
+				// 	@Override
+				// 	public Object getCredentials() {
+				// 		return null;
+				// 	}
+				//
+				// 	@Override
+				// 	public Object getDetails() {
+				// 		return null;
+				// 	}
+				//
+				// 	@Override
+				// 	public Object getPrincipal() {
+				// 		return new CustomUserDetails(1L);
+				// 	}
+				//
+				// 	@Override
+				// 	public boolean isAuthenticated() {
+				// 		return true;
+				// 	}
+				//
+				// 	@Override
+				// 	public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+				//
+				// 	}
+				//
+				// 	@Override
+				// 	public String getName() {
+				// 		return "101";
+				// 	}
+				// };
+
+				List<String> tokens = request.getHeaders().get("Authorization");
+				if(CollectionUtils.isEmpty(tokens)){
+					throw new RuntimeException("NOT EXIST USER");
+				}
+				String token = tokens.getFirst();
+				if (token != null && token.startsWith("Bearer ")) {
+					token = token.substring(7);
+				Authentication authentication = jwtProvider.getAuthentication(token);
+				return new Principal() {
+					@Override
+					public String getName() {
+						return ((CustomUserDetails)authentication.getPrincipal()).getUserId().toString();
+					}
+				};
+				}else{
+					throw new RuntimeException("NOT Bearer Token");
+				}
 			}
 		};
-	}
-
-	public static class StompPrincipal implements Principal {
-		private final String name;
-
-		public StompPrincipal(String name) {
-			this.name = name;
-		}
-
-		@Override
-		public String getName() {
-			return name;
-		}
-
-		@Override
-		public String toString() {
-			return "StompPrincipal[name=" + name + "]";
-		}
 	}
 }

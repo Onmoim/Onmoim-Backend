@@ -57,7 +57,7 @@ public class ChatMessageService {
 
 	@Transactional
 	public void sendUserMessage(ChatMessageDto message) {
-		Long roomId = message.getRoomId();
+		Long roomId = message.getGroupId();
 
 		ChatRoomMessage chatRoomMessage = ChatRoomMessage.create(
 			ChatRoomMessageId.create(roomId, roomChatMessageIdGenerator.getSequence(roomId)),

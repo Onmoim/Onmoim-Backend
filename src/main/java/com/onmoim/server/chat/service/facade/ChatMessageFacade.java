@@ -34,7 +34,6 @@ public class ChatMessageFacade {
 	 */
 	@Transactional
 	public void sendMessage(ChatMessageDto message, Long userId) {
-		Long roomId = message.getRoomId();
 		log.debug("messageDto : {}, sender : {}", message, userId);
 
 		isExistsOrThrow(message.getGroupId());
