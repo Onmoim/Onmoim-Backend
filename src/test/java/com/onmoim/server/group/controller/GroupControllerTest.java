@@ -254,13 +254,13 @@ class GroupControllerTest {
 	@WithMockUser(roles = "USER")
 	void joinGroupSuccess() throws Exception {
 		// given
-		doNothing().when(groupService).joinGroup(anyLong());
+		given(groupService.joinGroup(anyLong())).willReturn("topic");
 
 		// expected
 		mvc.perform(post("/api/v1/groups/{groupId}/join", 1L))
 			.andExpect(status().is2xxSuccessful())
 			.andExpect(jsonPath("$.message").value(Message.SUCCESS.getDescription()))
-			.andExpect(jsonPath("$.data").value("모임 가입 성공"))
+			.andExpect(jsonPath("$.data.subscribeDestination").value("topic"))
 			.andDo(print());
 	}
 
