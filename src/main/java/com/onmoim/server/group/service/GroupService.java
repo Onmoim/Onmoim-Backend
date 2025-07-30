@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.onmoim.server.chat.domain.enums.ChatSystemMessageTemplate;
+import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
 import com.onmoim.server.chat.messaging.ChatSystemMessageEvent;
 import com.onmoim.server.common.response.CommonCursorPageResponseDto;
 import com.onmoim.server.group.dto.response.GroupSummaryByCategoryResponseDto;
@@ -66,7 +67,6 @@ public class GroupService {
 	private final ApplicationEventPublisher eventPublisher;
 
 	private final ChatRoomService chatRoomService;
-	private final ChatMessageService chatMessageService;
 	private final GroupLikeQueryService groupLikeQueryService;
 
 	// 모임 생성
@@ -99,7 +99,7 @@ public class GroupService {
 	// 모임 가입
 	@NamedLock
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
-	public void joinGroup(Long groupId) {
+	public String joinGroup(Long groupId) {
 		// 유저 조회
 		User user = userQueryService.findById(getCurrentUserId());
 		// 모임 조회
@@ -123,6 +123,8 @@ public class GroupService {
 					.getContentWithBind(user.getName())
 			)
 		);
+
+		return SubscribeRegistry.CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + groupId;
 	}
 
 	// 모임 좋아요 또는 좋아요 취소

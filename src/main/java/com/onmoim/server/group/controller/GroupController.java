@@ -136,12 +136,12 @@ public class GroupController {
 
 	@Operation(
 		summary = "모임 가입",
-		description = "모임을 가입합니다. 모임 가입 성공 시 '모임 가입 성공' 메시지가 반환됩니다."
+		description = "모임을 가입합니다. 모임 가입 성공 시 '채팅방 구독 Destination' 문자열이 반환됩니다."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(
 			responseCode = "201",
-			description = "모임 가입 성공"),
+			description = "/topic/chat.room.1"),
 		@ApiResponse(
 			responseCode = "400",
 			description = "이미 가입된 회원이거나, 벤 처리된 회원"),
@@ -159,15 +159,15 @@ public class GroupController {
 			description = "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.")
 	})
 	@PostMapping("/v1/groups/{groupId}/join")
-	public ResponseEntity<ResponseHandler<String>> joinGroup(
+	public ResponseEntity<ResponseHandler<Map<String,String>>> joinGroup(
 		@Parameter(description = "모임ID", required = true, in = ParameterIn.PATH)
 		@PathVariable Long groupId
 	)
 	{
-		groupService.joinGroup(groupId);
+		String subscribeDestination = groupService.joinGroup(groupId);
 		return ResponseEntity
 			.status(CREATED)
-			.body(ResponseHandler.response("모임 가입 성공"));
+			.body(ResponseHandler.response(Map.of("subscribeDestination", subscribeDestination)));
 	}
 
 	@Operation(

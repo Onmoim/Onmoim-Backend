@@ -19,8 +19,6 @@ public class ChatMessageDto {
     private Long messageSequence;
 
     /** 채팅방 ID */
-    private Long roomId;
-
     private Long groupId;
 
     /** 메시지 타입 */
@@ -42,7 +40,7 @@ public class ChatMessageDto {
     public static ChatMessageDto of(ChatRoomMessage entity, ChatUserDto chatUserDto) {
         return ChatMessageDto.builder()
             .messageSequence(entity.getId().getMessageSequence())
-            .roomId(entity.getId().getRoomId())
+            .groupId(entity.getId().getRoomId())
             .type(entity.getType())
             .content(entity.getContent())
             .senderId(entity.getSenderId())

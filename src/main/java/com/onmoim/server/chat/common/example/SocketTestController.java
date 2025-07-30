@@ -8,7 +8,7 @@ import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
 
-import static com.onmoim.server.chat.domain.enums.SubscribeRegistry.ERROR_SUBSCRIBE_DESTINATION;
+import static com.onmoim.server.chat.domain.enums.SubscribeRegistry.SYSTEM_MESSAGE_PREFIX;
 
 @Controller
 @RequiredArgsConstructor
@@ -49,7 +49,7 @@ public class SocketTestController {
 			throw new RuntimeException("테스트용 에러입니다.");
 		}
 
-		String destination = ERROR_SUBSCRIBE_DESTINATION.getDestination();
+		String destination = SYSTEM_MESSAGE_PREFIX.getDestination();
 		messagingTemplate.convertAndSendToUser(principal.getName(), destination, "정상 처리되었습니다.");
 	}
 
