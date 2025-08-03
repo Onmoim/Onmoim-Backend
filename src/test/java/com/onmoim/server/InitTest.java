@@ -15,6 +15,6 @@ class InitTest {
 	@Test
 	void setGlobalMaxConnections() throws Exception {
 		dataSource.getConnection()
-			.createStatement().execute("SET GLOBAL max_connections = 200");
+			.createStatement().execute("SET GLOBAL max_connections = 250");
 	}
 }

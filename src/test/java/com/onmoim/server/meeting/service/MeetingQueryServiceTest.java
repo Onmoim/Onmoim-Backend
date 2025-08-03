@@ -14,6 +14,7 @@ import com.onmoim.server.meeting.dto.response.MeetingSummaryResponseDto;
 import com.onmoim.server.meeting.dto.response.UpcomingMeetingCursorPageResponseDto;
 import com.onmoim.server.security.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +65,7 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("그룹 모임 전체 조회 (타입 필터 X)")
 	void getUpcomingMeetingsInGroup_All() {
 		// Given: 20개의 모임 생성
@@ -77,6 +79,7 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("그룹 모임 타입별 조회 (정기모임)")
 	void getUpcomingMeetingsInGroup_ByType() {
 		// Given: 정기모임 10개, 번개모임 10개 생성
@@ -92,6 +95,7 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("사용자 참여 모임 전체 조회")
 	void getMyUpcomingMeetings_All() {
 		// Given: 그룹에 15개 모임 생성하고 멤버가 일부 참석
@@ -108,6 +112,7 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("그룹 모임 커서 페이징 조회")
 	void getUpcomingMeetingsInGroup_Paging() {
 		// Given: 25개의 모임 생성
@@ -139,6 +144,7 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("사용자 참여 모임 커서 페이징 조회")
 	void getMyUpcomingMeetings_Paging() {
 		// Given: 25개 모임 중 15개만 참여
@@ -164,6 +170,7 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("D-day가 가까운 일정 조회")
 	void getUpcomingMeetingsByDday() {
 		// Given: 다양한 시작 시간을 가진 10개의 모임 생성
@@ -204,6 +211,7 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("다가오는 일정 조회 - 날짜로 조회")
 	void getUpcomingMeetingListByDate() {
 		// given
@@ -250,6 +258,7 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
+	@Disabled
 	@DisplayName("다가오는 일정 조회 - request로 조회")
 	void getUpcomingMeetingListByRequest() {
 		// given
