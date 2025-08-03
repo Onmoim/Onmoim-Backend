@@ -1,7 +1,10 @@
 package com.onmoim.server.group.dto.response;
 
+import static com.onmoim.server.chat.domain.enums.SubscribeRegistry.*;
+
 import java.util.List;
 
+import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
 import com.onmoim.server.group.dto.GroupDetail;
 import com.onmoim.server.group.entity.GroupLikeStatus;
 import com.onmoim.server.group.entity.Status;
@@ -36,7 +39,9 @@ public record GroupDetailResponseDto(
 	@Schema(description = "모임 이미지 URL")
 	String imageUrl,
 	@Schema(description = "모임 일정")
-	List<MeetingDetailResponseDto> list
+	List<MeetingDetailResponseDto> list,
+	@Schema(description = "채팅방 구독 destination")
+	String subscribeDestination
 )
 {
 	public static GroupDetailResponseDto of(
@@ -57,6 +62,7 @@ public record GroupDetailResponseDto(
 			.likeStatus(convertStatus(groupDetail.likeStatus()))
 			.imageUrl(groupDetail.imgUrl())
 			.list(meetingDetails.stream().map(MeetingDetailResponseDto::of).toList())
+			.subscribeDestination(CHAT_ROOM_SUBSCRIBE_PREFIX.getDestination() + groupDetail.groupId())
 			.build();
 	}
 
