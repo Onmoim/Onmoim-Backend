@@ -45,7 +45,11 @@ public class DefaultFileValidator implements FileValidator {
 		}
 
 		if (!isAllowedFileTypeInternal(file)) {
-			log.warn("잘못된 파일 유형: {}", file.getContentType());
+			log.error("=== 파일 타입 검증 실패 ===");
+			log.error("전송된 Content-Type: '{}'", file.getContentType());
+			log.error("파일명: '{}'", file.getOriginalFilename());
+			log.error("허용된 타입들: {}", allowedFileTypes);
+			log.error("Content-Type이 허용된 타입에 포함되는가: {}", allowedFileTypes.contains(file.getContentType()));
 			throw new CustomException(ErrorCode.INVALID_FILE_TYPE);
 		}
 
@@ -54,7 +58,20 @@ public class DefaultFileValidator implements FileValidator {
 
 	private boolean isAllowedFileTypeInternal(MultipartFile file) {
 		String contentType = file.getContentType();
-		return contentType != null && allowedFileTypes.contains(contentType);
+		String fileName = file.getOriginalFilename();
+		
+		// 기본 Content-Type 체크
+		if (contentType != null && allowedFileTypes.contains(contentType)) {
+			return true;
+		}
+		
+		// PNG 파일의 경우 추가 체크 (일부 클라이언트가 잘못된 Content-Type을 보낼 수 있음)
+		if (fileName != null && fileName.toLowerCase().endsWith(".png")) {
+			log.warn("PNG 파일이지만 Content-Type이 올바르지 않음: '{}', 파일명: '{}'", contentType, fileName);
+			return allowedFileTypes.contains("image/png");
+		}
+		
+		return false;
 	}
 
 	private boolean isFileSizeValidInternal(MultipartFile file) {

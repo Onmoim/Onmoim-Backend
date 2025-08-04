@@ -411,14 +411,10 @@ class GroupPostControllerTest {
 				.willReturn(5L);
 
 		// when & then
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/groups/{groupId}/posts/{postId}/comments", groupId, postId)
-				.file(new MockMultipartFile("request", "", "application/json",
-						objectMapper.writeValueAsString(requestDto).getBytes()))
-				.with(authenticatedUser(1L))
-				.with(request -> {
-					request.setMethod("POST");
-					return request;
-				}))
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/groups/{groupId}/posts/{postId}/comments", groupId, postId)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(requestDto))
+				.with(authenticatedUser(1L)))
 			.andDo(print())
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.data").value(5L));
@@ -451,15 +447,11 @@ class GroupPostControllerTest {
 				.willReturn(6L);
 
 		// when & then
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}/replies",
+		mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}/replies",
 				groupId, postId, commentId)
-				.file(new MockMultipartFile("request", "", "application/json",
-						objectMapper.writeValueAsString(requestDto).getBytes()))
-				.with(authenticatedUser(1L))
-				.with(request -> {
-					request.setMethod("POST");
-					return request;
-				}))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(requestDto))
+				.with(authenticatedUser(1L)))
 			.andDo(print())
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.data").value(6L));
@@ -485,15 +477,11 @@ class GroupPostControllerTest {
 				.willReturn(1L);
 
 		// when & then
-		mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}",
+		mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/groups/{groupId}/posts/{postId}/comments/{commentId}",
 				groupId, postId, commentId)
-				.file(new MockMultipartFile("request", "", "application/json",
-						objectMapper.writeValueAsString(requestDto).getBytes()))
-				.with(authenticatedUser(1L))
-				.with(request -> {
-					request.setMethod("PUT");
-					return request;
-				}))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(requestDto))
+				.with(authenticatedUser(1L)))
 			.andDo(print())
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data").value(1L));
