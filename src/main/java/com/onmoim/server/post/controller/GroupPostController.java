@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -356,7 +357,7 @@ public class GroupPostController {
             @Parameter(description = "게시글 ID")
             @PathVariable Long postId,
             @Parameter(description = "댓글 내용")
-            @Valid @RequestPart CommentRequestDto request
+            @Valid @RequestBody CommentRequestDto request
     ) {
         Long userId = getCurrentUserId();
 
@@ -388,7 +389,7 @@ public class GroupPostController {
             @Parameter(description = "부모 댓글 ID")
             @PathVariable Long commentId,
             @Parameter(description = "답글 내용")
-            @Valid @RequestPart CommentRequestDto request
+            @Valid @RequestBody CommentRequestDto request
     ) {
         Long userId = getCurrentUserId();
 
@@ -421,7 +422,7 @@ public class GroupPostController {
             @Parameter(description = "댓글 ID")
             @PathVariable Long commentId,
             @Parameter(description = "수정할 댓글 내용")
-            @Valid @RequestPart CommentRequestDto request
+            @Valid @RequestBody CommentRequestDto request
     ) {
         Long userId = getCurrentUserId();
         User user = userQueryService.findById(userId);
