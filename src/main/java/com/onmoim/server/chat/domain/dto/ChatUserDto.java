@@ -1,9 +1,12 @@
 package com.onmoim.server.chat.domain.dto;
 
 import com.onmoim.server.user.entity.User;
+
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class ChatUserDto {
 	private Long id;
 	private String username;

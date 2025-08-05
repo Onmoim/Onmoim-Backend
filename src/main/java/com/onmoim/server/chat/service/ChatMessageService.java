@@ -9,8 +9,15 @@ import com.onmoim.server.chat.domain.enums.MessageType;
 import com.onmoim.server.chat.domain.enums.SubscribeRegistry;
 import com.onmoim.server.chat.repository.ChatMessageRepository;
 import com.onmoim.server.chat.repository.RoomChatMessageIdGenerator;
+import com.onmoim.server.user.repository.UserRepository;
+import com.onmoim.server.user.service.UserQueryService;
+import com.onmoim.server.user.service.UserService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +32,7 @@ public class ChatMessageService {
 	private final ChatMessageRepository chatMessageRepository;
 	private final RoomChatMessageIdGenerator roomChatMessageIdGenerator;
 	private final ChatMessageSendService chatMessageSendService;
+	private final UserQueryService userQueryService;
 
 	/**
 	 * 시스템 메시지 전송
@@ -76,13 +84,18 @@ public class ChatMessageService {
 		);
 	}
 
-	public List<ChatRoomMessage> getMessages(Long roomId, Long cursor) {
+	public List<ChatMessageDto> getMessages(Long roomId, Long cursor) {
+		List<ChatMessageDto> messageList = null;
+		Pageable pageable = PageRequest.of(0, 100);
+
 		if (cursor == null) {
 			// 첫 조회: 최신 100개
-			return chatMessageRepository.findTop100ByIdRoomIdOrderByIdMessageSequenceDesc(roomId);
+			messageList = chatMessageRepository.findTop100ByRoomIdWithUser(roomId,pageable);
 		} else {
 			// 커서가 있으면 이전 메시지 100개 조회
-			return chatMessageRepository.findTop100ByIdRoomIdAndIdMessageSequenceLessThanOrderByIdMessageSequenceDesc(roomId, cursor);
+			messageList =  chatMessageRepository.findTop100ByRoomIdWithUserBeforeCursor(roomId, cursor, pageable);
 		}
+
+		return messageList;
 	}
 }
