@@ -48,4 +48,21 @@ public class ChatMessageDto {
             .chatUserDto(chatUserDto)
             .build();
     }
+
+    // 프로젝션용 생성자 추가
+    public ChatMessageDto(Long messageSequence, Long groupId, MessageType type,
+        String content, Long senderId, LocalDateTime timestamp,
+        Long userId, String userName, String profileImgUrl) {
+        this.messageSequence = messageSequence;
+        this.groupId = groupId;
+        this.type = type;
+        this.content = content;
+        this.senderId = senderId;
+        this.timestamp = timestamp;
+        this.chatUserDto = ChatUserDto.builder()
+            .id(userId)
+            .username(userName)
+            .profileImageUrl(profileImgUrl)
+            .build();
+    }
 }

@@ -1,6 +1,7 @@
 package com.onmoim.server.chat.controller.rest;
 
 import com.onmoim.server.chat.domain.ChatRoomMessage;
+import com.onmoim.server.chat.domain.dto.ChatMessageDto;
 import com.onmoim.server.chat.service.ChatMessageService;
 import com.onmoim.server.common.response.ResponseHandler;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,10 +46,10 @@ public class ChatMessageController {
 		}
 	)
 	@GetMapping("/chatrooms/{roomId}/messages")
-	public ResponseEntity<ResponseHandler<List<ChatRoomMessage>>> getMessages(
+	public ResponseEntity<ResponseHandler<List<ChatMessageDto>>> getMessages(
 		@PathVariable Long roomId,
 		@RequestParam(required = false) Long cursor) {
-		List<ChatRoomMessage> messages = chatMessageService.getMessages(roomId, cursor);
+		List<ChatMessageDto> messages = chatMessageService.getMessages(roomId, cursor);
 		return ResponseEntity.ok(ResponseHandler.response(messages));
 	}
 }
