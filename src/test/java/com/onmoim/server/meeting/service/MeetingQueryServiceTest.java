@@ -6,6 +6,7 @@ import com.onmoim.server.meeting.dto.request.UpcomingMeetingsRequestDto;
 import com.onmoim.server.meeting.dto.response.CursorPageResponseDto;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -14,7 +15,6 @@ import com.onmoim.server.meeting.dto.response.MeetingSummaryResponseDto;
 import com.onmoim.server.meeting.dto.response.UpcomingMeetingCursorPageResponseDto;
 import com.onmoim.server.security.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +56,7 @@ class MeetingQueryServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		baseTime = LocalDateTime.of(2025, 7, 30, 12, 0); // 공통으로 설정
+		baseTime = LocalDateTime.now().plusDays(1).with(LocalTime.of(13, 0)); // 공통으로 설정
 		leader = userRepository.save(User.builder().name("모임장").build());
 		member = userRepository.save(User.builder().name("멤버").build());
 		group = groupRepository.save(Group.builder().name("테스트 그룹").capacity(100).build());
@@ -65,7 +65,6 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("그룹 모임 전체 조회 (타입 필터 X)")
 	void getUpcomingMeetingsInGroup_All() {
 		// Given: 20개의 모임 생성
@@ -79,7 +78,6 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("그룹 모임 타입별 조회 (정기모임)")
 	void getUpcomingMeetingsInGroup_ByType() {
 		// Given: 정기모임 10개, 번개모임 10개 생성
@@ -95,7 +93,6 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("사용자 참여 모임 전체 조회")
 	void getMyUpcomingMeetings_All() {
 		// Given: 그룹에 15개 모임 생성하고 멤버가 일부 참석
@@ -112,7 +109,6 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("그룹 모임 커서 페이징 조회")
 	void getUpcomingMeetingsInGroup_Paging() {
 		// Given: 25개의 모임 생성
@@ -144,7 +140,6 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("사용자 참여 모임 커서 페이징 조회")
 	void getMyUpcomingMeetings_Paging() {
 		// Given: 25개 모임 중 15개만 참여
@@ -170,7 +165,6 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("D-day가 가까운 일정 조회")
 	void getUpcomingMeetingsByDday() {
 		// Given: 다양한 시작 시간을 가진 10개의 모임 생성
@@ -211,7 +205,6 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("다가오는 일정 조회 - 날짜로 조회")
 	void getUpcomingMeetingListByDate() {
 		// given
@@ -258,7 +251,6 @@ class MeetingQueryServiceTest {
 	}
 
 	@Test
-	@Disabled
 	@DisplayName("다가오는 일정 조회 - request로 조회")
 	void getUpcomingMeetingListByRequest() {
 		// given
@@ -301,6 +293,39 @@ class MeetingQueryServiceTest {
 		);
 		assertThat(content).allSatisfy(dto ->
 			assertThat(dto.getAttendance()).isTrue()
+		);
+	}
+
+	@Test
+	@DisplayName("다가오는 일정 조회 - 모임 id로 조회")
+	void getUpcomingMeetingListByRequestGroupId() {
+		// given
+		// 인증 정보 설정
+		SecurityContext context = SecurityContextHolder.createEmptyContext();
+		CustomUserDetails userDetails = new CustomUserDetails(member.getId());
+		UsernamePasswordAuthenticationToken auth =
+			new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
+		context.setAuthentication(auth);
+		SecurityContextHolder.setContext(context);
+
+		// 일정 생성
+		List<Meeting> regularMeetings = createTestMeetingsByType(MeetingType.REGULAR, 10);
+
+		UpcomingMeetingsRequestDto request = UpcomingMeetingsRequestDto
+			.builder()
+			.groupId(group.getId())
+			.build();
+
+		// when
+		UpcomingMeetingCursorPageResponseDto<MeetingSummaryResponseDto> response =
+			meetingQueryService.getUpcomingMeetingList(null, null, 20, request);
+
+		// then
+		List<MeetingSummaryResponseDto> content = response.getContent();
+
+		assertThat(content).hasSize(10);
+		assertThat(content).allSatisfy(dto ->
+			assertThat(dto.getType()).isEqualTo(MeetingType.REGULAR)
 		);
 	}
 
