@@ -276,6 +276,11 @@ public class MeetingRepositoryCustomImpl implements MeetingRepositoryCustom {
 			where.and(meeting.type.eq(MeetingType.FLASH));
 		}
 
+		// 모임 id로 필터링 추가
+		if (request.getGroupId() != null) {
+			where.and(meeting.group.id.eq(request.getGroupId()));
+		}
+
 		return where;
 	}
 

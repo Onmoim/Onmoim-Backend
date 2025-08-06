@@ -30,4 +30,7 @@ public class UpcomingMeetingsRequestDto {
 	@Schema(description = "번개모임")
 	private Boolean flashYn;
 
+	@Schema(description = "모임 id")
+	private Long groupId;
+
 }
