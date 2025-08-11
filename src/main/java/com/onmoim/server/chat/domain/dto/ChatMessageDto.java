@@ -2,6 +2,8 @@ package com.onmoim.server.chat.domain.dto;
 
 import com.onmoim.server.chat.domain.ChatRoomMessage;
 import com.onmoim.server.chat.domain.enums.MessageType;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -15,25 +17,25 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ChatMessageDto {
 
-    /** 메시지 고유 ID */
+    @Schema(description = "메시지 고유 ID", example = "9876")
     private Long messageSequence;
 
-    /** 채팅방 ID */
+    @Schema(description = "채팅방 ID", example = "12345")
     private Long groupId;
 
-    /** 메시지 타입 */
+    @Schema(description = "메시지 타입", example = "TEXT")
     private MessageType type;
 
-    /** 메시지 내용 */
+    @Schema(description = "메시지 내용", example = "이번 주 모임은 화요일입니다.")
     private String content;
 
-    /** 발신자 ID (서버에서 Principal 기반으로 설정) */
+    @Schema(description = "발신자 ID (서버에서 Principal 기반으로 설정)", example = "54321")
     private Long senderId;
 
-    /** 발신자 이름 (UI 표시용) */
+    @Schema(description = "발신자 이름 및 정보 (UI 표시용)")
     private ChatUserDto chatUserDto;
 
-    /** 발송 시간 */
+    @Schema(description = "발송 시간", example = "2025-08-11T14:00:00")
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 
