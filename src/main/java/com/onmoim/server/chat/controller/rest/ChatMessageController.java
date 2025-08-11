@@ -58,12 +58,12 @@ public class ChatMessageController {
 		},
 		responses = {
 			@ApiResponse(responseCode = "200", description = "메시지 목록 조회 성공",
-				content = @Content(array = @ArraySchema(schema = @Schema(implementation = ChatRoomMessage.class)))),
+				content = @Content(array = @ArraySchema(schema = @Schema(implementation = ChatMessageDto.class)))),
 			@ApiResponse(responseCode = "400", description = "잘못된 요청"),
 			@ApiResponse(responseCode = "404", description = "채팅방을 찾을 수 없음")
 		}
 	)
-	@GetMapping("/chatrooms/{roomId}/messages")
+	@GetMapping("/chat/rooms/{roomId}/messages")
 	public ResponseEntity<ResponseHandler<List<ChatMessageDto>>> getMessages(
 		@PathVariable Long roomId,
 		@RequestParam(required = false) Long cursor) {
