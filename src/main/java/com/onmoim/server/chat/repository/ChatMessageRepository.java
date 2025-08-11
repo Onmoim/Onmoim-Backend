@@ -1,15 +1,14 @@
 package com.onmoim.server.chat.repository;
 
-import com.onmoim.server.chat.domain.ChatRoomMessage;
-import com.onmoim.server.chat.domain.ChatRoomMessageId;
-import com.onmoim.server.chat.domain.dto.ChatMessageDto;
+import java.util.List;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.List;
+import com.onmoim.server.chat.domain.ChatRoomMessage;
+import com.onmoim.server.chat.domain.ChatRoomMessageId;
+import com.onmoim.server.chat.domain.dto.ChatMessageDto;
 
 import io.lettuce.core.dynamic.annotation.Param;
 

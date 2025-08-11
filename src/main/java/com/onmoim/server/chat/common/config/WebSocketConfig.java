@@ -171,60 +171,60 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 			protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler,
 				Map<String, Object> attributes) {
 
-				// return new Authentication() {
-				// 	@Override
-				// 	public Collection<? extends GrantedAuthority> getAuthorities() {
-				// 		return List.of();
-				// 	}
-				//
-				// 	@Override
-				// 	public Object getCredentials() {
-				// 		return null;
-				// 	}
-				//
-				// 	@Override
-				// 	public Object getDetails() {
-				// 		return null;
-				// 	}
-				//
-				// 	@Override
-				// 	public Object getPrincipal() {
-				// 		return new CustomUserDetails(1L);
-				// 	}
-				//
-				// 	@Override
-				// 	public boolean isAuthenticated() {
-				// 		return true;
-				// 	}
-				//
-				// 	@Override
-				// 	public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
-				//
-				// 	}
-				//
-				// 	@Override
-				// 	public String getName() {
-				// 		return "101";
-				// 	}
-				// };
+				return new Authentication() {
+					@Override
+					public Collection<? extends GrantedAuthority> getAuthorities() {
+						return List.of();
+					}
 
-				List<String> tokens = request.getHeaders().get("Authorization");
-				if(CollectionUtils.isEmpty(tokens)){
-					throw new RuntimeException("NOT EXIST USER");
-				}
-				String token = tokens.getFirst();
-				if (token != null && token.startsWith("Bearer ")) {
-					token = token.substring(7);
-				Authentication authentication = jwtProvider.getAuthentication(token);
-				return new Principal() {
+					@Override
+					public Object getCredentials() {
+						return null;
+					}
+
+					@Override
+					public Object getDetails() {
+						return null;
+					}
+
+					@Override
+					public Object getPrincipal() {
+						return new CustomUserDetails(1L);
+					}
+
+					@Override
+					public boolean isAuthenticated() {
+						return true;
+					}
+
+					@Override
+					public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+
+					}
+
 					@Override
 					public String getName() {
-						return ((CustomUserDetails)authentication.getPrincipal()).getUserId().toString();
+						return "101";
 					}
 				};
-				}else{
-					throw new RuntimeException("NOT Bearer Token");
-				}
+
+				// List<String> tokens = request.getHeaders().get("Authorization");
+				// if(CollectionUtils.isEmpty(tokens)){
+				// 	throw new RuntimeException("NOT EXIST USER");
+				// }
+				// String token = tokens.getFirst();
+				// if (token != null && token.startsWith("Bearer ")) {
+				// 	token = token.substring(7);
+				// Authentication authentication = jwtProvider.getAuthentication(token);
+				// return new Principal() {
+				// 	@Override
+				// 	public String getName() {
+				// 		return ((CustomUserDetails)authentication.getPrincipal()).getUserId().toString();
+				// 	}
+				// };
+				// }else{
+				// 	throw new RuntimeException("NOT Bearer Token");
+				// }
 			}
 		};
 	}
